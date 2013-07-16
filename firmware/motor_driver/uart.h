@@ -16,7 +16,7 @@
 #define uart_enable_interrupt() UCSRB |= (1 << RXCIE)
 #define uart_disable_interrupt() UCSRB &= ~(1 << RXCIE)
 
-inline void uart_init();
+void uart_init();
 
 int uart_putc(char byte);
 int uart_getc(void);

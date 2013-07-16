@@ -32,7 +32,7 @@
 
 #include <inttypes.h>
 
-inline void motor_init();
+void motor_init();
 
 uint8_t motor_get_speed(uint8_t motor);
 uint8_t motor_get_direction(uint8_t motor);
