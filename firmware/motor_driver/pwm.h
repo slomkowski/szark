@@ -2,6 +2,8 @@
 #define _PWM_H_
 
 #include "global.h"
+#include <inttypes.h>
+#include <avr/io.h>
 
 // ** I/O configuration
 #define MOTOR1_PORT			B
@@ -23,14 +25,15 @@
 #define ENCODER2_INTERRUPT	INT1_vect
 
 // ** control commands
-#define MOTOR_STOP		CHAR_MOTOR_STOP	
+#define MOTOR_STOP		CHAR_MOTOR_STOP
 #define MOTOR_FORWARD	CHAR_MOTOR_FORWARD
-#define MOTOR_BACKWARD	CHAR_MOTOR_BACKWARD	
+#define MOTOR_BACKWARD	CHAR_MOTOR_BACKWARD
 
 #define MOTOR1_IDENTIFIER CHAR_MOTOR1
 #define MOTOR2_IDENTIFIER CHAR_MOTOR2
 
-#include <inttypes.h>
+#define PWM1_REG OCR0A
+#define PWM2_REG OCR0B
 
 void motor_init();
 
@@ -39,5 +42,16 @@ uint8_t motor_get_direction(uint8_t motor);
 
 void motor_set_speed(uint8_t motor, uint8_t speed);
 void motor_set_direction(uint8_t motor, uint8_t direction);
+
+// variables for communication with controller
+
+extern uint8_t motor1_direction;
+extern uint8_t motor2_direction;
+
+extern uint8_t motor1_ref;
+extern uint8_t motor2_ref;
+
+extern volatile uint16_t motor1_counter;
+extern volatile uint16_t motor2_counter;
 
 #endif

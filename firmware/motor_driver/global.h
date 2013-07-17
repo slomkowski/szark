@@ -5,10 +5,10 @@
 #  www.flylab.ovh.org m.slomkowski@gmail.com
 */
 
-#ifndef _GLOBAL_H_ 
+#ifndef _GLOBAL_H_
 #define _GLOBAL_H_
 
-/* 
+/*
    #######
    ####### Configuration
    #######
@@ -21,11 +21,12 @@
 #define DEBUG_PORT D
 #define DEBUG_PIN 0
 
+// set system clock to 4 MHz
 #define F_CPU 4000000UL
 
 #include <inttypes.h>
 
-/* 
+/*
    #######
    ####### Useful macros
    #######
@@ -41,12 +42,12 @@
 #define XDDR(x) (DDR##x)
 
 #define debug_up() { PORT(DEBUG_PORT) |= (1 << DEBUG_PIN); }
-#define debug_down() { PORT(DEBUG_PORT) &= ~(1 << DEBUG_PIN); } 
+#define debug_down() { PORT(DEBUG_PORT) &= ~(1 << DEBUG_PIN); }
 
 #define TRUE 1
 #define FALSE 0
 
-#include "command-chars.h"
+#include "motor_driver-commands.h"
 
 #endif
 

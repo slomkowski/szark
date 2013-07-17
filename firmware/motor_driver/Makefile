@@ -9,7 +9,7 @@ AVR-OBJCOPY=avr-objcopy
 AVR-SIZE=avr-size
 AVRDUDE=avrdude
 
-OUTPUT=motor_driver-firmware
+OUTPUT=motor_driver
 
 CPU-GCC=attiny2313
 CPU-AVRDUDE=t2313
