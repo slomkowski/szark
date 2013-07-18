@@ -7,13 +7,13 @@
 
 // ** I/O configuration
 #define MOTOR1_PORT			B
-#define MOTOR1_FORWARD_PIN	0
-#define MOTOR1_BACKWARD_PIN	1
+#define MOTOR1_FORWARD_PIN	1
+#define MOTOR1_BACKWARD_PIN	0
 #define MOTOR1_PWM_PIN		2
 
 #define MOTOR2_PORT			D
-#define MOTOR2_FORWARD_PIN	6
-#define MOTOR2_BACKWARD_PIN	4
+#define MOTOR2_FORWARD_PIN	4
+#define MOTOR2_BACKWARD_PIN	6
 #define MOTOR2_PWM_PIN		5
 
 #define ENCODER_PORT	D
@@ -48,8 +48,8 @@ void motor_set_direction(uint8_t motor, uint8_t direction);
 extern uint8_t motor1_direction;
 extern uint8_t motor2_direction;
 
-extern uint8_t motor1_ref;
-extern uint8_t motor2_ref;
+extern volatile uint8_t motor1_ref;
+extern volatile uint8_t motor2_ref;
 
 extern volatile uint16_t motor1_counter;
 extern volatile uint16_t motor2_counter;

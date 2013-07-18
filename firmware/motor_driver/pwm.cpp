@@ -16,19 +16,19 @@
 #define TIMER_INTERVAL 500
 
 /*
- * in my application, the maximal speed was limited to 70 impulses per interrupt
+ * in my application, the maximal speed was limited to 140 impulses per interrupt
  * this is the table of valid speeds (number of impulses in TIMER_INTERVAL time)
  */
-const uint16_t s_vals[] PROGMEM = { 0, 10, 20, 28, 36, 46, 54, 66, 74, 84, 92, 102, 112, 122, 130, 140 };
+const uint8_t s_vals[] PROGMEM = { 0, 10, 20, 28, 36, 46, 54, 66, 74, 84, 92, 102, 112, 122, 130, 140 };
 
 uint8_t motor1_direction;
 uint8_t motor2_direction;
 
-uint8_t motor1_ref;
-uint8_t motor2_ref;
+volatile uint8_t motor1_ref;
+volatile uint8_t motor2_ref;
 
-volatile uint16_t motor1_counter;
-volatile uint16_t motor2_counter;
+volatile uint16_t motor1_counter = 0;
+volatile uint16_t motor2_counter = 0;
 
 static void pwm1_start_generating() {
 	TCCR0A |= (1 << COM0A1);

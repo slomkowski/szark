@@ -21,22 +21,23 @@ uint8_t controller(uint16_t actual, uint8_t reference, int16_t *prevError) {
 }
 
 ISR(TIMER1_COMPA_vect) {
-	int16_t err1, err2, out1, out2;
+	int16_t error, output;
 	static int16_t prevErr1, prevErr2;
 
 	if (motor1_direction != MOTOR_STOP) {
-		err1 = motor1_counter - motor1_ref;
+		error = motor1_counter - motor1_ref;
 
-		out1 = PWM1_REG - ((CONTROLLER_P_REG * err1 / 100) + (CONTROLLER_D_REG * (err1 - prevErr1) / 100));
+		output = PWM1_REG - ((CONTROLLER_P_REG * error / 100) + (CONTROLLER_D_REG * (error - prevErr1) / 100));
 
-		prevErr1 = err1;
+		prevErr1 = error;
 
-		PWM1_REG = limit_pwm_val(out1);
+		PWM1_REG = limit_pwm_val(output);
+
 	} else {
 		prevErr1 = 0;
 	}
 
-	if (motor2_direction != MOTOR_STOP) {
+	/*if (motor2_direction != MOTOR_STOP) {
 		err2 = motor2_counter - motor2_ref;
 
 		out2 = PWM2_REG - ((CONTROLLER_P_REG * err2 / 100) + (CONTROLLER_D_REG * (err2 - prevErr2) / 100));
@@ -46,7 +47,7 @@ ISR(TIMER1_COMPA_vect) {
 		PWM2_REG = limit_pwm_val(out2);
 	} else {
 		prevErr2 = 0;
-	}
+	}*/
 
 	// clear the counters
 	motor1_counter = 0;
