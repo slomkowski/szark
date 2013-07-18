@@ -4,17 +4,17 @@
 # This code is distributed under the terms of GNU General Public License version 3.0.
 #
  
-AVR-CC=avr-gcc
+AVR-CC=avr-g++
 AVR-OBJCOPY=avr-objcopy
 AVR-SIZE=avr-size
 AVRDUDE=avrdude
 
-OUTPUT=motor_driver
+OUTPUT=bridge
 
 CPU-GCC=atmega8
 CPU-AVRDUDE=m8
 
-CFLAGS=-mmcu=$(CPU-GCC) -std=gnu99 -Os
+CFLAGS=-mmcu=$(CPU-GCC) -Os
 CFLAGS+=-Wall
 CFLAGS+=-I../common
 
@@ -29,13 +29,13 @@ EXTRA_DEPS = global.h
 
 BIN_DIR=obj
 
-SRC_C = $(shell ls *.c)
+SRC_CPP = $(shell ls *.cpp)
 
 .SUFFIXES:
-.SUFFIXES: .h .c .o
+.SUFFIXES: .h .cpp .c .o
 
-HEADERS = $(SRC_C:%.c=%.h) 
-OBJ = $(SRC_C:%.c=$(BIN_DIR)/%.o)
+HEADERS = $(SRC_CPP:%.cpp=%.h) 
+OBJ = $(SRC_CPP:%.cpp=$(BIN_DIR)/%.o)
 
 all : $(OUTPUT).hex
 
@@ -43,17 +43,17 @@ directories:
 	if [ ! -e $(BIN_DIR) ]; then mkdir -p $(BIN_DIR); fi
 
 # generic code
-$(OUTPUT).hex : $(BIN_DIR)/$(OUTPUT).elf
+$(OUTPUT).hex : directories $(BIN_DIR)/$(OUTPUT).elf
 	$(AVR-OBJCOPY) -O ihex $(BIN_DIR)/$(OUTPUT).elf $(OUTPUT).hex
 	$(AVR-SIZE) $(OUTPUT).hex
 
 $(BIN_DIR)/$(OUTPUT).elf : $(OBJ) 
 	$(AVR-CC) $(CFLAGS) -o $(BIN_DIR)/$(OUTPUT).elf $(OBJ)
 
-$(BIN_DIR)/main.o : main.c $(EXTRA_DEPS) directories
+$(BIN_DIR)/main.o : main.cpp $(EXTRA_DEPS) directories
 	$(AVR-CC) $(CFLAGS) -c $< -o $@
 
-$(BIN_DIR)/%.o : %.c %.h $(EXTRA_DEPS) directories
+$(BIN_DIR)/%.o : %.cpp %.h $(EXTRA_DEPS) directories
 	$(AVR-CC) $(CFLAGS) -c $< -o $@
 
 run: burn

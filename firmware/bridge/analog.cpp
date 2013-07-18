@@ -56,7 +56,7 @@ uint16_t analog_get_current()
 volatile uint16_t voltage, current;
 static volatile uint8_t chooser;
 
-inline void analog_init()
+void analog_init()
 {
 	DDRC &= ~((1 << ANALOG_VOLTAGE_PIN) | (1 << ANALOG_CURRENT_PIN)); // set as inputs
 	PORTC &= ~((1 << ANALOG_VOLTAGE_PIN) | (1 << ANALOG_CURRENT_PIN)); // disable pullup
