@@ -6,6 +6,8 @@
 #include "controller.h"
 #include "pwm.h"
 
+using namespace motor;
+
 static uint8_t limit_pwm_val(int16_t value) {
 	if (value < 0) {
 		return 0;
@@ -16,41 +18,37 @@ static uint8_t limit_pwm_val(int16_t value) {
 	}
 }
 
-uint8_t controller(uint16_t actual, uint8_t reference, int16_t *prevError) {
-	int16_t error = actual - reference;
-}
-
 ISR(TIMER1_COMPA_vect) {
-	int16_t error, output;
-	static int16_t prevErr1, prevErr2;
+	int16_t output, error;
+	static int16_t prevErr[2];
 
-	if (motor1_direction != MOTOR_STOP) {
-		error = motor1_counter - motor1_ref;
+	if (motor1.direction != STOP) {
+		error = motor1.counter - motor1.refSpeed;
 
-		output = PWM1_REG - ((CONTROLLER_P_REG * error / 100) + (CONTROLLER_D_REG * (error - prevErr1) / 100));
+		output = PWM1_REG - ((CONTROLLER_P_REG * error / 100) /*+ (CONTROLLER_D_REG * (error - prevErr1) / 100)*/);
 
-		prevErr1 = error;
+		prevErr[0] = error;
 
 		PWM1_REG = limit_pwm_val(output);
 
 	} else {
-		prevErr1 = 0;
+		prevErr[0] = 0;
 	}
 
-	/*if (motor2_direction != MOTOR_STOP) {
-		err2 = motor2_counter - motor2_ref;
+	if (motor2.direction != STOP) {
+		error = motor2.counter - motor2.refSpeed;
 
-		out2 = PWM2_REG - ((CONTROLLER_P_REG * err2 / 100) + (CONTROLLER_D_REG * (err2 - prevErr2) / 100));
+		output = PWM2_REG - ((CONTROLLER_P_REG * error / 100) /*+ (CONTROLLER_D_REG * (error - prevErr2) / 100)*/);
 
-		prevErr2 = err2;
+		prevErr[1] = error;
 
-		PWM2_REG = limit_pwm_val(out2);
+		PWM2_REG = limit_pwm_val(output);
 	} else {
-		prevErr2 = 0;
-	}*/
+		prevErr[1] = 0;
+	}
 
 	// clear the counters
-	motor1_counter = 0;
-	motor2_counter = 0;
+	motor1.counter = 0;
+	motor2.counter = 0;
 }
 

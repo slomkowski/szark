@@ -15,24 +15,26 @@
 // current setting - one interrupt per 125ms
 #define TIMER_INTERVAL 500
 
+using namespace motor;
+
 /*
- * in my application, the maximal speed was limited to 140 impulses per interrupt
- * this is the table of valid speeds (number of impulses in TIMER_INTERVAL time)
+ * in my application, the maximal controlled speed was limited to 92 impulses per interrupt
+ * this is the table of valid speeds (number of impulses in TIMER_INTERVAL time).
+ * Maximal speed is limited to 11 TODO dokumentacja motor driver prędkości
  */
-const uint8_t s_vals[] PROGMEM = { 0, 10, 20, 28, 36, 46, 54, 66, 74, 84, 92, 102, 112, 122, 130, 140 };
 
-uint8_t motor1_direction;
-uint8_t motor2_direction;
+const uint8_t s_vals[] PROGMEM = { 0, 10, 20, 28, 36, 46, 54, 66, 74, 84, 92, 255 };
+const uint8_t m1_speeds[] PROGMEM = { 0, 40, 50, 60, 75, 100, 130, 160, 180, 200, 230, 255 };
+const uint8_t m2_speeds[] PROGMEM = { 0, 65, 75, 90, 100, 125, 150, 170, 190, 215, 240, 255 };
 
-volatile uint8_t motor1_ref;
-volatile uint8_t motor2_ref;
-
-volatile uint16_t motor1_counter = 0;
-volatile uint16_t motor2_counter = 0;
+namespace motor {
+	Motor motor1;
+	Motor motor2;
+}
 
 static void pwm1_start_generating() {
 	TCCR0A |= (1 << COM0A1);
-	motor1_counter = 0;
+	motor1.counter = 0;
 	GIMSK |= (1 << INT0);
 }
 
@@ -43,7 +45,7 @@ static void pwm1_stop_generating() {
 
 static void pwm2_start_generating() {
 	TCCR0A |= (1 << COM0B1);
-	motor2_counter = 0;
+	motor2.counter = 0;
 	GIMSK |= (1 << INT1);
 }
 
@@ -52,7 +54,7 @@ static void pwm2_stop_generating() {
 	GIMSK &= ~(1 << INT1);
 }
 
-void motor_init() {
+void motor::init() {
 	// set outputs
 	DDR(MOTOR1_PORT) |= (1 << MOTOR1_FORWARD_PIN) | (1 << MOTOR1_BACKWARD_PIN) | (1 << MOTOR1_PWM_PIN);
 	DDR(MOTOR2_PORT) |= (1 << MOTOR2_FORWARD_PIN) | (1 << MOTOR2_BACKWARD_PIN) | (1 << MOTOR2_PWM_PIN);
@@ -62,8 +64,8 @@ void motor_init() {
 	PORT(ENCODER_PORT) |= (1 << ENCODER1_PIN) | (1 << ENCODER2_PIN);
 
 	// brake motors
-	motor_set_direction(MOTOR1_IDENTIFIER, MOTOR_STOP);
-	motor_set_direction(MOTOR2_IDENTIFIER, MOTOR_STOP);
+	setDirection(MOTOR1_IDENTIFIER, MOTOR_STOP);
+	setDirection(MOTOR2_IDENTIFIER, MOTOR_STOP);
 
 	// pwm setup
 	TCCR0A = (1 << WGM00); // phase-correct
@@ -82,7 +84,7 @@ void motor_init() {
 }
 
 // returned value is the actual PWM setting, which changes by encoder feedback, not the one set by the user
-uint8_t motor_get_speed(uint8_t motor) {
+uint8_t motor::getSpeed(uint8_t motor) {
 	if (motor == MOTOR1_IDENTIFIER) {
 		return PWM1_REG ;
 	} else {
@@ -90,33 +92,33 @@ uint8_t motor_get_speed(uint8_t motor) {
 	}
 }
 
-uint8_t motor_get_direction(uint8_t motor) {
+uint8_t motor::getDirection(uint8_t motor) {
 	if (motor == MOTOR1_IDENTIFIER) {
-		return (motor1_direction);
+		return (motor1.direction);
 	} else {
-		return (motor2_direction);
+		return (motor2.direction);
 	}
 }
 
-void motor_set_speed(uint8_t motor, uint8_t speed) {
+void motor::setSpeed(uint8_t motor, uint8_t speed) {
 	if (motor == MOTOR1_IDENTIFIER) {
 #if DEBUG
-		if(speed == '0') motor1_ref = pgm_read_byte(&(s_vals[0]));
-		else if(speed == 'm') motor1_ref = pgm_read_byte(&(s_vals[15]));
+		if(speed == '0') motor1.refSpeed = pgm_read_byte(&(s_vals[0]));
+		else if(speed == 'm') motor1.refSpeed = pgm_read_byte(&(s_vals[11]));
 		else
 #endif
-		motor1_ref = pgm_read_byte(&(s_vals[speed % 16]));
+		motor1.refSpeed = pgm_read_byte(&(s_vals[speed % 12]));
 	} else {
 #if DEBUG
-		if(speed == '0') motor2_ref = pgm_read_byte(&(s_vals[0]));
-		else if(speed == 'm') motor2_ref =pgm_read_byte(&(s_vals[15]));
+		if(speed == '0') motor2.refSpeed = pgm_read_byte(&(s_vals[0]));
+		else if(speed == 'm') motor2.refSpeed =pgm_read_byte(&(s_vals[11]));
 		else
 #endif
-		motor2_ref = pgm_read_byte(&(s_vals[speed % 16]));
+		motor2.refSpeed = pgm_read_byte(&(s_vals[speed % 12]));
 	}
 }
 
-void motor_set_direction(uint8_t motor, uint8_t direction) {
+void motor::setDirection(uint8_t motor, uint8_t direction) {
 	// motor 1
 	if (motor == MOTOR1_IDENTIFIER) {
 		if (direction == MOTOR_FORWARD) {
@@ -124,19 +126,19 @@ void motor_set_direction(uint8_t motor, uint8_t direction) {
 			PORT(MOTOR1_PORT) &= ~(1 << MOTOR1_BACKWARD_PIN);
 
 			pwm1_start_generating();
-			motor1_direction = MOTOR_FORWARD;
+			motor1.direction = FORWARD;
 		} else if (direction == MOTOR_BACKWARD) {
 			PORT(MOTOR1_PORT) &= ~(1 << MOTOR1_FORWARD_PIN);
 			PORT(MOTOR1_PORT) |= (1 << MOTOR1_BACKWARD_PIN);
 
 			pwm1_start_generating();
-			motor1_direction = MOTOR_BACKWARD;
+			motor1.direction = BACKWARD;
 		} else {
 			PORT(MOTOR1_PORT) |= (1 << MOTOR1_FORWARD_PIN);
 			PORT(MOTOR1_PORT) |= (1 << MOTOR1_BACKWARD_PIN);
 
 			pwm1_stop_generating();
-			motor1_direction = MOTOR_STOP;
+			motor1.direction = STOP;
 		}
 	} else // motor 2
 	{
@@ -145,27 +147,27 @@ void motor_set_direction(uint8_t motor, uint8_t direction) {
 			PORT(MOTOR2_PORT) &= ~(1 << MOTOR2_BACKWARD_PIN);
 
 			pwm2_start_generating();
-			motor2_direction = MOTOR_FORWARD;
+			motor2.direction = FORWARD;
 		} else if (direction == MOTOR_BACKWARD) {
 			PORT(MOTOR2_PORT) &= ~(1 << MOTOR2_FORWARD_PIN);
 			PORT(MOTOR2_PORT) |= (1 << MOTOR2_BACKWARD_PIN);
 
 			pwm2_start_generating();
-			motor2_direction = MOTOR_BACKWARD;
+			motor2.direction = BACKWARD;
 		} else {
 			PORT(MOTOR2_PORT) |= (1 << MOTOR2_FORWARD_PIN);
 			PORT(MOTOR2_PORT) |= (1 << MOTOR2_BACKWARD_PIN);
 
 			pwm2_stop_generating();
-			motor2_direction = MOTOR_STOP;
+			motor2.direction = STOP;
 		}
 	}
 }
 
 ISR(ENCODER1_INTERRUPT) {
-	motor1_counter++;
+	motor1.counter++;
 }
 
 ISR(ENCODER2_INTERRUPT) {
-	motor2_counter++;
+	motor2.counter++;
 }

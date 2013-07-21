@@ -20,7 +20,7 @@ int main() {
 	DDR(DEBUG_PORT) |= (1<<DEBUG_PIN);
 #endif
 
-	motor_init();
+	motor::init();
 	i2c_initialize((I2C_SLAVE_ADDRESS << 1));
 
 	sei();
@@ -34,9 +34,9 @@ int main() {
 		// generic
 		if (i2c_reply_ready()) {
 			if (i2c_wrbuf[0] == CHAR_MOTOR_GET_SPEED) {
-				i2c_rdbuf[0] = motor_get_speed(i2c_wrbuf[1]);
+				i2c_rdbuf[0] = motor::getSpeed(i2c_wrbuf[1]);
 			} else {
-				i2c_rdbuf[0] = motor_get_direction(i2c_wrbuf[1]);
+				i2c_rdbuf[0] = motor::getDirection(i2c_wrbuf[1]);
 			}
 
 			i2c_reply_done(1);
@@ -45,14 +45,14 @@ int main() {
 		if (i2c_message_ready()) {
 			switch (i2c_wrbuf[0]) {
 			case CHAR_MOTOR_BRAKE:
-				motor_set_direction(MOTOR1_IDENTIFIER, MOTOR_STOP);
-				motor_set_direction(MOTOR2_IDENTIFIER, MOTOR_STOP);
+				motor::setDirection(MOTOR1_IDENTIFIER, MOTOR_STOP);
+				motor::setDirection(MOTOR2_IDENTIFIER, MOTOR_STOP);
 				break;
 			case CHAR_MOTOR_SET_SPEED:
-				motor_set_speed(i2c_wrbuf[1], i2c_wrbuf[2]);
+				motor::setSpeed(i2c_wrbuf[1], i2c_wrbuf[2]);
 				break;
 			case CHAR_MOTOR_SET_DIRECTION:
-				motor_set_direction(i2c_wrbuf[1], i2c_wrbuf[2]);
+				motor::setDirection(i2c_wrbuf[1], i2c_wrbuf[2]);
 				break;
 
 			};

@@ -35,23 +35,27 @@
 #define PWM1_REG OCR0A
 #define PWM2_REG OCR0B
 
-void motor_init();
+namespace motor {
+	void init();
 
-uint8_t motor_get_speed(uint8_t motor);
-uint8_t motor_get_direction(uint8_t motor);
+	uint8_t getSpeed(uint8_t motor);
+	uint8_t getDirection(uint8_t motor);
 
-void motor_set_speed(uint8_t motor, uint8_t speed);
-void motor_set_direction(uint8_t motor, uint8_t direction);
+	void setSpeed(uint8_t motor, uint8_t speed);
+	void setDirection(uint8_t motor, uint8_t direction);
 
-// variables for communication with controller
+	enum Direction {
+		STOP = CHAR_MOTOR_STOP, FORWARD = CHAR_MOTOR_FORWARD, BACKWARD = CHAR_MOTOR_BACKWARD
+	};
 
-extern uint8_t motor1_direction;
-extern uint8_t motor2_direction;
+	struct Motor {
+		Direction direction;
+		volatile uint8_t refSpeed;
+		volatile uint16_t counter;
+	};
 
-extern volatile uint8_t motor1_ref;
-extern volatile uint8_t motor2_ref;
-
-extern volatile uint16_t motor1_counter;
-extern volatile uint16_t motor2_counter;
+	extern Motor motor1;
+	extern Motor motor2;
+}
 
 #endif
