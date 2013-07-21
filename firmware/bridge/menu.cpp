@@ -89,7 +89,7 @@ static void checkSelector(uint8_t lower, uint8_t upper) {
 	else if (subMenuSelector > upper) subMenuSelector = lower;
 }
 
-static uint8_t armcalibrationDone = 0, busIsActive = 0, armPosition = 0;
+static uint8_t armcalibrationDone = 0, busIsActive = 0, armPosition = 0, motorSpeed = 0;
 
 static void checkEnterButtonMenu(uint8_t exitId, uint8_t workMenuId) {
 	if (buttonPressed(BUTTON_ENTER)) {
@@ -294,6 +294,19 @@ void menuCheckButtons() {
 			motorButtonsControl(MOTOR_RIGHT, MOTOR_SPEED);
 			break;
 		}
+
+		static char speedText[] = "\nL: xxx, R: xxx";
+		motorSpeed = motor_get_speed(MOTOR_LEFT);
+		for (i = 6; i > 3; i--) {
+			speedText[i] = (motorSpeed % 10 + '0');
+			motorSpeed /= 10;
+		}
+		motorSpeed = motor_get_speed(MOTOR_RIGHT);
+		for (i = 14; i > 11; i--) {
+			speedText[i] = (motorSpeed % 10 + '0');
+			motorSpeed /= 10;
+		}
+		lcd_puts(speedText);
 
 		checkEnterButtonWorkMenu(MOTOR_MENU);
 
