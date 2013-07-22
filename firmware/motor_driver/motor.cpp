@@ -10,6 +10,7 @@
 #include <stdlib.h>
 
 #include "motor.h"
+#include "controller.h"
 
 // interrupt interval - the base is (f_clk/1024) ~= 0.25ms
 // current setting - one interrupt per 125ms
@@ -171,4 +172,9 @@ ISR(ENCODER1_INTERRUPT) {
 
 ISR(ENCODER2_INTERRUPT) {
 	motor2.counter++;
+}
+
+ISR(TIMER1_COMPA_vect) {
+	PWM1_REG = regulate(&motor1, PWM1_REG);
+	PWM2_REG = regulate(&motor2, PWM2_REG);
 }

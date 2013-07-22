@@ -1,20 +1,12 @@
 #include "global.h"
 
-#include <avr/io.h>
-#include <avr/interrupt.h>
 #include <inttypes.h>
-#include "controller.h"
 #include "motor.h"
-
-// PD controller constants:
-// proportional
-const int16_t CONTROLLER_P_REG = 60;
-// derivative
-const int16_t CONTROLLER_D_REG = 0;
+#include "controller.h"
 
 using namespace motor;
 
-static uint8_t limit_pwm_val(int16_t value) {
+static uint8_t limit8bit(int16_t value) {
 	if (value < 0) {
 		return 0;
 	} else if (value > 0xff) {
@@ -24,37 +16,23 @@ static uint8_t limit_pwm_val(int16_t value) {
 	}
 }
 
-ISR(TIMER1_COMPA_vect) {
+uint8_t motor::regulate(Motor *motor, uint8_t actualPwmReg) {
 	int16_t output, error;
-	static int16_t prevErr[2];
+	if (motor->direction != STOP) {
+		error = motor->counter - motor->refSpeed;
 
-	if (motor1.direction != STOP) {
-		error = motor1.counter - motor1.refSpeed;
+		output = actualPwmReg - ((CONTROLLER_P_REG * error / 100) + (CONTROLLER_D_REG * (error - motor->prevError) / 100));
 
-		output = PWM1_REG - ((CONTROLLER_P_REG * error / 100) /*+ (CONTROLLER_D_REG * (error - prevErr1) / 100)*/);
+		motor->prevError = error;
 
-		prevErr[0] = error;
+		motor->counter = 0;
 
-		PWM1_REG = limit_pwm_val(output);
+		return limit8bit(output);
 
 	} else {
-		prevErr[0] = 0;
+		motor->prevError = 0;
+		return 0;
 	}
-
-	if (motor2.direction != STOP) {
-		error = motor2.counter - motor2.refSpeed;
-
-		output = PWM2_REG - ((CONTROLLER_P_REG * error / 100) /*+ (CONTROLLER_D_REG * (error - prevErr2) / 100)*/);
-
-		prevErr[1] = error;
-
-		PWM2_REG = limit_pwm_val(output);
-	} else {
-		prevErr[1] = 0;
-	}
-
-	// clear the counters
-	motor1.counter = 0;
-	motor2.counter = 0;
 }
+
 

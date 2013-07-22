@@ -52,6 +52,7 @@ namespace motor {
 		Direction direction;
 		volatile uint8_t refSpeed;
 		volatile uint16_t counter;
+		int16_t prevError;
 	};
 
 	extern Motor motor1;
