@@ -11,7 +11,7 @@
 #include <avr/interrupt.h>
 #include <avr/wdt.h>
 
-#include "pwm.h"
+#include "motor.h"
 #include "i2c-slave.h"
 
 int main() {

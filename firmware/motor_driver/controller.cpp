@@ -4,7 +4,13 @@
 #include <avr/interrupt.h>
 #include <inttypes.h>
 #include "controller.h"
-#include "pwm.h"
+#include "motor.h"
+
+// PD controller constants:
+// proportional
+const int16_t CONTROLLER_P_REG = 60;
+// derivative
+const int16_t CONTROLLER_D_REG = 0;
 
 using namespace motor;
 
