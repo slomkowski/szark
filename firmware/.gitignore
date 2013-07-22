@@ -18,3 +18,6 @@
 *.exe
 *.out
 *.app
+
+# Eclipse settings
+.settings
