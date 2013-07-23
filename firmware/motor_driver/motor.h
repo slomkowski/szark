@@ -53,6 +53,7 @@ namespace motor {
 		volatile uint8_t refSpeed;
 		volatile uint16_t counter;
 		int16_t prevError;
+		uint8_t fixedDriveCycleCounter;
 	};
 
 	extern Motor motor1;

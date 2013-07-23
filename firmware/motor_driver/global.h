@@ -5,7 +5,7 @@
  * Configuration
  */
 
-#define DEBUG 0
+#define DEBUG true
 
 // set system clock to 4 MHz
 #define F_CPU 4000000UL
@@ -33,8 +33,14 @@
 #define DEBUG_PORT D
 #define DEBUG_PIN 0
 
-#define debug_up() { PORT(DEBUG_PORT) |= (1 << DEBUG_PIN); }
-#define debug_down() { PORT(DEBUG_PORT) &= ~(1 << DEBUG_PIN); }
+#include <avr/io.h>
+
+static inline void debugUp() {
+	PORT(DEBUG_PORT) |= (1 << DEBUG_PIN);
+}
+static inline void debugDown() {
+	PORT(DEBUG_PORT) &= ~(1 << DEBUG_PIN);
+}
 
 #include "motor_driver-commands.h"
 

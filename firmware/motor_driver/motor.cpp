@@ -12,26 +12,40 @@
 #include "motor.h"
 #include "controller.h"
 
-// interrupt interval - the base is (f_clk/1024) ~= 0.25ms
-// current setting - one interrupt per 125ms
+/* Interrupt interval - after this time the PD controller interrupt is called.
+ * The base is (f_clk/1024) ~= 0.25ms. Current setting 500 = 125ms
+ */
 const uint16_t TIMER_INTERVAL = 500;
 
-using namespace motor;
+/*
+ * After each change of direction or speed the motor's PWM value is taken
+ * from Mx_SPEEDS array and held for the several timer cycles. After that
+ * the PD controller is enabled.
+ */
+const uint8_t FIXED_DRIVE_CYCLES = 3;
 
 /*
  * in my application, the maximal controlled speed was limited to 92 impulses per interrupt
- * this is the table of valid speeds (number of impulses in TIMER_INTERVAL time).
- * Maximal speed is limited to 11 TODO dokumentacja motor driver prędkości
+ * this is the table of valid speeds (number of impulses in TIMER_INTERVAL time). There are
+ * 12 speed levels (from 0 to 11). 11 is maximal possible speed (the motors are driven with
+ * full supply voltage).
  */
-
 const uint8_t REF_SPEEDS[] PROGMEM = { 0, 10, 20, 28, 36, 46, 54, 66, 74, 84, 92, 255 };
+
+/*
+ * The fixed PWM values for each motor for the static drive phase (info above).
+ */
 const uint8_t M1_SPEEDS[] PROGMEM = { 0, 40, 50, 60, 75, 100, 130, 160, 180, 200, 230, 255 };
 const uint8_t M2_SPEEDS[] PROGMEM = { 0, 65, 75, 90, 100, 125, 150, 170, 190, 215, 240, 255 };
+
+static const uint8_t NO_SPEEDS = sizeof(REF_SPEEDS) / sizeof(REF_SPEEDS[0]);
 
 namespace motor {
 	Motor motor1;
 	Motor motor2;
 }
+
+using namespace motor;
 
 void motor::init() {
 	// set outputs
@@ -65,7 +79,9 @@ void motor::init() {
 	GIMSK |= (1 << INT0) | (1 << INT1);
 }
 
-// returned value is the actual PWM setting, which changes by encoder feedback, not the one set by the user
+/*
+ * Returned value is the actual PWM setting, not the value set by user.
+ */
 uint8_t motor::getSpeed(uint8_t motor) {
 	if (motor == MOTOR1_IDENTIFIER) {
 		return PWM1_REG ;
@@ -83,55 +99,29 @@ uint8_t motor::getDirection(uint8_t motor) {
 }
 
 void motor::setSpeed(uint8_t motor, uint8_t speed) {
-	const uint8_t MAX_IDX = sizeof(REF_SPEEDS) / sizeof(REF_SPEEDS[0]);
+	uint8_t newRefSpeed;
+
+#if DEBUG
+	if(speed == '0') newRefSpeed = pgm_read_byte(&(REF_SPEEDS[0]));
+	else if(speed == 'm') newRefSpeed = pgm_read_byte(&(REF_SPEEDS[NO_SPEEDS - 1]));
+	else
+#endif
+	newRefSpeed = pgm_read_byte(&(REF_SPEEDS[speed % NO_SPEEDS]));
 
 	if (motor == MOTOR1_IDENTIFIER) {
-#if DEBUG
-		if(speed == '0') motor1.refSpeed = pgm_read_byte(&(s_vals[0]));
-		else if(speed == 'm') motor1.refSpeed = pgm_read_byte(&(s_vals[MAX_IDX - 1]));
-		else
-#endif
-		motor1.refSpeed = pgm_read_byte(&(REF_SPEEDS[speed % MAX_IDX]));
+		if (newRefSpeed != motor1.refSpeed) {
+			PWM1_REG = pgm_read_byte(&(M1_SPEEDS[speed % NO_SPEEDS]));
+			motor1.fixedDriveCycleCounter = FIXED_DRIVE_CYCLES;
+		}
 	} else {
-#if DEBUG
-		if(speed == '0') motor2.refSpeed = pgm_read_byte(&(s_vals[0]));
-		else if(speed == 'm') motor2.refSpeed = pgm_read_byte(&(s_vals[MAX_IDX - 1]));
-		else
-#endif
-		motor2.refSpeed = pgm_read_byte(&(REF_SPEEDS[speed % MAX_IDX]));
+		if (newRefSpeed != motor2.refSpeed) {
+			PWM2_REG = pgm_read_byte(&(M2_SPEEDS[speed % NO_SPEEDS]));
+			motor2.fixedDriveCycleCounter = FIXED_DRIVE_CYCLES;
+		}
 	}
 }
 
-static void setPwmEnabled(uint8_t motor, uint8_t direction) {
-	uint8_t reg;
-	Motor *mStruct;
-
-	if (motor == MOTOR1_IDENTIFIER) {
-		reg = (1 << COM0A1);
-		mStruct = &motor1;
-	} else {
-		reg = (1 << COM0B1);
-		mStruct = &motor2;
-	}
-
-	switch (direction) {
-	case MOTOR_FORWARD:
-		TCCR0A |= reg;
-		mStruct->direction = FORWARD;
-		break;
-	case MOTOR_BACKWARD:
-		TCCR0A |= reg;
-		mStruct->direction = BACKWARD;
-		break;
-	default:
-		TCCR0A &= ~reg;
-		mStruct->direction = STOP;
-		break;
-	};
-	mStruct->counter = 0;
-}
-
-void motor::setDirection(uint8_t motor, uint8_t direction = MOTOR_STOP) {
+static void updateDirectionPins(uint8_t motor, uint8_t direction) {
 	if (motor == MOTOR1_IDENTIFIER) {
 		switch (direction) {
 		case MOTOR_FORWARD:
@@ -163,7 +153,56 @@ void motor::setDirection(uint8_t motor, uint8_t direction = MOTOR_STOP) {
 			break;
 		}
 	}
-	setPwmEnabled(motor, direction);
+}
+
+void motor::setDirection(uint8_t motor, uint8_t direction = MOTOR_STOP) {
+	uint8_t reg;
+	Motor *mStruct;
+	Direction newDirection;
+
+	if (motor == MOTOR1_IDENTIFIER) {
+		reg = (1 << COM0A1);
+		mStruct = &motor1;
+	} else {
+		reg = (1 << COM0B1);
+		mStruct = &motor2;
+	}
+
+	switch (direction) {
+	case MOTOR_FORWARD:
+		TCCR0A |= reg;
+		newDirection = FORWARD;
+		break;
+	case MOTOR_BACKWARD:
+		TCCR0A |= reg;
+		newDirection = BACKWARD;
+		break;
+	default:
+		TCCR0A &= ~reg;
+		newDirection = STOP;
+		break;
+	};
+
+	uint8_t speedIdx = 0;
+	for (uint8_t i = 0; i < NO_SPEEDS; i++) {
+		if (pgm_read_byte(&(REF_SPEEDS[i])) == mStruct->refSpeed) {
+			speedIdx = i;
+			break;
+		}
+	}
+
+	if (newDirection != mStruct->direction) {
+		if (motor == MOTOR1_IDENTIFIER) {
+			PWM1_REG = pgm_read_byte(&(M1_SPEEDS[speedIdx]));
+		} else {
+			PWM2_REG = pgm_read_byte(&(M2_SPEEDS[speedIdx]));
+		}
+		mStruct->fixedDriveCycleCounter = FIXED_DRIVE_CYCLES;
+		mStruct->direction = newDirection;
+		mStruct->counter = 0;
+
+		updateDirectionPins(motor, direction);
+	}
 }
 
 ISR(ENCODER1_INTERRUPT) {
@@ -175,6 +214,14 @@ ISR(ENCODER2_INTERRUPT) {
 }
 
 ISR(TIMER1_COMPA_vect) {
-	PWM1_REG = regulate(&motor1, PWM1_REG);
-	PWM2_REG = regulate(&motor2, PWM2_REG);
+	if (motor1.fixedDriveCycleCounter == 0) {
+		PWM1_REG = regulate(&motor1, PWM1_REG );
+	} else {
+		motor1.fixedDriveCycleCounter--;
+	}
+	if (motor2.fixedDriveCycleCounter == 0) {
+		PWM2_REG = regulate(&motor2, PWM2_REG );
+	} else {
+		motor2.fixedDriveCycleCounter--;
+	}
 }
