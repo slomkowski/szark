@@ -16817,34 +16817,6 @@ Source: 008-0260-0_E.pdf</description>
 </nets>
 </sheet>
 </sheets>
-<errors>
-<approved hash="104,1,22.86,40.64,IC1,VCC,+5V,,,"/>
-<approved hash="104,1,22.86,38.1,IC1,VCC,+5V,,,"/>
-<approved hash="104,1,22.86,66.04,IC1,AVCC,N$10,,,"/>
-<approved hash="104,1,190.5,53.34,LCD1,VSS,GND,,,"/>
-<approved hash="104,1,190.5,73.66,LCD1,VDD,+5V,,,"/>
-<approved hash="104,1,190.5,48.26,LCD1,A,N$2,,,"/>
-<approved hash="104,1,190.5,45.72,LCD1,K,GND,,,"/>
-<approved hash="202,1,68.58,-30.48,IC5A,-IN,,,,"/>
-<approved hash="202,1,68.58,-25.4,IC5A,+IN,,,,"/>
-<approved hash="104,1,114.3,-35.56,IC5P,V+,+5V,,,"/>
-<approved hash="104,1,114.3,-50.8,IC5P,V-,GND,,,"/>
-<approved hash="208,1,91.44,58.42,+5V,sup,,,,"/>
-<approved hash="208,1,193.04,78.74,+5V,sup,,,,"/>
-<approved hash="208,1,-5.08,101.6,+5V,sup,,,,"/>
-<approved hash="208,1,154.94,-33.02,+5V,out,,,,"/>
-<approved hash="208,1,106.68,-27.94,+5V,sup,,,,"/>
-<approved hash="208,1,200.66,78.74,+5V,sup,,,,"/>
-<approved hash="208,1,111.76,17.78,+5V,sup,,,,"/>
-<approved hash="208,1,12.7,45.72,+5V,sup,,,,"/>
-<approved hash="115,1,125.599,39.3277,BUS,,,,,"/>
-<approved hash="115,1,97.7477,75.0612,ISP,,,,,"/>
-<approved hash="115,1,168.029,12.7,S1,,,,,"/>
-<approved hash="115,1,185.809,12.7,S2,,,,,"/>
-<approved hash="115,1,203.589,12.7,S3,,,,,"/>
-<approved hash="115,1,7.56352,-33.02,RSENSE,,,,,"/>
-<approved hash="115,1,213.663,-30.48,+12V,,,,,"/>
-</errors>
 </schematic>
 </drawing>
 </eagle>
