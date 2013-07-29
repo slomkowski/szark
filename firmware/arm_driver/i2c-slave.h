@@ -28,13 +28,13 @@
 /****************************************************************************
   Global definitions
 ****************************************************************************/
-  
+
 union TWI_statusReg_t // Status byte holding flags.
 {
 	unsigned char all;
 	struct
 	{
-		unsigned char lastTransOK:1;      
+		unsigned char lastTransOK:1;
 		unsigned char RxDataInBuf:1;
 		unsigned char genAddressCall:1; // TRUE = General call, FALSE = TWI Address;
 		unsigned char unusedBits:5;
@@ -48,7 +48,7 @@ extern union TWI_statusReg_t TWI_statusReg;
 /****************************************************************************
   Function definitions
 ****************************************************************************/
-void TWI_Slave_Initialise(unsigned char, void *process_func);
+void TWI_Slave_Initialise(unsigned char, void (*process_func)(uint8_t*, uint8_t*));
 unsigned char TWI_Transceiver_Busy(void);
 //unsigned char TWI_Get_State_Info(void);
 void TWI_Start_Transceiver_With_Data(unsigned char *, unsigned char);
@@ -70,18 +70,18 @@ void TWI_Interrupt_Routine();
 /****************************************************************************
   TWI State codes
 ****************************************************************************/
-// General TWI Master staus codes                      
-#define TWI_START                  0x08  // START has been transmitted  
+// General TWI Master staus codes
+#define TWI_START                  0x08  // START has been transmitted
 #define TWI_REP_START              0x10  // Repeated START has been transmitted
 #define TWI_ARB_LOST               0x38  // Arbitration lost
 
-// TWI Master Transmitter staus codes                      
+// TWI Master Transmitter staus codes
 #define TWI_MTX_ADR_ACK            0x18  // SLA+W has been tramsmitted and ACK received
-#define TWI_MTX_ADR_NACK           0x20  // SLA+W has been tramsmitted and NACK received 
+#define TWI_MTX_ADR_NACK           0x20  // SLA+W has been tramsmitted and NACK received
 #define TWI_MTX_DATA_ACK           0x28  // Data byte has been tramsmitted and ACK received
-#define TWI_MTX_DATA_NACK          0x30  // Data byte has been tramsmitted and NACK received 
+#define TWI_MTX_DATA_NACK          0x30  // Data byte has been tramsmitted and NACK received
 
-// TWI Master Receiver staus codes  
+// TWI Master Receiver staus codes
 #define TWI_MRX_ADR_ACK            0x40  // SLA+R has been tramsmitted and ACK received
 #define TWI_MRX_ADR_NACK           0x48  // SLA+R has been tramsmitted and NACK received
 #define TWI_MRX_DATA_ACK           0x50  // Data byte has been received and ACK tramsmitted

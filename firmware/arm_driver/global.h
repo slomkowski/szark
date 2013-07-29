@@ -1,14 +1,14 @@
-#ifndef _GLOBAL_H_ 
+#ifndef _GLOBAL_H_
 #define _GLOBAL_H_
 
-/* 
+/*
    #######
    ####### Configuration
    #######
 */
 
 #define I2C_SLAVE_ADDRESS 0x30
-#define I2C_BUFFER_SIZE 5      // Reserves memory for the drivers transceiver buffer. 
+#define I2C_BUFFER_SIZE 5      // Reserves memory for the drivers transceiver buffer.
 
 #define DEBUG 1
 
@@ -19,7 +19,7 @@
 #include <inttypes.h>
 #include <stdbool.h>
 
-/* 
+/*
    #######
    ####### Useful macros
    #######
@@ -34,7 +34,7 @@
 #define DDR(x) XDDR(x)
 #define XDDR(x) (DDR##x)
 
-#include "command-chars.h"
+#include "arm_driver-commands.h"
 
 #endif
 

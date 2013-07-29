@@ -4,7 +4,7 @@
 #include <inttypes.h>
 
 #include "global.h"
-#include "command-chars.h"
+#include "arm_driver-commands.h"
 
 
 //*** I/O configuration - bound to hardware
@@ -81,7 +81,7 @@
 
 //*** initial speed settings - range 0 - 15
 #define CAL_SPEED_SHOULDER	220
-#define CAL_SPEED_ELBOW		100 
+#define CAL_SPEED_ELBOW		100
 #define CAL_SPEED_WRIST		100
 #define CAL_SPEED_GRIPPER	15
 

@@ -2,7 +2,7 @@
 #define __ARM_COMMAND_CHARS_H__
 
 /** Description of the protocol used in the communication with the arm driver. Data is sent by I2C interface.
-  This file is included to 'bridge' during compilation. 
+  This file is included to 'bridge' during compilation.
 */
 
 /* definition on the characters used in protocol */
@@ -25,7 +25,7 @@
 #define CHAR_ARM_TRUE			't'
 #define CHAR_ARM_FALSE			'f'
 
-typedef enum { MOTOR_STOP = '0', MOTOR_FORWARD = 'f', MOTOR_BACKWARD = 'b' } DIRECTION;
+typedef enum { MOTOR_STOP = '0', MOTOR_FORWARD = 'f', MOTOR_BACKWARD = 'b', MOTOR_NONE = 0 } DIRECTION;
 
 typedef enum { MOTOR_SHOULDER = 's', MOTOR_ELBOW = 'e', MOTOR_WRIST = 'w', MOTOR_GRIPPER = 'g'} MOTOR;
 
