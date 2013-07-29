@@ -17,7 +17,7 @@
 #define CHAR_ARM_SET_POSITION		'p'
 
 #define CHAR_ARM_BRAKE			'B'
-#define CHAR_ARM_CALLIBRATE		'C'
+#define CHAR_ARM_CALIBRATE		'C'
 #define CHAR_ARM_GET_MODE		'M'
 
 #define CHAR_ARM_IS_CALIBRATED	'K'

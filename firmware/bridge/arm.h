@@ -30,7 +30,7 @@ bool arm_is_calibrated();
 #define arm_get_calibration_status() arm_get_one_byte(CHAR_ARM_IS_CALIBRATED)
 #define arm_get_mode() arm_get_one_byte(CHAR_ARM_GET_MODE)
 
-#define arm_calibrate()	arm_one_byte(CHAR_ARM_CALLIBRATE)
+#define arm_calibrate()	arm_one_byte(CHAR_ARM_CALIBRATE)
 #define arm_brake()		arm_one_byte(CHAR_ARM_BRAKE)
 
 #define arm_get_direction(arm)	arm_get(arm, CHAR_ARM_GET_DIRECTION)

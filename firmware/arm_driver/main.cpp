@@ -76,7 +76,7 @@ void process_commands(uint8_t *rxbuf, uint8_t *txbuf)
 			interruptCalibration = true;
 			motor_brake();
 			break;
-		case CHAR_ARM_CALLIBRATE:
+		case CHAR_ARM_CALIBRATE:
 			interruptCalibration = true;
 			startCalibration = true;
 			break;
