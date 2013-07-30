@@ -59,7 +59,6 @@ static Motor toMotors(uint8_t index);
 static void setTimerMs(uint16_t interval); // in milliseconds
 static void setTimerContinuous();
 static bool getMsState(JOINT_INDEX index);
-static bool getMsState(uint8_t index);
 
 static volatile bool timerNotClear = true, timerOneShot = true;
 
@@ -111,7 +110,7 @@ void joint::setDirection(Motor motor, Direction direction) {
 	if (joints[idx].mode == POS) joints[idx].mode = DIR;
 
 	// put data to the struct, checking if the command is
-	if ((((direction == MOTOR_FORWARD) || (direction == MOTOR_BACKWARD)) && (joints[idx].allowedDir == MOTOR_NONE))
+	if ((((direction == MOTOR_FORWARD) || (direction == MOTOR_BACKWARD)) && (joints[idx].allowedDir == MOTOR_BOTH))
 		|| (joints[idx].allowedDir == direction)) joints[idx].currDir = direction;
 
 	else joints[idx].currDir = MOTOR_STOP;
@@ -334,7 +333,7 @@ void joint::calibrate() {
 
 	for (uint8_t i = 0; i < 4; i++) {
 		setSpeed(toMotors(i), joints[i].initSpeed);
-		joints[i].allowedDir = MOTOR_NONE;
+		joints[i].allowedDir = MOTOR_BOTH;
 		joints[i].calibrated = false;
 		joints[i].mode = CAL;
 	}
@@ -447,7 +446,7 @@ static inline void wristEncoderSupport() {
 			joints[WRIST].allowedDir = MOTOR_BACKWARD;
 			setDirection(MOTOR_WRIST, MOTOR_STOP);
 		} else if ((joints[WRIST].currPos != 0) && (joints[WRIST].currPos != POS_MAX_WRIST)) joints[WRIST].allowedDir =
-			MOTOR_NONE;
+			MOTOR_BOTH;
 	}
 }
 
@@ -460,7 +459,7 @@ ISR(TIMER1_COMPA_vect) {
 	} else {
 		// standard; one tick per 2 ms
 		for (uint8_t idx = 0; idx < 4; idx++) {
-			if (getMsState(idx) && (joints[idx].msCurrState == false)) {
+			if (getMsState((JOINT_INDEX) idx) && (joints[idx].msCurrState == false)) {
 				if (joints[idx].msCounter == MS_DEBOUNCE_COUNTER) {
 					if (idx == WRIST) {
 						joints[WRIST].currPos = joints[WRIST].maxPos / 2;
@@ -484,9 +483,9 @@ ISR(TIMER1_COMPA_vect) {
 					joints[idx].msCurrState = true;
 					joints[idx].msCounter = 0;
 				} else joints[idx].msCounter++;
-			} else if (!getMsState(idx) && (joints[idx].msCurrState == true)) {
+			} else if (!getMsState((JOINT_INDEX) idx) && (joints[idx].msCurrState == true)) {
 				if (joints[idx].msCounter == MS_DEBOUNCE_COUNTER) {
-					joints[idx].allowedDir = MOTOR_NONE;
+					joints[idx].allowedDir = MOTOR_BOTH;
 
 					if (idx == GRIPPER) joints[GRIPPER].currPos = joints[GRIPPER].maxPos;
 
@@ -595,24 +594,3 @@ static bool getMsState(JOINT_INDEX index) {
 	return val ? true : false;
 }
 
-static bool getMsState(uint8_t index) {
-	uint8_t val;
-	switch (index) {
-	case SHOULDER:
-		val = bit_is_set(PIN(SENSOR_SHOULDER_MS_PORT), SENSOR_SHOULDER_MS_PIN);
-		break;
-	case GRIPPER:
-		val = bit_is_set(PIN(SENSOR_GRIPPER_MS_PORT), SENSOR_GRIPPER_MS_PIN);
-		break;
-	case WRIST:
-		val = bit_is_set(PIN(SENSOR_WRIST_MS_PORT), SENSOR_WRIST_MS_PIN);
-		break;
-	case ELBOW:
-		val = bit_is_set(PIN(SENSOR_ELBOW_MS_PORT), SENSOR_ELBOW_MS_PIN);
-		break;
-	default:
-		return false;
-	}
-
-	return val ? true : false;
-}

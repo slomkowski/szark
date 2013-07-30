@@ -27,7 +27,7 @@
 
 namespace arm {
 	typedef enum {
-		MOTOR_STOP = '0', MOTOR_FORWARD = 'f', MOTOR_BACKWARD = 'b', MOTOR_NONE = 0
+		MOTOR_STOP = '0', MOTOR_FORWARD = 'f', MOTOR_BACKWARD = 'b', MOTOR_BOTH = 0
 	} Direction;
 
 	typedef enum {
