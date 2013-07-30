@@ -21,18 +21,17 @@ uint8_t motor::regulate(MotorStruct *motor, uint8_t actualPwmReg) {
 	if (motor->direction != STOP) {
 		error = motor->counter - motor->refSpeed;
 
-		output = actualPwmReg - ((CONTROLLER_P_REG * error / 100) + (CONTROLLER_D_REG * (error - motor->prevError) / 100));
+		output = actualPwmReg
+			- ((CONTROLLER_P_REG * error / 100) + (CONTROLLER_D_REG * (error - motor->prevError) / 100));
 
 		motor->prevError = error;
 
 		motor->counter = 0;
 
 		return limit8bit(output);
-
 	} else {
 		motor->prevError = 0;
 		return 0;
 	}
 }
-
 

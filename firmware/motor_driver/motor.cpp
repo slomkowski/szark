@@ -112,11 +112,13 @@ void motor::setSpeed(Motor motor, uint8_t speed) {
 		if (newRefSpeed != motor1.refSpeed) {
 			PWM1_REG = pgm_read_byte(&(M1_SPEEDS[speed % NO_SPEEDS]));
 			motor1.fixedDriveCycleCounter = FIXED_DRIVE_CYCLES;
+			motor1.refSpeed = newRefSpeed;
 		}
 	} else {
 		if (newRefSpeed != motor2.refSpeed) {
 			PWM2_REG = pgm_read_byte(&(M2_SPEEDS[speed % NO_SPEEDS]));
 			motor2.fixedDriveCycleCounter = FIXED_DRIVE_CYCLES;
+			motor2.refSpeed = newRefSpeed;
 		}
 	}
 }
