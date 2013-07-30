@@ -17,7 +17,6 @@
 #define F_CPU 8000000UL
 
 #include <inttypes.h>
-#include <stdbool.h>
 
 /*
    #######
@@ -33,8 +32,6 @@
 // *** DDR
 #define DDR(x) XDDR(x)
 #define XDDR(x) (DDR##x)
-
-#include "arm_driver-commands.h"
 
 #endif
 

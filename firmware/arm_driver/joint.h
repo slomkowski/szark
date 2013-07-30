@@ -6,7 +6,6 @@
 #include "global.h"
 #include "arm_driver-commands.h"
 
-
 //*** I/O configuration - bound to hardware
 
 // output pins
@@ -92,34 +91,38 @@
 
 #define MS_DEBOUNCE_TIME 10 // ms
 #define TIMER_MS_INTERVAL 2 // ms
-
 #define MS_DEBOUNCE_COUNTER (MS_DEBOUNCE_TIME / TIMER_MS_INTERVAL)
 
+namespace joint {
+
 //*** type definitions
-typedef uint8_t POSITION;
-typedef uint8_t SPEED;
+	typedef uint8_t Position;
+	typedef uint8_t Speed;
 // typedef DIRECTION - definition is in command-chars.h
 
-typedef enum { DIR = 'D', POS = 'P', CAL = 'C' } MODE;
-extern volatile bool startCalibration;
-extern volatile bool calibrated __attribute__ ((section (".noinit")));
-extern volatile bool interruptCalibration;
+	typedef enum {
+		DIR = 'D', POS = 'P', CAL = 'C'
+	} Mode;
+
+	extern volatile bool startCalibration;
+	extern volatile bool calibrated __attribute__ ((section (".noinit")));
+	extern volatile bool interruptCalibration;
 
 //*** getters
-SPEED motor_get_speed(MOTOR motor);
-DIRECTION motor_get_direction(MOTOR motor);
-POSITION motor_get_position(MOTOR motor);
-MODE motor_get_mode(MOTOR motor);
+	Speed getSpeed(arm::Motor motor);
+	arm::Direction getDirection(arm::Motor motor);
+	Position getPosition(arm::Motor motor);
+	Mode getMode(arm::Motor motor);
 
 //*** setters
-void motor_set_speed(MOTOR motor, SPEED speed);
-void motor_set_direction(MOTOR motor, DIRECTION direction);
-void motor_set_position(MOTOR motor, POSITION position);
+	void setSpeed(arm::Motor motor, Speed speed);
+	void setDirection(arm::Motor motor, arm::Direction direction);
+	void setPosition(arm::Motor motor, Position position);
 
 //*** additional functions
-void motor_calibrate();
-void motor_brake();
-void motor_init();
-
+	void calibrate();
+	void brake();
+	void init();
+}
 
 #endif

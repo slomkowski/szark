@@ -10,17 +10,19 @@
 #include <avr/interrupt.h>
 #include <avr/wdt.h>
 
-#include "motors.h"
+#include "joint.h"
 #include "i2c-slave.h"
 
-void process_commands(uint8_t *rxbuf, uint8_t *txbuf);
+using namespace arm;
+
+void processCommands(uint8_t *rxbuf, uint8_t *txbuf);
 
 int main()
 {
-	motor_init();
+	joint::init();
 
 	// i2c
-	TWI_Slave_Initialise((unsigned char)((I2C_SLAVE_ADDRESS << TWI_ADR_BITS) | (1<<TWI_GEN_BIT)), process_commands);
+	TWI_Slave_Initialise((unsigned char)((I2C_SLAVE_ADDRESS << TWI_ADR_BITS) | (1<<TWI_GEN_BIT)), processCommands);
 	TWI_Start_Transceiver();
 
 #if WATCHD0G_ENABLE
@@ -31,7 +33,7 @@ int main()
 
 	while(TRUE)
 	{
-		if(startCalibration) motor_calibrate();
+		if(joint::startCalibration) joint::calibrate();
 
 #if WATCHD0G_ENABLE
 		wdt_enable(WDTO_120MS);
@@ -40,45 +42,45 @@ int main()
 }
 
 // this function is called within interrupt routine, should be as fast as possible
-void process_commands(uint8_t *rxbuf, uint8_t *txbuf)
+void processCommands(uint8_t *rxbuf, uint8_t *txbuf)
 {
 	// command interpreter
 	switch(rxbuf[0])
 	{
 		case CHAR_ARM_GET_SPEED:
-			txbuf[0] = motor_get_speed((MOTOR)rxbuf[1]);
+			txbuf[0] = joint::getSpeed((Motor)rxbuf[1]);
 			break;
 		case CHAR_ARM_SET_SPEED:
-			interruptCalibration = true;
-			motor_set_speed((MOTOR)rxbuf[1], rxbuf[2]);
+			joint::interruptCalibration = true;
+			joint::setSpeed((Motor)rxbuf[1], rxbuf[2]);
 			break;
 		case CHAR_ARM_SET_DIRECTION:
-			interruptCalibration = true;
-			motor_set_direction((MOTOR)rxbuf[1], (DIRECTION)rxbuf[2]);
+			joint::interruptCalibration = true;
+			joint::setDirection((Motor)rxbuf[1], (Direction)rxbuf[2]);
 			break;
 		case CHAR_ARM_GET_DIRECTION:
-			txbuf[0] = motor_get_direction((MOTOR)rxbuf[1]);
+			txbuf[0] = joint::getDirection((Motor)rxbuf[1]);
 			break;
 		case CHAR_ARM_GET_POSITION:
-			txbuf[0] = motor_get_position((MOTOR)rxbuf[1]);
+			txbuf[0] = joint::getPosition((Motor)rxbuf[1]);
 			break;
 		case CHAR_ARM_GET_MODE:
-			txbuf[0] = motor_get_mode((MOTOR)rxbuf[1]);
+			txbuf[0] = joint::getMode((Motor)rxbuf[1]);
 			break;
 		case CHAR_ARM_IS_CALIBRATED:
-			txbuf[0] = calibrated ? CHAR_ARM_TRUE : CHAR_ARM_FALSE;
+			txbuf[0] = joint::calibrated ? CHAR_ARM_TRUE : CHAR_ARM_FALSE;
 			break;
 		case CHAR_ARM_SET_POSITION:
-			interruptCalibration = true;
-			motor_set_position((MOTOR)rxbuf[1], rxbuf[2]);
+			joint::interruptCalibration = true;
+			joint::setPosition((Motor)rxbuf[1], rxbuf[2]);
 			break;
 		case CHAR_ARM_BRAKE:
-			interruptCalibration = true;
-			motor_brake();
+			joint::interruptCalibration = true;
+			joint::brake();
 			break;
 		case CHAR_ARM_CALIBRATE:
-			interruptCalibration = true;
-			startCalibration = true;
+			joint::interruptCalibration = true;
+			joint::startCalibration = true;
 			break;
 	};
 }

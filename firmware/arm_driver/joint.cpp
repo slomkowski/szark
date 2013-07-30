@@ -5,38 +5,47 @@
 #include <avr/interrupt.h>
 #include <util/delay.h>
 
-#include "motors.h"
+#include "joint.h"
 
+#include "arm_driver-commands.h"
+
+using namespace arm;
+using namespace joint;
+
+namespace joint {
 // mode of operation - DIR, POS, CAL - global
-volatile bool calibrated __attribute__ ((section (".noinit")));
-volatile bool interruptCalibration, startCalibration;
+	volatile bool calibrated __attribute__ ((section (".noinit")));
+	volatile bool interruptCalibration, startCalibration;
+}
 
 #define getval(sfr, bit) (bit_is_set(sfr, bit) ? true : false)
 
 // this struct stores the values for single joint
 static volatile struct {
 	// position
-	POSITION currPos; // current position
-	POSITION destPos; // desired position
-	POSITION maxPos;  // maximal position
+	Position currPos; // current position
+	Position destPos; // desired position
+	Position maxPos;  // maximal position
 
 	// direction
-	DIRECTION allowedDir;
-	DIRECTION currDir;
+	Direction allowedDir;
+	Direction currDir;
 
 	// speed
-	SPEED currSpeed;
-	SPEED initSpeed;
+	Speed currSpeed;
+	Speed initSpeed;
 
 	// calibration
 	bool calibrated;
-	MODE mode;
+	Mode mode;
 
 	// MS parameters
-	uint8_t msCounter;bool msCurrState; // false - low, true - high
+	uint8_t msCounter;
+	bool msCurrState; // false - low, true - high
 
 	// encoders
-	bool encoderState;bool prevEncoderState;
+	bool encoderState;
+	bool prevEncoderState;
 } joints[4] __attribute__ ((section (".noinit")));
 
 // these values index the 'joints' table.
@@ -45,9 +54,8 @@ typedef enum {
 } JOINT_INDEX;
 
 //*** local functions
-static JOINT_INDEX toJoint(MOTOR motor);
-static MOTOR toMotors(JOINT_INDEX index);
-static MOTOR toMotors(uint8_t index);
+static JOINT_INDEX toJoint(Motor motor);
+static Motor toMotors(uint8_t index);
 static void setTimerMs(uint16_t interval); // in milliseconds
 static void setTimerContinuous();
 static bool getMsState(JOINT_INDEX index);
@@ -57,25 +65,25 @@ static volatile bool timerNotClear = true, timerOneShot = true;
 
 //*** basic getters
 
-SPEED motor_get_speed(MOTOR motor) {
+Speed joint::getSpeed(Motor motor) {
 	return joints[toJoint(motor)].currSpeed;
 }
 
-DIRECTION motor_get_direction(MOTOR motor) {
+Direction joint::getDirection(Motor motor) {
 	return joints[toJoint(motor)].currDir;
 }
 
-POSITION motor_get_position(MOTOR motor) {
+Position joint::getPosition(Motor motor) {
 	return joints[toJoint(motor)].currPos;
 }
 
-MODE motor_get_mode(MOTOR motor) {
+Mode joint::getMode(Motor motor) {
 	return joints[toJoint(motor)].mode;
 }
 
 // basic setters. The setters put the data in the structure and send the data to the appropriate output (registers, pins)
 
-void motor_set_speed(MOTOR motor, SPEED speed) {
+void joint::setSpeed(Motor motor, Speed speed) {
 	// put data to the struct
 	joints[toJoint(motor)].currSpeed = speed;
 
@@ -96,15 +104,15 @@ void motor_set_speed(MOTOR motor, SPEED speed) {
 	};
 }
 
-void motor_set_direction(MOTOR motor, DIRECTION direction) {
-	DIRECTION currentDir;
+void joint::setDirection(Motor motor, Direction direction) {
+	Direction currentDir;
 	const JOINT_INDEX idx = toJoint(motor);
 
 	if (joints[idx].mode == POS) joints[idx].mode = DIR;
 
 	// put data to the struct, checking if the command is
-	if ((((direction == MOTOR_FORWARD) || (direction == MOTOR_BACKWARD)) && (joints[idx].allowedDir == MOTOR_NONE)
-		|| (joints[idx].allowedDir == direction))) joints[idx].currDir = direction;
+	if ((((direction == MOTOR_FORWARD) || (direction == MOTOR_BACKWARD)) && (joints[idx].allowedDir == MOTOR_NONE))
+		|| (joints[idx].allowedDir == direction)) joints[idx].currDir = direction;
 
 	else joints[idx].currDir = MOTOR_STOP;
 
@@ -167,7 +175,7 @@ void motor_set_direction(MOTOR motor, DIRECTION direction) {
 	};
 }
 
-void motor_set_position(MOTOR motor, POSITION position) {
+void joint::setPosition(Motor motor, Position position) {
 	const JOINT_INDEX idx = toJoint(motor);
 
 	if (joints[idx].calibrated == false) return;
@@ -178,24 +186,24 @@ void motor_set_position(MOTOR motor, POSITION position) {
 	joints[idx].destPos = position;
 
 	if (joints[idx].currPos < position) {
-		motor_set_direction(motor, MOTOR_FORWARD);
+		setDirection(motor, MOTOR_FORWARD);
 		joints[idx].mode = POS;
 	} else if (joints[idx].currPos > position) {
-		motor_set_direction(motor, MOTOR_BACKWARD);
+		setDirection(motor, MOTOR_BACKWARD);
 		joints[idx].mode = POS;
 	} else // if equal
 	{
-		motor_set_direction(motor, MOTOR_STOP);
+		setDirection(motor, MOTOR_STOP);
 		joints[idx].mode = DIR;
 	}
 }
 
-void motor_brake() {
+void joint::brake() {
 	uint8_t i;
 	// instantly brake all the motors
 	for (i = 0; i < 4; i++) {
-		motor_set_speed(toMotors(i), 0);
-		motor_set_direction(toMotors(i), MOTOR_STOP);
+		setSpeed(toMotors(i), 0);
+		setDirection(toMotors(i), MOTOR_STOP);
 	}
 }
 
@@ -290,7 +298,7 @@ static void init_structure() {
 	}
 }
 
-void motor_init() {
+void joint::init() {
 	init_pinouts();
 
 	init_structure();
@@ -317,15 +325,15 @@ void motor_init() {
 }
 
 static void abortCalibration() {
-	motor_brake();
+	brake();
 	calibrated = false;
 }
 
-void motor_calibrate() {
-	motor_brake();
+void joint::calibrate() {
+	brake();
 
 	for (uint8_t i = 0; i < 4; i++) {
-		motor_set_speed(toMotors(i), joints[i].initSpeed);
+		setSpeed(toMotors(i), joints[i].initSpeed);
 		joints[i].allowedDir = MOTOR_NONE;
 		joints[i].calibrated = false;
 		joints[i].mode = CAL;
@@ -337,13 +345,11 @@ void motor_calibrate() {
 	/// neutral positions: shoulder, gripper - backward, elbow - forward
 	// elbow
 	if (bit_is_set(PIN(SENSOR_ELBOW_MS_PORT), SENSOR_ELBOW_MS_PIN)) // jeżeli jest na którymś wyłączniku
-	motor_set_direction(MOTOR_ELBOW, MOTOR_FORWARD);
+	setDirection(MOTOR_ELBOW, MOTOR_FORWARD);
 	// shoulder
-	if (bit_is_set(PIN(SENSOR_SHOULDER_MS_PORT), SENSOR_SHOULDER_MS_PIN)) motor_set_direction(MOTOR_SHOULDER,
-		MOTOR_BACKWARD);
+	if (bit_is_set(PIN(SENSOR_SHOULDER_MS_PORT), SENSOR_SHOULDER_MS_PIN)) setDirection(MOTOR_SHOULDER, MOTOR_BACKWARD);
 	// gripper
-	if (bit_is_set(PIN(SENSOR_GRIPPER_MS_PORT), SENSOR_GRIPPER_MS_PIN)) motor_set_direction(MOTOR_GRIPPER,
-		MOTOR_BACKWARD);
+	if (bit_is_set(PIN(SENSOR_GRIPPER_MS_PORT), SENSOR_GRIPPER_MS_PIN)) setDirection(MOTOR_GRIPPER, MOTOR_BACKWARD);
 	// wrist
 	if (bit_is_set(PIN(SENSOR_WRIST_MS_PORT), SENSOR_WRIST_MS_PIN)) {
 		joints[WRIST].calibrated = true;
@@ -361,30 +367,30 @@ void motor_calibrate() {
 		return;
 	}
 
-	motor_set_direction(MOTOR_ELBOW, MOTOR_STOP);
-	motor_set_direction(MOTOR_SHOULDER, MOTOR_STOP);
-	motor_set_direction(MOTOR_GRIPPER, MOTOR_STOP);
+	setDirection(MOTOR_ELBOW, MOTOR_STOP);
+	setDirection(MOTOR_SHOULDER, MOTOR_STOP);
+	setDirection(MOTOR_GRIPPER, MOTOR_STOP);
 
 	// elbow
-	if (getMsState(ELBOW)) motor_set_direction(MOTOR_ELBOW, MOTOR_BACKWARD);
-	else motor_set_direction(MOTOR_ELBOW, MOTOR_FORWARD);
+	if (getMsState(ELBOW)) setDirection(MOTOR_ELBOW, MOTOR_BACKWARD);
+	else setDirection(MOTOR_ELBOW, MOTOR_FORWARD);
 
 	// shoulder
-	if (getMsState(SHOULDER)) motor_set_direction(MOTOR_SHOULDER, MOTOR_FORWARD);
-	else motor_set_direction(MOTOR_SHOULDER, MOTOR_BACKWARD);
+	if (getMsState(SHOULDER)) setDirection(MOTOR_SHOULDER, MOTOR_FORWARD);
+	else setDirection(MOTOR_SHOULDER, MOTOR_BACKWARD);
 
 	// gripper
-	if (getMsState(GRIPPER)) motor_set_direction(MOTOR_GRIPPER, MOTOR_FORWARD);
-	else motor_set_direction(MOTOR_GRIPPER, MOTOR_BACKWARD);
+	if (getMsState(GRIPPER)) setDirection(MOTOR_GRIPPER, MOTOR_FORWARD);
+	else setDirection(MOTOR_GRIPPER, MOTOR_BACKWARD);
 
 	setTimerMs(700);
 
 	while (timerNotClear && !interruptCalibration)
 		;
 
-	motor_set_direction(MOTOR_SHOULDER, MOTOR_BACKWARD);
-	motor_set_direction(MOTOR_GRIPPER, MOTOR_BACKWARD);
-	motor_set_direction(MOTOR_ELBOW, MOTOR_FORWARD);
+	setDirection(MOTOR_SHOULDER, MOTOR_BACKWARD);
+	setDirection(MOTOR_GRIPPER, MOTOR_BACKWARD);
+	setDirection(MOTOR_ELBOW, MOTOR_FORWARD);
 
 	if (interruptCalibration) {
 		abortCalibration();
@@ -395,7 +401,7 @@ void motor_calibrate() {
 
 	if (joints[WRIST].calibrated == false) {
 		joints[WRIST].currPos = 0;
-		motor_set_direction(MOTOR_WRIST, MOTOR_FORWARD);
+		setDirection(MOTOR_WRIST, MOTOR_FORWARD);
 		joints[WRIST].mode = CAL;
 	}
 
@@ -426,9 +432,9 @@ static inline void wristEncoderSupport() {
 	static bool backward = false;
 
 	if (joints[WRIST].mode == CAL) {
-		if ((joints[WRIST].currPos < (POS_MAX_WRIST / 2)) && !backward) motor_set_direction(MOTOR_WRIST, MOTOR_FORWARD);
+		if ((joints[WRIST].currPos < (POS_MAX_WRIST / 2)) && !backward) setDirection(MOTOR_WRIST, MOTOR_FORWARD);
 		if (joints[WRIST].currPos > (POS_MAX_WRIST / 2)) {
-			motor_set_direction(MOTOR_WRIST, MOTOR_BACKWARD);
+			setDirection(MOTOR_WRIST, MOTOR_BACKWARD);
 			backward = true;
 		}
 	}
@@ -436,10 +442,10 @@ static inline void wristEncoderSupport() {
 	else if (joints[WRIST].calibrated == true) {
 		if ((joints[WRIST].currPos == 0) && (joints[WRIST].currDir == MOTOR_BACKWARD)) {
 			joints[WRIST].allowedDir = MOTOR_FORWARD;
-			motor_set_direction(MOTOR_WRIST, MOTOR_STOP);
+			setDirection(MOTOR_WRIST, MOTOR_STOP);
 		} else if ((joints[WRIST].currPos >= POS_MAX_WRIST) && (joints[WRIST].currDir == MOTOR_FORWARD)) {
 			joints[WRIST].allowedDir = MOTOR_BACKWARD;
-			motor_set_direction(MOTOR_WRIST, MOTOR_STOP);
+			setDirection(MOTOR_WRIST, MOTOR_STOP);
 		} else if ((joints[WRIST].currPos != 0) && (joints[WRIST].currPos != POS_MAX_WRIST)) joints[WRIST].allowedDir =
 			MOTOR_NONE;
 	}
@@ -459,7 +465,7 @@ ISR(TIMER1_COMPA_vect) {
 					if (idx == WRIST) {
 						joints[WRIST].currPos = joints[WRIST].maxPos / 2;
 						if (joints[WRIST].mode == CAL) {
-							motor_set_direction(MOTOR_WRIST, MOTOR_STOP);
+							setDirection(MOTOR_WRIST, MOTOR_STOP);
 							joints[WRIST].mode = DIR;
 						}
 						joints[WRIST].calibrated = true;
@@ -473,7 +479,7 @@ ISR(TIMER1_COMPA_vect) {
 							joints[idx].allowedDir = MOTOR_BACKWARD;
 							joints[idx].currPos = joints[idx].maxPos;
 						}
-						motor_set_direction(toMotors(idx), MOTOR_STOP);
+						setDirection(toMotors(idx), MOTOR_STOP);
 					}
 					joints[idx].msCurrState = true;
 					joints[idx].msCounter = 0;
@@ -504,7 +510,7 @@ ISR(TIMER1_COMPA_vect) {
 
 				if (joints[i].mode == POS) {
 					if (joints[i].destPos == joints[i].currPos) {
-						motor_set_direction(toMotors(i), MOTOR_STOP);
+						setDirection(toMotors(i), MOTOR_STOP);
 						joints[i].mode = DIR;
 					}
 				}
@@ -522,7 +528,7 @@ ISR(TIMER1_COMPA_vect) {
 
 //*** local auxiliary functions
 
-static JOINT_INDEX toJoint(MOTOR motor) {
+static JOINT_INDEX toJoint(Motor motor) {
 	switch (motor) {
 	case MOTOR_SHOULDER:
 		return SHOULDER;
@@ -536,21 +542,7 @@ static JOINT_INDEX toJoint(MOTOR motor) {
 	}
 }
 
-static MOTOR toMotors(uint8_t index) {
-	switch (index) {
-	case SHOULDER:
-		return MOTOR_SHOULDER;
-	case GRIPPER:
-		return MOTOR_GRIPPER;
-	case WRIST:
-		return MOTOR_WRIST;
-	case ELBOW:
-	default:
-		return MOTOR_ELBOW;
-	}
-}
-
-static MOTOR toMotors(JOINT_INDEX index) {
+static Motor toMotors(uint8_t index) {
 	switch (index) {
 	case SHOULDER:
 		return MOTOR_SHOULDER;
