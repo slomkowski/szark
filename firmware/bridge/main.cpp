@@ -33,7 +33,7 @@ static char lcd_text[LCD_ROWS * LCD_COLUMNS + 1];
 int main()
 {
 	uint8_t i;
-	// initialization section 
+	// initialization section
 	uart_init();
 	buttons_init();
 	uart_enable_interrupt();
@@ -50,10 +50,10 @@ int main()
 	enabled = 0;
 
 	lcd_clrscr();
-	lcd_puts_P("SZARK-Loading...\n 2012 Slomkowski"); // hello message	
+	lcd_puts_P("SZARK-Loading...\n 2012 Slomkowski"); // hello message
 
 	sei(); // interrupts activation
-	
+
 	// buttons & emergency stop loop
 	while(1)
 	{
@@ -66,10 +66,10 @@ int main()
 			{
 				emergencyStopPerform();
 				enabled = 0;
-	
+
 				// send it six times -- just for sure
 				for(i = 0; i < 6; i++) uart_putc(RS_STOP_BUS);
-	
+
 				lcd_clrscr();
 				lcd_puts_P("INACTIVE\nEMERGENCY BUTTON");
 			}
@@ -84,7 +84,7 @@ int main()
 			lcd_modified = 0;
 		}
 #if WATCHD0G_ENABLE
-		wdt_reset();	
+		wdt_reset();
 #endif
 	}
 }
@@ -102,7 +102,7 @@ ISR(USART_RXC_vect)
 	{
 		case RS_BATTERY:
 			uart_putc(RS_BATTERY);
-			// measure 
+			// measure
 			uart_putc((uint8_t)(0xff & voltage));
 			uart_putc((uint8_t)(0xff & (voltage >> 8)));
 			uart_putc((uint8_t)(0xff & current));
@@ -147,22 +147,22 @@ ISR(USART_RXC_vect)
 					uart_putc(motor_get(command2, command1));
 					break;
 				case CHAR_MOTOR_BRAKE:
-					motor_brake();
+					brake();
 #if SET_COMMAND_ACK
 					uart_putc(RS_MOTOR);
 #endif
 					break;
 			};
 			break;
-	
+
 		case RS_STOP_SERVER: // perform an emergency reset
 			emergencyStopPerform();
 			enabled = 0;
 			uart_putc(RS_STOP_SERVER);
-			
+
 			lcd_clrscr();
 			lcd_puts_P("INACTIVE\nsoftware stop");
-			
+
 			break;
 
 		case RS_EXPANDER:
@@ -194,17 +194,17 @@ ISR(USART_RXC_vect)
 			// arm directions
 			uart_putc(RS_ARM);
 			uart_putc(CHAR_ARM_GET_ALL_DIRECTIONS);
-			uart_putc(arm_get(MOTOR_SHOULDER, CHAR_ARM_GET_DIRECTION));
-			uart_putc(arm_get(MOTOR_ELBOW, CHAR_ARM_GET_DIRECTION));
-			uart_putc(arm_get(MOTOR_WRIST, CHAR_ARM_GET_DIRECTION));
-			uart_putc(arm_get(MOTOR_GRIPPER, CHAR_ARM_GET_DIRECTION));
+			uart_putc(arm_get(arm::MOTOR_SHOULDER, CHAR_ARM_GET_DIRECTION));
+			uart_putc(arm_get(arm::MOTOR_ELBOW, CHAR_ARM_GET_DIRECTION));
+			uart_putc(arm_get(arm::MOTOR_WRIST, CHAR_ARM_GET_DIRECTION));
+			uart_putc(arm_get(arm::MOTOR_GRIPPER, CHAR_ARM_GET_DIRECTION));
 			// arm positions
 			uart_putc(RS_ARM);
 			uart_putc(CHAR_ARM_GET_ALL_POSITIONS);
-			uart_putc(arm_get(MOTOR_SHOULDER, CHAR_ARM_GET_POSITION));
-			uart_putc(arm_get(MOTOR_ELBOW, CHAR_ARM_GET_POSITION));
-			uart_putc(arm_get(MOTOR_WRIST, CHAR_ARM_GET_POSITION));
-			uart_putc(arm_get(MOTOR_GRIPPER, CHAR_ARM_GET_POSITION));
+			uart_putc(arm_get(arm::MOTOR_SHOULDER, CHAR_ARM_GET_POSITION));
+			uart_putc(arm_get(arm::MOTOR_ELBOW, CHAR_ARM_GET_POSITION));
+			uart_putc(arm_get(arm::MOTOR_WRIST, CHAR_ARM_GET_POSITION));
+			uart_putc(arm_get(arm::MOTOR_GRIPPER, CHAR_ARM_GET_POSITION));
 			break;
 
 		case RS_ARM:
@@ -238,26 +238,26 @@ ISR(USART_RXC_vect)
 					uart_putc(RS_ARM);
 					uart_putc(CHAR_ARM_GET_ALL_POSITIONS);
 					// order: shoulder, elbow, wrist, gripper
-					uart_putc(arm_get(MOTOR_SHOULDER, CHAR_ARM_GET_POSITION));
-					uart_putc(arm_get(MOTOR_ELBOW, CHAR_ARM_GET_POSITION));
-					uart_putc(arm_get(MOTOR_WRIST, CHAR_ARM_GET_POSITION));
-					uart_putc(arm_get(MOTOR_GRIPPER, CHAR_ARM_GET_POSITION));
+					uart_putc(arm_get(arm::MOTOR_SHOULDER, CHAR_ARM_GET_POSITION));
+					uart_putc(arm_get(arm::MOTOR_ELBOW, CHAR_ARM_GET_POSITION));
+					uart_putc(arm_get(arm::MOTOR_WRIST, CHAR_ARM_GET_POSITION));
+					uart_putc(arm_get(arm::MOTOR_GRIPPER, CHAR_ARM_GET_POSITION));
 					break;
 				case CHAR_ARM_GET_ALL_DIRECTIONS:
 					uart_putc(RS_ARM);
 					uart_putc(CHAR_ARM_GET_ALL_DIRECTIONS);
 					// order: shoulder, elbow, wrist, gripper
-					uart_putc(arm_get(MOTOR_SHOULDER, CHAR_ARM_GET_DIRECTION));
-					uart_putc(arm_get(MOTOR_ELBOW, CHAR_ARM_GET_DIRECTION));
-					uart_putc(arm_get(MOTOR_WRIST, CHAR_ARM_GET_DIRECTION));
-					uart_putc(arm_get(MOTOR_GRIPPER, CHAR_ARM_GET_DIRECTION));
+					uart_putc(arm_get(arm::MOTOR_SHOULDER, CHAR_ARM_GET_DIRECTION));
+					uart_putc(arm_get(arm::MOTOR_ELBOW, CHAR_ARM_GET_DIRECTION));
+					uart_putc(arm_get(arm::MOTOR_WRIST, CHAR_ARM_GET_DIRECTION));
+					uart_putc(arm_get(arm::MOTOR_GRIPPER, CHAR_ARM_GET_DIRECTION));
 					break;
 				case CHAR_ARM_GET_MODE:
 				case CHAR_ARM_IS_CALIBRATED:
 					uart_putc(RS_ARM);
 					uart_putc(arm_get_one_byte(command2));
 					break;
-				case CHAR_ARM_CALLIBRATE:
+				case CHAR_ARM_CALIBRATE:
 					arm_calibrate();
 #if SET_COMMAND_ACK
 					uart_putc(RS_ARM);
@@ -276,7 +276,7 @@ ISR(USART_RXC_vect)
 			enabled = 1;
 
 			menuSetToMain();
-		
+
 			lcd_clrscr();
 			lcd_puts_P("OPERATIONAL");
 
@@ -291,13 +291,13 @@ void emergencyStopPerform()
 	DDR(EMERGENCY_STOP_PORT) |= (1<<EMERGENCY_STOP);
 	PORT(EMERGENCY_STOP_PORT) &= ~(1<<EMERGENCY_STOP);
 	i2c_exp_set_value(0);
-} 
+}
 // set as input, disable pullup
 void emergencyStopDisable()
 {
 	DDR(EMERGENCY_STOP_PORT) &= ~(1<<EMERGENCY_STOP);
 	PORT(EMERGENCY_STOP_PORT) &= ~(1<<EMERGENCY_STOP);
-} 
+}
 
 uint8_t emergencyIsStopped()
 {

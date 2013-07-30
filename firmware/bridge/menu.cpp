@@ -67,18 +67,18 @@ static void batteryDisplay() {
 
 static uint8_t armButtonsControlAndPos(uint8_t motor, uint8_t speed) {
 	arm_set_speed(motor, speed);
-	if (buttonPressed(BUTTON_UP)) arm_set_direction(motor, MOTOR_FORWARD);
-	else if (buttonPressed(BUTTON_DOWN)) arm_set_direction(motor, MOTOR_BACKWARD);
-	else arm_set_direction(motor, MOTOR_STOP);
+	if (buttonPressed(BUTTON_UP)) arm_set_direction(motor, arm::MOTOR_FORWARD);
+	else if (buttonPressed(BUTTON_DOWN)) arm_set_direction(motor, arm::MOTOR_BACKWARD);
+	else arm_set_direction(motor, arm::MOTOR_STOP);
 
 	return arm_get_position(motor);
 }
 
 static void motorButtonsControl(uint8_t motor, uint8_t speed) {
 	motor_set_speed(motor, speed);
-	if (buttonPressed(BUTTON_UP)) motor_set_direction(motor, MOTOR_FORWARD);
-	else if (buttonPressed(BUTTON_DOWN)) motor_set_direction(motor, MOTOR_BACKWARD);
-	else motor_set_direction(motor, MOTOR_STOP);
+	if (buttonPressed(BUTTON_UP)) motor_set_direction(motor, motor::FORWARD);
+	else if (buttonPressed(BUTTON_DOWN)) motor_set_direction(motor, motor::BACKWARD);
+	else motor_set_direction(motor, motor::STOP);
 }
 
 static void checkSelector(uint8_t lower, uint8_t upper) {
@@ -227,19 +227,19 @@ void menuCheckButtons() {
 			break;
 		case 2: // shoulder
 			lcd_puts_P("shoulder\n");
-			armPosition = armButtonsControlAndPos(MOTOR_SHOULDER, ARM_SHOULDER_SPEED);
+			armPosition = armButtonsControlAndPos(arm::MOTOR_SHOULDER, ARM_SHOULDER_SPEED);
 			break;
 		case 3:
 			lcd_puts_P("elbow\n");
-			armPosition = armButtonsControlAndPos(MOTOR_ELBOW, ARM_ELBOW_SPEED);
+			armPosition = armButtonsControlAndPos(arm::MOTOR_ELBOW, ARM_ELBOW_SPEED);
 			break;
 		case 4:
 			lcd_puts_P("wrist\n");
-			armPosition = armButtonsControlAndPos(MOTOR_WRIST, ARM_WRIST_SPEED);
+			armPosition = armButtonsControlAndPos(arm::MOTOR_WRIST, ARM_WRIST_SPEED);
 			break;
 		case 5:
 			lcd_puts_P("gripper\n");
-			armPosition = armButtonsControlAndPos(MOTOR_GRIPPER, ARM_GRIPPER_SPEED);
+			armPosition = armButtonsControlAndPos(arm::MOTOR_GRIPPER, ARM_GRIPPER_SPEED);
 			break;
 		}
 		// display position

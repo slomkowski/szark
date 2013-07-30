@@ -44,7 +44,7 @@ void motor_set(uint8_t command, uint8_t motor, uint8_t value)
 	i2c_stop();
 }
 
-void motor_brake()
+void brake()
 {
 	i2c_start();
 

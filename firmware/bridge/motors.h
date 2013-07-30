@@ -22,7 +22,7 @@
 uint8_t motor_get(uint8_t command, uint8_t motor);
 void motor_set(uint8_t command, uint8_t motor, uint8_t value);
 
-void motor_brake();
+void brake();
 
 #define motor_get_direction(motor) motor_get(CHAR_MOTOR_GET_DIRECTION, motor)
 #define motor_get_speed(motor) motor_get(CHAR_MOTOR_GET_SPEED, motor)
