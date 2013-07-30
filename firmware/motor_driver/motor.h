@@ -24,31 +24,21 @@
 #define ENCODER1_INTERRUPT	INT0_vect
 #define ENCODER2_INTERRUPT	INT1_vect
 
-// ** control commands
-#define MOTOR_STOP		CHAR_MOTOR_STOP
-#define MOTOR_FORWARD	CHAR_MOTOR_FORWARD
-#define MOTOR_BACKWARD	CHAR_MOTOR_BACKWARD
-
-#define MOTOR1_IDENTIFIER CHAR_MOTOR1
-#define MOTOR2_IDENTIFIER CHAR_MOTOR2
-
 #define PWM1_REG OCR0A
 #define PWM2_REG OCR0B
+
+#include "motor_driver-commands.h"
 
 namespace motor {
 	void init();
 
-	uint8_t getSpeed(uint8_t motor);
-	uint8_t getDirection(uint8_t motor);
+	uint8_t getSpeed(Motor motor);
+	Direction getDirection(Motor motor);
 
-	void setSpeed(uint8_t motor, uint8_t speed);
-	void setDirection(uint8_t motor, uint8_t direction);
+	void setSpeed(Motor motor, uint8_t speed);
+	void setDirection(Motor motor, Direction direction);
 
-	enum Direction {
-		STOP = CHAR_MOTOR_STOP, FORWARD = CHAR_MOTOR_FORWARD, BACKWARD = CHAR_MOTOR_BACKWARD
-	};
-
-	struct Motor {
+	struct MotorStruct {
 		Direction direction;
 		volatile uint8_t refSpeed;
 		volatile uint16_t counter;
@@ -56,8 +46,8 @@ namespace motor {
 		uint8_t fixedDriveCycleCounter;
 	};
 
-	extern Motor motor1;
-	extern Motor motor2;
+	extern MotorStruct motor1;
+	extern MotorStruct motor2;
 }
 
 #endif

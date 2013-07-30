@@ -41,8 +41,8 @@ const uint8_t M2_SPEEDS[] PROGMEM = { 0, 65, 75, 90, 100, 125, 150, 170, 190, 21
 static const uint8_t NO_SPEEDS = sizeof(REF_SPEEDS) / sizeof(REF_SPEEDS[0]);
 
 namespace motor {
-	Motor motor1;
-	Motor motor2;
+	MotorStruct motor1;
+	MotorStruct motor2;
 }
 
 using namespace motor;
@@ -57,8 +57,8 @@ void motor::init() {
 	PORT(ENCODER_PORT) |= (1 << ENCODER1_PIN) | (1 << ENCODER2_PIN);
 
 	// brake motors
-	setDirection(MOTOR1_IDENTIFIER, MOTOR_STOP);
-	setDirection(MOTOR2_IDENTIFIER, MOTOR_STOP);
+	setDirection(MOTOR1, STOP);
+	setDirection(MOTOR2, STOP);
 
 	// pwm setup
 	TCCR0A = (1 << WGM00); // phase-correct
@@ -82,33 +82,33 @@ void motor::init() {
 /*
  * Returned value is the actual PWM setting, not the value set by user.
  */
-uint8_t motor::getSpeed(uint8_t motor) {
-	if (motor == MOTOR1_IDENTIFIER) {
+uint8_t motor::getSpeed(Motor motor) {
+	if (motor == MOTOR1) {
 		return PWM1_REG ;
 	} else {
 		return PWM2_REG ;
 	}
 }
 
-uint8_t motor::getDirection(uint8_t motor) {
-	if (motor == MOTOR1_IDENTIFIER) {
+Direction motor::getDirection(Motor motor) {
+	if (motor == MOTOR1) {
 		return (motor1.direction);
 	} else {
 		return (motor2.direction);
 	}
 }
 
-void motor::setSpeed(uint8_t motor, uint8_t speed) {
+void motor::setSpeed(Motor motor, uint8_t speed) {
 	uint8_t newRefSpeed;
 
 #if DEBUG
-	if(speed == '0') newRefSpeed = pgm_read_byte(&(REF_SPEEDS[0]));
-	else if(speed == 'm') newRefSpeed = pgm_read_byte(&(REF_SPEEDS[NO_SPEEDS - 1]));
+	if (speed == '0') newRefSpeed = pgm_read_byte(&(REF_SPEEDS[0]));
+	else if (speed == 'm') newRefSpeed = pgm_read_byte(&(REF_SPEEDS[NO_SPEEDS - 1]));
 	else
 #endif
 	newRefSpeed = pgm_read_byte(&(REF_SPEEDS[speed % NO_SPEEDS]));
 
-	if (motor == MOTOR1_IDENTIFIER) {
+	if (motor == MOTOR1) {
 		if (newRefSpeed != motor1.refSpeed) {
 			PWM1_REG = pgm_read_byte(&(M1_SPEEDS[speed % NO_SPEEDS]));
 			motor1.fixedDriveCycleCounter = FIXED_DRIVE_CYCLES;
@@ -121,14 +121,14 @@ void motor::setSpeed(uint8_t motor, uint8_t speed) {
 	}
 }
 
-static void updateDirectionPins(uint8_t motor, uint8_t direction) {
-	if (motor == MOTOR1_IDENTIFIER) {
+static void updateDirectionPins(Motor motor, Direction direction) {
+	if (motor == MOTOR1) {
 		switch (direction) {
-		case MOTOR_FORWARD:
+		case FORWARD:
 			PORT(MOTOR1_PORT) |= (1 << MOTOR1_FORWARD_PIN);
 			PORT(MOTOR1_PORT) &= ~(1 << MOTOR1_BACKWARD_PIN);
 			break;
-		case MOTOR_BACKWARD:
+		case BACKWARD:
 			PORT(MOTOR1_PORT) &= ~(1 << MOTOR1_FORWARD_PIN);
 			PORT(MOTOR1_PORT) |= (1 << MOTOR1_BACKWARD_PIN);
 			break;
@@ -139,11 +139,11 @@ static void updateDirectionPins(uint8_t motor, uint8_t direction) {
 		}
 	} else {
 		switch (direction) {
-		case MOTOR_FORWARD:
+		case FORWARD:
 			PORT(MOTOR2_PORT) |= (1 << MOTOR2_FORWARD_PIN);
 			PORT(MOTOR2_PORT) &= ~(1 << MOTOR2_BACKWARD_PIN);
 			break;
-		case MOTOR_BACKWARD:
+		case BACKWARD:
 			PORT(MOTOR2_PORT) &= ~(1 << MOTOR2_FORWARD_PIN);
 			PORT(MOTOR2_PORT) |= (1 << MOTOR2_BACKWARD_PIN);
 			break;
@@ -155,12 +155,12 @@ static void updateDirectionPins(uint8_t motor, uint8_t direction) {
 	}
 }
 
-void motor::setDirection(uint8_t motor, uint8_t direction = MOTOR_STOP) {
+void motor::setDirection(Motor motor, Direction direction = STOP) {
 	uint8_t reg;
-	Motor *mStruct;
+	MotorStruct *mStruct;
 	Direction newDirection;
 
-	if (motor == MOTOR1_IDENTIFIER) {
+	if (motor == MOTOR1) {
 		reg = (1 << COM0A1);
 		mStruct = &motor1;
 	} else {
@@ -169,13 +169,10 @@ void motor::setDirection(uint8_t motor, uint8_t direction = MOTOR_STOP) {
 	}
 
 	switch (direction) {
-	case MOTOR_FORWARD:
+	case FORWARD:
+	case BACKWARD:
 		TCCR0A |= reg;
-		newDirection = FORWARD;
-		break;
-	case MOTOR_BACKWARD:
-		TCCR0A |= reg;
-		newDirection = BACKWARD;
+		newDirection = direction;
 		break;
 	default:
 		TCCR0A &= ~reg;
@@ -192,7 +189,7 @@ void motor::setDirection(uint8_t motor, uint8_t direction = MOTOR_STOP) {
 	}
 
 	if (newDirection != mStruct->direction) {
-		if (motor == MOTOR1_IDENTIFIER) {
+		if (motor == MOTOR1) {
 			PWM1_REG = pgm_read_byte(&(M1_SPEEDS[speedIdx]));
 		} else {
 			PWM2_REG = pgm_read_byte(&(M2_SPEEDS[speedIdx]));

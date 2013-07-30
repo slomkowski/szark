@@ -15,7 +15,7 @@ namespace motor {
 	// derivative
 	const int16_t CONTROLLER_D_REG = 30;
 
-	uint8_t regulate(Motor *motor, uint8_t actualPwmReg);
+	uint8_t regulate(MotorStruct *motor, uint8_t actualPwmReg);
 }
 
 #endif /* CONTROLLER_H_ */

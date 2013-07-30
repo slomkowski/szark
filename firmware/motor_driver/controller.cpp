@@ -16,7 +16,7 @@ static uint8_t limit8bit(int16_t value) {
 	}
 }
 
-uint8_t motor::regulate(Motor *motor, uint8_t actualPwmReg) {
+uint8_t motor::regulate(MotorStruct *motor, uint8_t actualPwmReg) {
 	int16_t output, error;
 	if (motor->direction != STOP) {
 		error = motor->counter - motor->refSpeed;
