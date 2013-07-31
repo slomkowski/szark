@@ -16,7 +16,7 @@ CPU-AVRDUDE=m8
 
 CFLAGS=-mmcu=$(CPU-GCC) -Os
 CFLAGS+=-Wall
-CFLAGS+=-I../common
+CFLAGS+=-I../common -I. -Iusbdrv
 
 # config for USB programmer
 PROGRAMMER=stk500v2
@@ -29,18 +29,20 @@ EXTRA_DEPS = global.h
 
 BIN_DIR=obj
 
-SRC_CPP = $(shell ls *.cpp)
+SRC_CPP = $(shell ls *.cpp usbdrv/*.c)
+SRC_ASM = $(shell ls usbdrv/*.S)
 
 .SUFFIXES:
 .SUFFIXES: .h .cpp .c .o
 
 HEADERS = $(SRC_CPP:%.cpp=%.h) 
 OBJ = $(SRC_CPP:%.cpp=$(BIN_DIR)/%.o)
+OBJ += $(SRC_ASM:%.S=$(BIN_DIR)/%.o)
 
 all : $(OUTPUT).hex
 
 directories:
-	if [ ! -e $(BIN_DIR) ]; then mkdir -p $(BIN_DIR); fi
+	mkdir -p $(BIN_DIR)/usbdrv
 
 # generic code
 $(OUTPUT).hex : directories $(BIN_DIR)/$(OUTPUT).elf
@@ -55,6 +57,10 @@ $(BIN_DIR)/main.o : main.cpp $(EXTRA_DEPS) directories
 
 $(BIN_DIR)/%.o : %.cpp %.h $(EXTRA_DEPS) directories
 	$(AVR-CC) $(CFLAGS) -c $< -o $@
+	
+# Generic rule for assembling Assembler source files:
+$(BIN_DIR)/%.o : %.S
+	$(AVR-CC) $(CFLAGS) -x assembler-with-cpp -c $< -o $@
 
 run: burn
 

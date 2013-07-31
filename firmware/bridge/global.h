@@ -5,15 +5,16 @@
 #  www.slomkowski.eu m.slomkowski@gmail.com
 */
 
-#ifndef _GLOBAL_H_ 
+#ifndef _GLOBAL_H_
 #define _GLOBAL_H_
 
-/* 
+/*
    #######
    ####### Configuration
    #######
 */
-#define F_CPU 8000000UL
+
+#define F_CPU 16000000UL // 16Mhz
 
 #define WATCHDOG_ENABLE 1
 
@@ -52,7 +53,7 @@
 // to prevent the motor drivers from running
 extern volatile uint8_t enabled;
 
-/* 
+/*
    #######
    ####### Useful macros
    #######

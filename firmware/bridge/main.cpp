@@ -24,19 +24,38 @@
 #include "i2c_expander.h"
 #include "arm.h"
 #include "menu.h"
+#include "usbdrv.h"
+
 
 volatile uint8_t enabled = 0;
 
 static volatile uint8_t lcd_modified = 0;
 static char lcd_text[LCD_ROWS * LCD_COLUMNS + 1];
 
+PROGMEM const uint8_t usbHidReportDescriptor[22] = { /* USB report descriptor */
+0x06, 0x00, 0xff,              // USAGE_PAGE (Generic Desktop)
+	0x09, 0x01,                    // USAGE (Vendor Usage 1)
+	0xa1, 0x01,                    // COLLECTION (Application)
+	0x15, 0x00,                    //   LOGICAL_MINIMUM (0)
+	0x26, 0xff, 0x00,              //   LOGICAL_MAXIMUM (255)
+	0x75, 0x08,                    //   REPORT_SIZE (8)
+	0x95, 0x01,                    //   REPORT_COUNT (1)
+	0x09, 0x00,                    //   USAGE (Undefined)
+	0xb2, 0x02, 0x01,              //   FEATURE (Data,Var,Abs,Buf)
+	0xc0                           // END_COLLECTION
+	};
+/* The descriptor above is a dummy only, it silences the drivers. The report
+ * it describes consists of one byte of undefined data.
+ * We don't transfer our data through HID reports, we use custom requests
+ * instead.
+ */
+
 int main()
 {
 	uint8_t i;
-	// initialization section
-	uart_init();
-	buttons_init();
-	uart_enable_interrupt();
+
+
+	//buttons_init();
 	lcd_init();
 	analog_init();
 	i2c_init();
@@ -54,9 +73,15 @@ int main()
 
 	sei(); // interrupts activation
 
+	// wait 250 ms
+	_delay_ms(250);
+	usbDeviceConnect();
+
 	// buttons & emergency stop loop
 	while(1)
 	{
+		usbPoll();
+
 		if(enabled)
 		{
 			// if EXTERNAL STOP was performed
