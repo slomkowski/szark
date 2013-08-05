@@ -19,7 +19,7 @@ COMMONFLAGS=-mmcu=$(CPU-GCC) -Os
 COMMONFLAGS+=-Wall 
 COMMONFLAGS+=-I../common -I. -Iusbdrv
 CFLAGS=$(COMMONFLAGS) --std=gnu99
-CPPFLAGS=$(COMMONFLAGS)
+CPPFLAGS=$(COMMONFLAGS) --std=c++11
 
 # config for USB programmer
 PROGRAMMER=stk500v2
