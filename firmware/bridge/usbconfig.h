@@ -1,11 +1,3 @@
-/*
- * USB Geiger counter
- * 2013 Michał Słomkowski
- * This code is distributed under the terms of GNU General Public License version 3.0.
- *
- * This code is based on project: hid-custom-rq example from V-USB created by obdev.com
- */
-
 /* Name: usbconfig.h
  * Project: V-USB, virtual USB port for Atmel's(r) AVR(r) microcontrollers
  * Author: Christian Starkjohann
@@ -19,19 +11,18 @@
 #define __usbconfig_h_included__
 
 /*
- General Description:
- This file is an example configuration (with inline documentation) for the USB
- driver. It configures V-USB for USB D+ connected to Port D bit 2 (which is
- also hardware interrupt 0 on many devices) and USB D- to Port D bit 4. You may
- wire the lines to any other port, as long as D+ is also wired to INT0 (or any
- other hardware interrupt, as long as it is the highest level interrupt, see
- section at the end of this file).
- */
+General Description:
+This file is an example configuration (with inline documentation) for the USB
+driver. It configures V-USB for USB D+ connected to Port D bit 2 (which is
+also hardware interrupt 0 on many devices) and USB D- to Port D bit 4. You may
+wire the lines to any other port, as long as D+ is also wired to INT0 (or any
+other hardware interrupt, as long as it is the highest level interrupt, see
+section at the end of this file).
+*/
 
 /* ---------------------------- Hardware Config ---------------------------- */
 
 #define USB_CFG_IOPORTNAME      D
-
 /* This is the port where the USB bus is connected. When you configure it to
  * "B", the registers PORTB, PINB and DDRB will be used.
  */
@@ -120,11 +111,11 @@
  * interval. The value is in milliseconds and must not be less than 10 ms for
  * low speed devices.
  */
-#define USB_CFG_IS_SELF_POWERED         1
+#define USB_CFG_IS_SELF_POWERED         0
 /* Define this to 1 if the device has its own power supply. Set it to 0 if the
  * device is powered from the USB bus.
  */
-#define USB_CFG_MAX_BUS_POWER           10
+#define USB_CFG_MAX_BUS_POWER           40
 /* Set this variable to the maximum USB bus power consumption of your device.
  * The value is in milliamperes. [It will be divided by two since USB
  * communicates power requirements in units of 2 mA.]
@@ -247,8 +238,8 @@
 #define USB_CFG_DEVICE_VERSION  0x00, 0x01
 /* Version number of the device: Minor number first, then major number.
  */
-#define USB_CFG_VENDOR_NAME     's', 'l', 'o', 'm', 'k', 'o', 'w', 's', 'k', 'i', '.', 'e', 'u'
-#define USB_CFG_VENDOR_NAME_LEN  13
+#define USB_CFG_VENDOR_NAME     'o', 'b', 'd', 'e', 'v', '.', 'a', 't'
+#define USB_CFG_VENDOR_NAME_LEN 8
 /* These two values define the vendor name returned by the USB device. The name
  * must be given as a list of characters under single quotes. The characters
  * are interpreted as Unicode (UTF-16) entities.
@@ -257,8 +248,8 @@
  * obdev's free shared VID/PID pair. See the file USB-IDs-for-free.txt for
  * details.
  */
-#define USB_CFG_DEVICE_NAME     'S', 'Z', 'A', 'R', 'K', ' ', 'B', 'r', 'i', 'd', 'g', 'e'
-#define USB_CFG_DEVICE_NAME_LEN 12
+#define USB_CFG_DEVICE_NAME     'L', 'E', 'D', 'C', 't', 'l', 'H', 'I', 'D'
+#define USB_CFG_DEVICE_NAME_LEN 9
 /* Same as above for the device name. If you don't want a device name, undefine
  * the macros. See the file USB-IDs-for-free.txt before you assign a name if
  * you use a shared VID/PID.
@@ -361,6 +352,7 @@
 #define USB_CFG_DESCR_PROPS_HID_REPORT              0
 #define USB_CFG_DESCR_PROPS_UNKNOWN                 0
 
+
 #define usbMsgPtr_t unsigned short
 /* If usbMsgPtr_t is not defined, it defaults to 'uchar *'. We define it to
  * a scalar type here because gcc generates slightly shorter code for scalar
@@ -377,14 +369,21 @@
  * which is not fully supported (such as IAR C) or if you use a differnt
  * interrupt than INT0, you may have to define some of these.
  */
-
-#define USB_INTR_CFG            MCUCR
-#define USB_INTR_CFG_SET        (1 << ISC01)
-//#define USB_INTR_CFG_CLR        0
-#define USB_INTR_ENABLE         GIMSK
-#define USB_INTR_ENABLE_BIT     INT1
-#define USB_INTR_PENDING        GIFR
-#define USB_INTR_PENDING_BIT    INTF0
-#define USB_INTR_VECTOR         INT1_vect
+/* #define USB_INTR_CFG            MCUCR */
+/* #define USB_INTR_CFG_SET        ((1 << ISC00) | (1 << ISC01)) */
+/* #define USB_INTR_CFG_CLR        0 */
+/* #define USB_INTR_ENABLE         GIMSK */
+/* #define USB_INTR_ENABLE_BIT     INT0 */
+/* #define USB_INTR_PENDING        GIFR */
+/* #define USB_INTR_PENDING_BIT    INTF0 */
+/* #define USB_INTR_VECTOR         INT0_vect */
+#define USB_INTR_CFG            EICRA   // register where interrupt features are configured
+#define USB_INTR_CFG_SET        ((1<<ISC10) | (1<<ISC11))   // feature bits to set
+#define USB_INTR_CFG_CLR        0       // feature bits to clear
+#define USB_INTR_ENABLE         EIMSK   // register where interrupt enable bit resides
+#define USB_INTR_ENABLE_BIT     INT1    // bit number in above register
+#define USB_INTR_PENDING        EIFR    // register where interrupt pending bit resides
+#define USB_INTR_PENDING_BIT    INTF1   // bit number in above register
+#define USB_INTR_VECTOR         INT1_vect  // interrupt vector
 
 #endif /* __usbconfig_h_included__ */

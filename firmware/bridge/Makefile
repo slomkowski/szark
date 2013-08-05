@@ -4,39 +4,40 @@
 # This code is distributed under the terms of GNU General Public License version 3.0.
 #
  
-AVR-CC=avr-g++
+AVR-CC=avr-gcc
 AVR-OBJCOPY=avr-objcopy
 AVR-SIZE=avr-size
 AVRDUDE=avrdude
 
 OUTPUT=bridge
 
-CPU-GCC=atmega8
-CPU-AVRDUDE=m8
+CPU-GCC=atmega168
+CPU-AVRDUDE=m168
 
 CFLAGS=-mmcu=$(CPU-GCC) -Os
-CFLAGS+=-Wall
+CFLAGS+=-Wall --std=gnu99
 CFLAGS+=-I../common -I. -Iusbdrv
 
 # config for USB programmer
 PROGRAMMER=stk500v2
 PORT=avrdoper
 
-FUSE_LOW=0xe4
-FUSE_HIGH=0xd9
+FUSE_LOW=0xff
+FUSE_HIGH=0xdd
+FUSE_EXTENDED=0xf9
 
 EXTRA_DEPS = global.h
 
 BIN_DIR=obj
 
-SRC_CPP = $(shell ls *.cpp usbdrv/*.c)
+SRC_CPP = $(shell ls *.c usbdrv/*.c)
 SRC_ASM = $(shell ls usbdrv/*.S)
 
 .SUFFIXES:
 .SUFFIXES: .h .cpp .c .o
 
-HEADERS = $(SRC_CPP:%.cpp=%.h) 
-OBJ = $(SRC_CPP:%.cpp=$(BIN_DIR)/%.o)
+HEADERS = $(SRC_CPP:%.c=%.h) 
+OBJ = $(SRC_CPP:%.c=$(BIN_DIR)/%.o)
 OBJ += $(SRC_ASM:%.S=$(BIN_DIR)/%.o)
 
 all : $(OUTPUT).hex
@@ -52,10 +53,10 @@ $(OUTPUT).hex : directories $(BIN_DIR)/$(OUTPUT).elf
 $(BIN_DIR)/$(OUTPUT).elf : $(OBJ) 
 	$(AVR-CC) $(CFLAGS) -o $(BIN_DIR)/$(OUTPUT).elf $(OBJ)
 
-$(BIN_DIR)/main.o : main.cpp $(EXTRA_DEPS) directories
+$(BIN_DIR)/main.o : main.c $(EXTRA_DEPS) directories
 	$(AVR-CC) $(CFLAGS) -c $< -o $@
 
-$(BIN_DIR)/%.o : %.cpp %.h $(EXTRA_DEPS) directories
+$(BIN_DIR)/%.o : %.c %.h $(EXTRA_DEPS) directories
 	$(AVR-CC) $(CFLAGS) -c $< -o $@
 	
 # Generic rule for assembling Assembler source files:
@@ -68,7 +69,8 @@ burn: $(OUTPUT).hex
 	$(AVRDUDE) -c $(PROGRAMMER) -p $(CPU-AVRDUDE) -P $(PORT) -U flash:w:"$(OUTPUT).hex":a -U flash:v:"$(OUTPUT).hex":a -e
 
 burn_fuses:
-	$(AVRDUDE) -c $(PROGRAMMER) -p $(CPU-AVRDUDE) -P $(PORT) -U lfuse:w:$(FUSE_LOW):m -U hfuse:w:$(FUSE_HIGH):m 
+	$(AVRDUDE) -c $(PROGRAMMER) -p $(CPU-AVRDUDE) -P $(PORT) -U lfuse:w:$(FUSE_LOW):m -U hfuse:w:$(FUSE_HIGH):m -U efuse:w:$(FUSE_EXTENDED):m
+	
 
 clean:
 	rm -rf $(OUTPUT).* $(BIN_DIR)
