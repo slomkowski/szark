@@ -5,10 +5,11 @@
 #include <util/delay.h>
 #include <avr/pgmspace.h>
 
+extern "C" {
 #include "usbdrv.h"
-#include "requests.h"
+}
 
-PROGMEM const char usbHidReportDescriptor[22] = { /* USB report descriptor */
+PROGMEM const uint8_t usbHidReportDescriptor[22] = { /* USB report descriptor */
 0x06, 0x00, 0xff,              // USAGE_PAGE (Generic Desktop)
 	0x09, 0x01,                    // USAGE (Vendor Usage 1)
 	0xa1, 0x01,                    // COLLECTION (Application)
@@ -29,7 +30,7 @@ PROGMEM const char usbHidReportDescriptor[22] = { /* USB report descriptor */
 /* ------------------------------------------------------------------------- */
 
 usbMsgLen_t usbFunctionSetup(uchar data[8]) {
-	usbRequest_t *rq = (void *) data;
+	usbRequest_t *rq = (usbRequest_t *) data;
 
 	if ((rq->bmRequestType & USBRQ_TYPE_MASK) == USBRQ_TYPE_VENDOR) {
 

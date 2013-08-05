@@ -141,11 +141,12 @@ USB messages, even if they address another (low-speed) device on the same bus.
  */
 
 #ifndef __ASSEMBLER__
+#include <stdint.h>
 #ifndef uchar
-#define uchar   unsigned char
+#define uchar   uint8_t
 #endif
 #ifndef schar
-#define schar   signed char
+#define schar   int8_t
 #endif
 /* shortcuts for well defined 8 bit integer types */
 
@@ -474,7 +475,7 @@ extern
 #if !(USB_CFG_DESCR_PROPS_HID_REPORT & USB_PROP_IS_RAM)
 PROGMEM const
 #endif
-char usbDescriptorHidReport[];
+uint8_t usbDescriptorHidReport[];
 
 extern
 #if !(USB_CFG_DESCR_PROPS_STRING_0 & USB_PROP_IS_RAM)

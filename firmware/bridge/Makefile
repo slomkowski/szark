@@ -5,6 +5,7 @@
 #
  
 AVR-CC=avr-gcc
+AVR-CPP=avr-g++
 AVR-OBJCOPY=avr-objcopy
 AVR-SIZE=avr-size
 AVRDUDE=avrdude
@@ -14,9 +15,11 @@ OUTPUT=bridge
 CPU-GCC=atmega168
 CPU-AVRDUDE=m168
 
-CFLAGS=-mmcu=$(CPU-GCC) -Os
-CFLAGS+=-Wall --std=gnu99
-CFLAGS+=-I../common -I. -Iusbdrv
+COMMONFLAGS=-mmcu=$(CPU-GCC) -Os
+COMMONFLAGS+=-Wall 
+COMMONFLAGS+=-I../common -I. -Iusbdrv
+CFLAGS=$(COMMONFLAGS) --std=gnu99
+CPPFLAGS=$(COMMONFLAGS)
 
 # config for USB programmer
 PROGRAMMER=stk500v2
@@ -30,14 +33,16 @@ EXTRA_DEPS = global.h
 
 BIN_DIR=obj
 
-SRC_CPP = $(shell ls *.c usbdrv/*.c)
+SRC_CPP = $(shell ls *.cpp)
+SRC_C=$(shell ls usbdrv/*.c)
 SRC_ASM = $(shell ls usbdrv/*.S)
 
 .SUFFIXES:
-.SUFFIXES: .h .cpp .c .o
+.SUFFIXES: .h .cpp .c .o .inc .S .asm
 
-HEADERS = $(SRC_CPP:%.c=%.h) 
-OBJ = $(SRC_CPP:%.c=$(BIN_DIR)/%.o)
+HEADERS = $(SRC_CPP:%.cpp=%.h) 
+OBJ = $(SRC_C:%.c=$(BIN_DIR)/%.o)
+OBJ += $(SRC_CPP:%.cpp=$(BIN_DIR)/%.o)
 OBJ += $(SRC_ASM:%.S=$(BIN_DIR)/%.o)
 
 all : $(OUTPUT).hex
@@ -53,15 +58,18 @@ $(OUTPUT).hex : directories $(BIN_DIR)/$(OUTPUT).elf
 $(BIN_DIR)/$(OUTPUT).elf : $(OBJ) 
 	$(AVR-CC) $(CFLAGS) -o $(BIN_DIR)/$(OUTPUT).elf $(OBJ)
 
-$(BIN_DIR)/main.o : main.c $(EXTRA_DEPS) directories
-	$(AVR-CC) $(CFLAGS) -c $< -o $@
+$(BIN_DIR)/main.o : main.cpp $(EXTRA_DEPS) directories
+	$(AVR-CPP) $(CPPFLAGS) -c $< -o $@
 
 $(BIN_DIR)/%.o : %.c %.h $(EXTRA_DEPS) directories
 	$(AVR-CC) $(CFLAGS) -c $< -o $@
+
+$(BIN_DIR)/%.o : %.cpp %.h $(EXTRA_DEPS) directories
+	$(AVR-CPP) $(CPPFLAGS) -c $< -o $@
 	
 # Generic rule for assembling Assembler source files:
 $(BIN_DIR)/%.o : %.S
-	$(AVR-CC) $(CFLAGS) -x assembler-with-cpp -c $< -o $@
+	$(AVR-CC) $(COMMONFLAGS) -x assembler-with-cpp -c $< -o $@
 
 run: burn
 
