@@ -11,6 +11,7 @@ extern "C" {
 #include "i2c.h"
 #include "lcd.h"
 #include "motor_driver.h"
+#include "analog.h"
 
 //
 #define WATCHDOG_ENABLE true
@@ -35,6 +36,7 @@ int main(void) {
 #endif
 	i2c::init();
 	lcd::init();
+	analog::init();
 
 	usbInit();
 	usbDeviceDisconnect();

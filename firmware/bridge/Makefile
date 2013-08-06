@@ -16,10 +16,10 @@ CPU-GCC=atmega168
 CPU-AVRDUDE=m168
 
 COMMONFLAGS=-mmcu=$(CPU-GCC) -Os
-COMMONFLAGS+=-Wall 
+COMMONFLAGS+=-Wall
 COMMONFLAGS+=-I../common -I. -Iusbdrv
 CFLAGS=$(COMMONFLAGS) --std=gnu99
-CPPFLAGS=$(COMMONFLAGS) --std=c++11
+CPPFLAGS=$(COMMONFLAGS) --std=c++11 -Wextra
 
 # config for USB programmer
 PROGRAMMER=stk500v2

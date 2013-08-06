@@ -12,8 +12,15 @@
 #include <stdint.h>
 
 namespace motor_driver {
-	uint8_t get(uint8_t command, uint8_t motor);
-	void set(uint8_t command, uint8_t motor, uint8_t value);
+	const motor::Motor LEFT = motor::MOTOR1;
+	const motor::Motor RIGHT = motor::MOTOR2;
+
+	motor::Direction getDirection(motor::Motor motor);
+	void setDirection(motor::Motor motor, motor::Direction direction);
+
+	uint8_t getSpeed(motor::Motor motor);
+	void setSpeed(motor::Motor motor, uint8_t speed);
+
 	void brake();
 }
 
