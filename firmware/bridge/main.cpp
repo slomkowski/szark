@@ -9,6 +9,7 @@ extern "C" {
 #include "usbdrv.h"
 }
 #include "i2c.h"
+#include "lcd.h"
 #include "motor_driver.h"
 
 //
@@ -33,9 +34,11 @@ int main(void) {
 	wdt_enable(WDTO_1S);
 #endif
 	i2c::init();
+	lcd::init();
 
 	usbInit();
 	usbDeviceDisconnect();
+
 
 	for (uint8_t i = 0; i < 0xff; i++) {
 #if WATCHDOG_ENABLE
