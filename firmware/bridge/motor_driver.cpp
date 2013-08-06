@@ -9,7 +9,7 @@
 #include "motor_driver.h"
 #include "i2c.h"
 
-const uint8_t MOTOR_DRIVER_ADDRESS = 0x12;
+static const uint8_t MOTOR_DRIVER_ADDRESS = 0x12;
 
 using namespace motor;
 
