@@ -100,10 +100,6 @@ namespace joint {
 	typedef uint8_t Speed;
 // typedef DIRECTION - definition is in command-chars.h
 
-	typedef enum {
-		DIR = 'D', POS = 'P', CAL = 'C'
-	} Mode;
-
 	extern volatile bool startCalibration;
 	extern volatile bool calibrated __attribute__ ((section (".noinit")));
 	extern volatile bool interruptCalibration;
@@ -112,7 +108,7 @@ namespace joint {
 	Speed getSpeed(arm::Motor motor);
 	arm::Direction getDirection(arm::Motor motor);
 	Position getPosition(arm::Motor motor);
-	Mode getMode(arm::Motor motor);
+	arm::Mode getMode(arm::Motor motor);
 
 //*** setters
 	void setSpeed(arm::Motor motor, Speed speed);

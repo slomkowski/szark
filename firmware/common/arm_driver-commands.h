@@ -33,6 +33,10 @@ namespace arm {
 	typedef enum {
 		MOTOR_SHOULDER = 's', MOTOR_ELBOW = 'e', MOTOR_WRIST = 'w', MOTOR_GRIPPER = 'g'
 	} Motor;
+
+	typedef enum {
+		DIR = 'D', POS = 'P', CAL = 'C'
+	} Mode;
 }
 
 #endif
