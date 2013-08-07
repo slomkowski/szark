@@ -160,7 +160,7 @@ void lcd::init() {
 }
 
 void lcd::clrscr() {
-	position = 0;
+	gotoxy(0, 0);
 
 	send(LCDC_CLS, COMMAND);
 
@@ -190,14 +190,14 @@ void lcd::gotoxy(uint8_t x, uint8_t y) {
 	position = x;
 }
 
-void lcd::puts(char *str) {
+void lcd::puts(const char *str) {
 	char c;
 	while ((c = *str++)) {
 		putc(c);
 	}
 }
 
-void lcd::puts(uint8_t x, uint8_t y, char *str) {
+void lcd::puts(uint8_t x, uint8_t y, const char *str) {
 	gotoxy(x, y);
 	puts(str);
 }

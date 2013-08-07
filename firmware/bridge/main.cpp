@@ -13,9 +13,10 @@ extern "C" {
 #include "motor_driver.h"
 #include "analog.h"
 #include "buttons.h"
+#include "menu.h"
 
 //
-static const bool WATCHDOG_ENABLE = true;
+static const bool WATCHDOG_ENABLE = false;
 
 usbMsgLen_t usbFunctionSetup(uchar data[8]) {
 	usbRequest_t *rq = (usbRequest_t *) data;
@@ -35,13 +36,15 @@ int main(void) {
 	if (WATCHDOG_ENABLE) {
 		wdt_enable(WDTO_1S);
 	}
+
+	usbInit();
+	usbDeviceDisconnect();
+
 	i2c::init();
 	lcd::init();
 	analog::init();
 	buttons::init();
-
-	usbInit();
-	usbDeviceDisconnect();
+	menu::init();
 
 	for (uint8_t i = 0; i < 0xff; i++) {
 		if (WATCHDOG_ENABLE) {
@@ -56,6 +59,10 @@ int main(void) {
 		if (WATCHDOG_ENABLE) {
 			wdt_reset();
 		}
+
 		usbPoll();
+
+		menu::poll();
+		_delay_ms(100);
 	}
 }

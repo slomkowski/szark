@@ -8,6 +8,7 @@
 #ifndef ARM_DRIVER_H_
 #define ARM_DRIVER_H_
 
+#include <stdint.h>
 #include "arm_driver-commands.h"
 
 namespace arm_driver {

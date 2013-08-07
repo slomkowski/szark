@@ -16,8 +16,8 @@ namespace lcd {
 
 	void gotoxy(uint8_t x, uint8_t y);
 
-	void puts(char *str);
-	void puts(uint8_t x, uint8_t y, char *str);
+	void puts(const char *str);
+	void puts(uint8_t x, uint8_t y, const char *str);
 
 	void putsp(const char *progmem_s);
 	void putsp(uint8_t x, uint8_t y, const char *progmemString);
