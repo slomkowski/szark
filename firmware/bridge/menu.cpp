@@ -43,10 +43,37 @@ static Menu mainMenu(NULL, 3, mainMenuItems);
 
 static Menu* actualMenu;
 
+const uint16_t BATTERY_VOLTAGE_FACTOR = 71;
+
+static void batteryDisplay() {
+	static char text[] = "Batt: xx.xV\n";
+
+	uint8_t index;
+	uint16_t volt = (analog::getRawVoltage() / 4) * BATTERY_VOLTAGE_FACTOR / 10;
+
+	if (volt % 10 >= 5) {
+		volt = volt / 10 + 1;
+	} else {
+		volt /= 10;
+	}
+
+	// aka itoa
+	for (index = 9; index >= 6; index--) {
+		if (index != 8) {
+			text[index] = volt % 10 + '0';
+			volt /= 10;
+		}
+	}
+
+	lcd::puts(text);
+}
+
 void menu::init() {
 	armMenu.setParent(&mainMenu);
 	motorMenu.setParent(&mainMenu);
 	expanderMenu.setParent(&mainMenu);
+
+	mainMenu.setHeaderFunction(batteryDisplay);
 
 	actualMenu = &mainMenu;
 }
@@ -55,19 +82,13 @@ void menu::poll() {
 	actualMenu->process();
 }
 
-Menu::Menu(const char* title, uint8_t itemsLength, MenuItem menuItems[], Menu *parent) {
-	this->currentPosition = 0;
-	this->title = title;
-	this->menuItems = menuItems;
-	this->itemsLength = itemsLength;
-	this->parent = parent;
-}
-
 void Menu::process() {
 	lcd::clrscr();
 
 	if (this->title != NULL) {
 		lcd::puts(title);
+	} else if (this->headerFunction != NULL) {
+		(*headerFunction)();
 	}
 
 	if (itemsLength > 0) {
@@ -87,9 +108,7 @@ void Menu::process() {
 			} else {
 				currentPosition++;
 			}
-		}
-
-		if (buttons->down) {
+		} else if (buttons->down) {
 			if (currentPosition == 0) {
 				if (parent == NULL) {
 					currentPosition = itemsLength - 1;
@@ -99,14 +118,26 @@ void Menu::process() {
 			} else {
 				currentPosition--;
 			}
-		}
-
-		if (buttons->enter) {
+		} else if (buttons->enter) {
 			if (currentPosition == itemsLength) {
 				actualMenu = parent;
 			} else {
-				actualMenu = menuItems[currentPosition].subMenu;
+				if (subMenuFunction != NULL) {
+					(*subMenuFunction)(this->currentPosition);
+				} else if (menuItems[currentPosition].subMenu != NULL) {
+					actualMenu = menuItems[currentPosition].subMenu;
+				} else {
+					lcd::clrscr();
+					lcd::putsp(PSTR("No function nor submenu!"));
+				}
 			}
 		}
 	}
+}
+
+Menu::Menu(const char* title, uint8_t itemsLength, MenuItem menuItems[], Menu *parent) {
+	this->title = title;
+	this->menuItems = menuItems;
+	this->itemsLength = itemsLength;
+	this->parent = parent;
 }

@@ -29,12 +29,24 @@ namespace menu {
 		void setParent(Menu *parent) {
 			this->parent = parent;
 		}
+
+		void setSubMenuFunction(void (*subMenuFunction)(uint8_t currentPosition)) {
+			this->subMenuFunction = subMenuFunction;
+		}
+
+		void setHeaderFunction(void (*headerFunction)()) {
+			this->headerFunction = headerFunction;
+		}
+
 	private:
 		const char *title;
 		const MenuItem *menuItems;
 		Menu *parent;
-		uint8_t currentPosition;
+		uint8_t currentPosition = 0;
 		uint8_t itemsLength;
+
+		void (*headerFunction)() = NULL;
+		void (*subMenuFunction)(uint8_t currentPosition) = NULL;
 	};
 
 	void init();
