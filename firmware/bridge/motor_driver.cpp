@@ -43,7 +43,7 @@ static void set(uint8_t command, uint8_t motor, uint8_t value) {
 	i2c::stop();
 }
 
-void motor_driver::brake() {
+void motor::brake() {
 	i2c::start();
 
 	i2c::write(i2c::addressToWrite(MOTOR_DRIVER_ADDRESS));
@@ -52,18 +52,18 @@ void motor_driver::brake() {
 	i2c::stop();
 }
 
-motor::Direction motor_driver::getDirection(motor::Motor motor) {
+motor::Direction motor::getDirection(motor::Motor motor) {
 	return (Direction) get(CHAR_MOTOR_GET_DIRECTION, motor);
 }
 
-void motor_driver::setDirection(motor::Motor motor, motor::Direction direction) {
+void motor::setDirection(motor::Motor motor, motor::Direction direction) {
 	set(CHAR_MOTOR_SET_DIRECTION, motor, (uint8_t) direction);
 }
 
-uint8_t motor_driver::getSpeed(motor::Motor motor) {
+uint8_t motor::getSpeed(motor::Motor motor) {
 	return get(CHAR_MOTOR_GET_SPEED, motor);
 }
 
-void motor_driver::setSpeed(motor::Motor motor, uint8_t speed) {
+void motor::setSpeed(motor::Motor motor, uint8_t speed) {
 	set(CHAR_MOTOR_SET_SPEED, motor, speed);
 }

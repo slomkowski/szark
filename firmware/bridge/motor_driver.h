@@ -11,7 +11,7 @@
 #include "motor_driver-commands.h"
 #include <stdint.h>
 
-namespace motor_driver {
+namespace motor {
 	const motor::Motor LEFT = motor::MOTOR1;
 	const motor::Motor RIGHT = motor::MOTOR2;
 

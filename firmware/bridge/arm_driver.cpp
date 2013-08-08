@@ -64,43 +64,43 @@ static uint8_t recvOneByte(uint8_t command) {
 	return val;
 }
 
-void arm_driver::calibrate() {
+void arm::calibrate() {
 	sendOneByte(CHAR_ARM_CALIBRATE);
 }
 
-void arm_driver::brake() {
+void arm::brake() {
 	sendOneByte(CHAR_ARM_BRAKE);
 }
 
-bool arm_driver::isCalibrated() {
+bool arm::isCalibrated() {
 	if (recvOneByte(CHAR_ARM_IS_CALIBRATED) == CHAR_ARM_TRUE) return true;
 	else return false;
 }
 
-arm::Mode arm_driver::getMode() {
+arm::Mode arm::getMode() {
 	return (arm::Mode) recvOneByte(CHAR_ARM_GET_MODE);
 }
 
-arm::Direction arm_driver::getDirection(arm::Motor motor) {
+arm::Direction arm::getDirection(arm::Motor motor) {
 	return (arm::Direction) get(motor, CHAR_ARM_GET_DIRECTION);
 }
 
-void arm_driver::setDirection(arm::Motor motor, arm::Direction direction) {
+void arm::setDirection(arm::Motor motor, arm::Direction direction) {
 	set(motor, direction, CHAR_ARM_SET_DIRECTION);
 }
 
-uint8_t arm_driver::getSpeed(arm::Motor motor) {
+uint8_t arm::getSpeed(arm::Motor motor) {
 	return get(motor, CHAR_ARM_GET_SPEED);
 }
 
-void arm_driver::setSpeed(arm::Motor motor, uint8_t speed) {
+void arm::setSpeed(arm::Motor motor, uint8_t speed) {
 	set(motor, speed, CHAR_ARM_SET_SPEED);
 }
 
-uint8_t arm_driver::getPosition(arm::Motor motor) {
+uint8_t arm::getPosition(arm::Motor motor) {
 	return get(motor, CHAR_ARM_GET_POSITION);
 }
 
-void arm_driver::setPosition(arm::Motor motor, uint8_t position) {
+void arm::setPosition(arm::Motor motor, uint8_t position) {
 	set(motor, position, CHAR_ARM_SET_POSITION);
 }

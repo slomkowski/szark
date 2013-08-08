@@ -11,7 +11,7 @@
 #include <stdint.h>
 #include "arm_driver-commands.h"
 
-namespace arm_driver {
+namespace arm {
 	void calibrate();
 	void brake();
 	bool isCalibrated();

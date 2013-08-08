@@ -103,8 +103,8 @@ static void expanderSubMenuFunction(uint8_t currentPosition, buttons::Buttons *b
 }
 
 static void motorSubMenuFunction(uint8_t currentPosition, buttons::Buttons *buttonsState) {
-	motor_driver::setSpeed(motor_driver::LEFT, 3);
-	motor_driver::setSpeed(motor_driver::RIGHT, 3);
+	motor::setSpeed(motor::LEFT, 3);
+	motor::setSpeed(motor::RIGHT, 3);
 
 	auto direction = motor::STOP;
 	if (buttonsState->up) {
@@ -119,26 +119,26 @@ static void motorSubMenuFunction(uint8_t currentPosition, buttons::Buttons *butt
 	switch (currentPosition) {
 	case 0:
 		lcd_putsP("MOTOR: left");
-		motor_driver::setDirection(motor_driver::LEFT, direction);
+		motor::setDirection(motor::LEFT, direction);
 		break;
 	case 1:
 		lcd_putsP("MOTOR: right");
-		motor_driver::setDirection(motor_driver::RIGHT, direction);
+		motor::setDirection(motor::RIGHT, direction);
 		break;
 	case 2:
 		lcd_putsP("MOTOR: both");
-		motor_driver::setDirection(motor_driver::LEFT, direction);
-		motor_driver::setDirection(motor_driver::RIGHT, direction);
+		motor::setDirection(motor::LEFT, direction);
+		motor::setDirection(motor::RIGHT, direction);
 		break;
 	}
 
 	static char speedText[] = "\nL: xxx, R: xxx";
-	auto motorSpeed = motor_driver::getSpeed(motor_driver::LEFT);
+	auto motorSpeed = motor::getSpeed(motor::LEFT);
 	for (uint8_t i = 6; i > 3; i--) {
 		speedText[i] = (motorSpeed % 10 + '0');
 		motorSpeed /= 10;
 	}
-	motorSpeed = motor_driver::getSpeed(motor_driver::RIGHT);
+	motorSpeed = motor::getSpeed(motor::RIGHT);
 	for (uint8_t i = 14; i > 11; i--) {
 		speedText[i] = (motorSpeed % 10 + '0');
 		motorSpeed /= 10;
