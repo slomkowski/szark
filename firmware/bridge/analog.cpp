@@ -15,8 +15,8 @@
 #define ANALOG_VOLTAGE_CHANNEL 0x1
 #define ANALOG_CURRENT_CHANNEL 0x0
 
-volatile uint16_t rawVoltage;
-volatile uint16_t rawCurrent;
+static volatile uint16_t rawVoltage;
+static volatile uint16_t rawCurrent;
 
 void analog::init() {
 	DDRC &= ~((1 << ANALOG_VOLTAGE_CHANNEL) | (1 << ANALOG_CURRENT_CHANNEL)); // set as inputs

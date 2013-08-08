@@ -68,12 +68,47 @@ static void batteryDisplay() {
 	lcd::puts(text);
 }
 
+static void expanderSubMenuFunction(uint8_t currentPosition, buttons::Buttons *buttonsState) {
+	static uint8_t currentDevice = 8;
+	lcd::putsp(PSTR("EXPANDER:\nDevice: "));
+
+	if (buttonsState->enter) {
+		currentDevice = 8;
+		expander::setValue(0);
+		return;
+	}
+
+	if (buttonsState->up) {
+		currentDevice++;
+		if (currentDevice > 8) {
+			currentDevice = 0;
+		}
+	}
+	if (buttonsState->down) {
+		if (currentDevice == 0) {
+			currentDevice = 8;
+		} else {
+			currentDevice--;
+		}
+	}
+
+	if (currentDevice == 8) {
+		lcd::putsp(PSTR("OFF"));
+	} else {
+		lcd::putc('0' + currentDevice);
+	}
+
+	expander::setValue(1 << currentDevice);
+}
+
 void menu::init() {
 	armMenu.setParent(&mainMenu);
 	motorMenu.setParent(&mainMenu);
 	expanderMenu.setParent(&mainMenu);
 
 	mainMenu.setHeaderFunction(batteryDisplay);
+
+	expanderMenu.setSubMenuFunction(expanderSubMenuFunction);
 
 	actualMenu = &mainMenu;
 }
@@ -85,51 +120,66 @@ void menu::poll() {
 void Menu::process() {
 	lcd::clrscr();
 
-	if (this->title != NULL) {
-		lcd::puts(title);
-	} else if (this->headerFunction != NULL) {
-		(*headerFunction)();
+	buttons::Buttons *buttons = buttons::getButtonsState();
+
+	if (inSubMenuFunction or itemsLength == 0) {
+		inSubMenuFunction = true;
+		(*subMenuFunction)(this->currentPosition, buttons);
+	} else {
+		if (this->title != NULL) {
+			lcd::puts(title);
+		} else if (this->headerFunction != NULL) {
+			(*headerFunction)();
+		}
+
+		if (itemsLength > 0) {
+			lcd::putsp(0, 1, PSTR("< "));
+			if (currentPosition == itemsLength) {
+				lcd::putsp(PSTR("EXIT"));
+			} else {
+				lcd::puts(menuItems[currentPosition].name);
+			}
+			lcd::putsp(PSTR(" >"));
+
+			if (buttons->up) {
+				if ((parent == NULL and currentPosition == itemsLength - 1) or currentPosition == itemsLength) {
+					currentPosition = 0;
+				} else {
+					currentPosition++;
+				}
+			} else if (buttons->down) {
+				if (currentPosition == 0) {
+					if (parent == NULL) {
+						currentPosition = itemsLength - 1;
+					} else {
+						currentPosition = itemsLength;
+					}
+				} else {
+					currentPosition--;
+				}
+			}
+		}
 	}
 
-	if (itemsLength > 0) {
-		lcd::putsp(0, 1, PSTR("< "));
+	if (buttons->enter) {
 		if (currentPosition == itemsLength) {
-			lcd::putsp(PSTR("EXIT"));
+			actualMenu = parent;
 		} else {
-			lcd::puts(menuItems[currentPosition].name);
-		}
-		lcd::putsp(PSTR(" >"));
-
-		buttons::Buttons *buttons = buttons::getButtonsState();
-
-		if (buttons->up) {
-			if ((parent == NULL and currentPosition == itemsLength - 1) or currentPosition == itemsLength) {
-				currentPosition = 0;
-			} else {
-				currentPosition++;
-			}
-		} else if (buttons->down) {
-			if (currentPosition == 0) {
-				if (parent == NULL) {
-					currentPosition = itemsLength - 1;
+			if (subMenuFunction != NULL) {
+				if (not inSubMenuFunction) {
+					inSubMenuFunction = true;
+					(*subMenuFunction)(this->currentPosition, buttons);
 				} else {
-					currentPosition = itemsLength;
+					inSubMenuFunction = false;
+					if (itemsLength == 0) {
+						actualMenu = parent;
+					}
 				}
+			} else if (menuItems[currentPosition].subMenu != NULL) {
+				actualMenu = menuItems[currentPosition].subMenu;
 			} else {
-				currentPosition--;
-			}
-		} else if (buttons->enter) {
-			if (currentPosition == itemsLength) {
-				actualMenu = parent;
-			} else {
-				if (subMenuFunction != NULL) {
-					(*subMenuFunction)(this->currentPosition);
-				} else if (menuItems[currentPosition].subMenu != NULL) {
-					actualMenu = menuItems[currentPosition].subMenu;
-				} else {
-					lcd::clrscr();
-					lcd::putsp(PSTR("No function nor submenu!"));
-				}
+				lcd::clrscr();
+				lcd::putsp(PSTR("No function nor submenu!"));
 			}
 		}
 	}
@@ -140,4 +190,9 @@ Menu::Menu(const char* title, uint8_t itemsLength, MenuItem menuItems[], Menu *p
 	this->menuItems = menuItems;
 	this->itemsLength = itemsLength;
 	this->parent = parent;
+
+	this->currentPosition = 0;
+	this->headerFunction = NULL;
+	this->subMenuFunction = NULL;
+	this->inSubMenuFunction = false;
 }

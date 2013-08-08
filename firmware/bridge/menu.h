@@ -11,6 +11,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <avr/pgmspace.h>
+#include "buttons.h"
 
 namespace menu {
 
@@ -30,7 +31,7 @@ namespace menu {
 			this->parent = parent;
 		}
 
-		void setSubMenuFunction(void (*subMenuFunction)(uint8_t currentPosition)) {
+		void setSubMenuFunction(void (*subMenuFunction)(uint8_t currentPosition, buttons::Buttons *buttonsState)) {
 			this->subMenuFunction = subMenuFunction;
 		}
 
@@ -42,11 +43,12 @@ namespace menu {
 		const char *title;
 		const MenuItem *menuItems;
 		Menu *parent;
-		uint8_t currentPosition = 0;
+		uint8_t currentPosition;
 		uint8_t itemsLength;
+		bool inSubMenuFunction;
 
-		void (*headerFunction)() = NULL;
-		void (*subMenuFunction)(uint8_t currentPosition) = NULL;
+		void (*headerFunction)();
+		void (*subMenuFunction)(uint8_t currentPosition, buttons::Buttons *buttonsState);
 	};
 
 	void init();

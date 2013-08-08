@@ -42,7 +42,6 @@ int main(void) {
 
 	i2c::init();
 	lcd::init();
-	analog::init();
 	buttons::init();
 	menu::init();
 
@@ -54,6 +53,7 @@ int main(void) {
 	}
 	usbDeviceConnect();
 	sei();
+	analog::init();
 
 	for (;;) {
 		if (WATCHDOG_ENABLE) {
