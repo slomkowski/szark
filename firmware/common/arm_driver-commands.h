@@ -27,11 +27,11 @@
 
 namespace arm {
 	typedef enum {
-		MOTOR_STOP = '0', MOTOR_FORWARD = 'f', MOTOR_BACKWARD = 'b', MOTOR_BOTH = 0
+		STOP = '0', FORWARD = 'f', BACKWARD = 'b', BOTH = 0
 	} Direction;
 
 	typedef enum {
-		MOTOR_SHOULDER = 's', MOTOR_ELBOW = 'e', MOTOR_WRIST = 'w', MOTOR_GRIPPER = 'g'
+		SHOULDER = 's', ELBOW = 'e', WRIST = 'w', GRIPPER = 'g'
 	} Motor;
 
 	typedef enum {
