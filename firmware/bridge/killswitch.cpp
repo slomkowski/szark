@@ -23,7 +23,7 @@ void killswitch::setActive(bool active) {
 		PORT(KS_PORT) &= ~(1 << KS_PIN);
 	} else if (isActive() == true) {
 		PORT(KS_PORT) |= (1 << KS_PIN);
-		_delay_ms(50);
+		_delay_ms(200);
 	}
 }
 

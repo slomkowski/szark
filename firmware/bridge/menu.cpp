@@ -8,6 +8,7 @@
 #include "global.h"
 
 #include <avr/pgmspace.h>
+#include <util/delay.h>
 #include <stdlib.h>
 
 #include "lcd.h"
@@ -22,12 +23,18 @@
 
 using namespace menu;
 
-namespace arm {
-	const char CALIBRATE[] PROGMEM = "CALIBRATE";
-	const char SHOULDER[] PROGMEM = "SHOULDER";
-	const char ELBOW[] PROGMEM = "ELBOW";
-	const char WRIST[] PROGMEM = "WRIST";
-}
+/*
+ * Hardware settings
+ */
+const uint16_t BATTERY_VOLTAGE_FACTOR = 71;
+const uint8_t MOTOR_SPEED = 3;
+
+const uint8_t ARM_SPEED = 5;
+
+const uint8_t ARM_SHOULDER_SPEED = ARM_SPEED;
+const uint8_t ARM_ELBOW_SPEED = ARM_SPEED;
+const uint8_t ARM_WRIST_SPEED = ARM_SPEED;
+const uint8_t ARM_GRIPPER_SPEED = ARM_SPEED;
 
 static MenuItem armMenuItems[] = { { "CALIBRATE", NULL }, { "SHOULDER", NULL }, { "ELBOW", NULL }, { "WRIST", NULL }, {
 	"GRIPPER", NULL } };
@@ -43,9 +50,7 @@ static MenuItem mainMenuItems[] = { { "ARM DRIVER", &armMenu }, { "MOTOR DRIVER"
 
 static MenuClass mainMenu(NULL, 3, mainMenuItems);
 
-const uint16_t BATTERY_VOLTAGE_FACTOR = 71;
-
-static void batteryDisplay() {
+static void batteryDisplayHeaderFunction() {
 	static char text[] = "Batt: xx.xV\n";
 
 	uint8_t index;
@@ -68,7 +73,8 @@ static void batteryDisplay() {
 	lcd::puts(text);
 }
 
-static void expanderSubMenuFunction(uint8_t currentPosition, buttons::Buttons *buttonsState) {
+//#pragma GCC diagnostic ignored "-Wunused-parameter"
+static void expanderSubMenuFunction(bool isFirstCall, uint8_t currentPosition, buttons::Buttons *buttonsState) {
 	static uint8_t currentDevice = 8;
 	lcd::putsp(PSTR("EXPANDER:\nDevice: "));
 
@@ -101,9 +107,12 @@ static void expanderSubMenuFunction(uint8_t currentPosition, buttons::Buttons *b
 	expander::setValue(1 << currentDevice);
 }
 
-static void motorSubMenuFunction(uint8_t currentPosition, buttons::Buttons *buttonsState) {
-	motor::setSpeed(motor::LEFT, 3);
-	motor::setSpeed(motor::RIGHT, 3);
+static void motorSubMenuFunction(bool isFirstCall, uint8_t currentPosition, buttons::Buttons *buttonsState) {
+	if (isFirstCall) {
+		lcd::puts("F");
+		motor::setSpeed(motor::LEFT, MOTOR_SPEED);
+		motor::setSpeed(motor::RIGHT, MOTOR_SPEED);
+	}
 
 	auto direction = motor::STOP;
 	if (buttonsState->up) {
@@ -115,17 +124,18 @@ static void motorSubMenuFunction(uint8_t currentPosition, buttons::Buttons *butt
 		direction = motor::STOP;
 	}
 
+	lcd_putsP("MOTOR: ");
 	switch (currentPosition) {
 	case 0:
-		lcd_putsP("MOTOR: left");
+		lcd_putsP("left");
 		motor::setDirection(motor::LEFT, direction);
 		break;
 	case 1:
-		lcd_putsP("MOTOR: right");
+		lcd_putsP("right");
 		motor::setDirection(motor::RIGHT, direction);
 		break;
 	case 2:
-		lcd_putsP("MOTOR: both");
+		lcd_putsP("both");
 		motor::setDirection(motor::LEFT, direction);
 		motor::setDirection(motor::RIGHT, direction);
 		break;
@@ -145,15 +155,97 @@ static void motorSubMenuFunction(uint8_t currentPosition, buttons::Buttons *butt
 	lcd::puts(speedText);
 }
 
+/*static void armCalibrationHeaderFunction() {
+ lcd_putsP("ARM. Cal: ");
+ if (arm::isCalibrated()) {
+ lcd_putsP("Yes");
+ } else {
+ lcd_putsP("NO");
+ }
+ }*/
+
+static void armSubMenuFunction(bool isFirstCall, uint8_t currentPosition, buttons::Buttons *buttonsState) {
+	static bool calibrationFired;
+
+	if (isFirstCall) {
+		calibrationFired = false;
+		lcd::puts("F");
+		arm::setSpeed(arm::SHOULDER, ARM_SHOULDER_SPEED);
+		arm::setSpeed(arm::ELBOW, ARM_ELBOW_SPEED);
+		arm::setSpeed(arm::WRIST, ARM_WRIST_SPEED);
+		arm::setSpeed(arm::GRIPPER, ARM_GRIPPER_SPEED);
+	}
+
+	lcd::putsp(PSTR("ARM: "));
+
+	auto direction = arm::STOP;
+	auto motor = arm::SHOULDER;
+
+	if (buttonsState->up) {
+		direction = arm::FORWARD;
+	} else if (buttonsState->down) {
+		direction = arm::BACKWARD;
+	}
+	if (buttonsState->enter) {
+		direction = arm::STOP;
+	}
+
+	switch (currentPosition) {
+	case 0: // calibrate
+		lcd_putsP("calibrate\n");
+		if (not calibrationFired) {
+			lcd::puts("C");
+			arm::calibrate();
+			calibrationFired = true;
+			return;
+		}
+
+		if (arm::isCalibrated()) {
+			lcd_putsP("finished: YES");
+		} else {
+			lcd_putsP("finished: NO");
+		}
+		return;
+	case 1: // shoulder
+		lcd_putsP("shoulder\n");
+		motor = arm::SHOULDER;
+		break;
+	case 2:
+		lcd_putsP("elbow\n");
+		motor = arm::ELBOW;
+		break;
+	case 3:
+		lcd_putsP("wrist\n");
+		motor = arm::WRIST;
+		break;
+	case 4:
+		lcd_putsP("gripper\n");
+		motor = arm::GRIPPER;
+		break;
+	}
+
+	arm::setDirection(motor, direction);
+	auto armPosition = arm::getPosition(motor);
+
+	static char armPositionText[] = "Position: XXX"; // X fields are replaced by digits
+	for (uint8_t i = 12; i > 9; i--) {
+		armPositionText[i] = (armPosition % 10 + '0');
+		armPosition /= 10;
+	}
+	lcd::puts(armPositionText);
+}
+
 void menu::init() {
 	armMenu.setParent(&mainMenu);
 	motorMenu.setParent(&mainMenu);
 	expanderMenu.setParent(&mainMenu);
 
-	mainMenu.setHeaderFunction(batteryDisplay);
+	mainMenu.setHeaderFunction(batteryDisplayHeaderFunction);
+	//armMenu.setHeaderFunction(armCalibrationHeaderFunction);
 
 	expanderMenu.setSubMenuFunction(expanderSubMenuFunction);
 	motorMenu.setSubMenuFunction(motorSubMenuFunction);
+	armMenu.setSubMenuFunction(armSubMenuFunction);
 }
 
 void menu::poll() {

@@ -9,7 +9,7 @@
 #include "i2c.h"
 #include "arm_driver.h"
 
-static const uint8_t ARM_DRIVER_ADDRESS = 0x12;
+static const uint8_t ARM_DRIVER_ADDRESS = 0x30;
 
 static uint8_t get(uint8_t motor, uint8_t command) {
 	i2c::start();

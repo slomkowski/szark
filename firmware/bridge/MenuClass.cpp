@@ -45,13 +45,13 @@ void MenuClass::process() {
 	if (inSubMenuFunction or itemsLength == 0) {
 		if (subMenuFunction == NULL) {
 			lcd::clrscr();
-			lcd::putsp(PSTR("No submenu function nor menu items!"));
+			lcd::putsp(PSTR("No sub-menu function nor menu items!"));
 		} else {
 			if (not inSubMenuFunction) {
 				killswitch::setActive(false);
 			}
+			(*subMenuFunction)(not inSubMenuFunction, this->currentPosition, buttons);
 			inSubMenuFunction = true;
-			(*subMenuFunction)(this->currentPosition, buttons);
 		}
 	} else {
 		if (this->title != NULL) {
@@ -97,7 +97,8 @@ void MenuClass::process() {
 				if (not inSubMenuFunction) {
 					inSubMenuFunction = true;
 					killswitch::setActive(false);
-					(*subMenuFunction)(this->currentPosition, buttons);
+					lcd::clrscr();
+					(*subMenuFunction)(true, this->currentPosition, buttons);
 				} else {
 					inSubMenuFunction = false;
 					killswitch::setActive(true);

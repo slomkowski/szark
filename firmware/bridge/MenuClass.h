@@ -31,7 +31,8 @@ namespace menu {
 			this->parent = parent;
 		}
 
-		void setSubMenuFunction(void (*subMenuFunction)(uint8_t currentPosition, buttons::Buttons *buttonsState)) {
+		void setSubMenuFunction(
+			void (*subMenuFunction)(bool isFirstCall, uint8_t currentPosition, buttons::Buttons *buttonsState)) {
 			this->subMenuFunction = subMenuFunction;
 		}
 
@@ -49,7 +50,7 @@ namespace menu {
 		static MenuClass *actualMenu;
 
 		void (*headerFunction)();
-		void (*subMenuFunction)(uint8_t currentPosition, buttons::Buttons *buttonsState);
+		void (*subMenuFunction)(bool isFirstCall, uint8_t currentPosition, buttons::Buttons *buttonsState);
 	};
 
 } /* namespace faza */

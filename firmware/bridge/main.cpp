@@ -11,6 +11,7 @@ extern "C" {
 #include "i2c.h"
 #include "lcd.h"
 #include "motor_driver.h"
+#include "arm_driver.h"
 #include "analog.h"
 #include "buttons.h"
 #include "menu.h"

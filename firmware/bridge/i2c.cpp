@@ -17,7 +17,8 @@ using namespace i2c;
  i2c functions have timer attached, so if the device doesn't respond, function waits a fixed period of time and then returns.
  If there was no timer, function would loop forever
  */
-#define TIMER_ENABLE true
+// TODO enable i2c timer
+#define TIMER_ENABLE false
 
 static volatile bool timerNotClear = true;
 
@@ -33,9 +34,9 @@ void i2c::init() {
 
 static void setUpTimer() {
 #if TIMER_ENABLE
-	// TODO match to new clock speed
+	// TODO match to new clock speed for i2c timer
 	TCNT0 = 150;
-	timerNotClear = 1;
+	timerNotClear = true;
 	TCCR0B = (1 << CS01) | (1 << CS00); // clkio/64
 #endif
 }
@@ -47,7 +48,7 @@ static void waitForOperationComplete() {
 
 #if TIMER_ENABLE
 ISR(TIMER0_OVF_vect, ISR_NOBLOCK) {
-	timerNotClear = 0;
+	timerNotClear = false;
 	TCCR0B = 0; // stop timer
 }
 #endif
