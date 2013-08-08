@@ -17,6 +17,7 @@
 #include "buttons.h"
 #include "analog.h"
 #include "menu.h"
+#include "killswitch.h"
 
 using namespace menu;
 
@@ -101,6 +102,37 @@ static void expanderSubMenuFunction(uint8_t currentPosition, buttons::Buttons *b
 	expander::setValue(1 << currentDevice);
 }
 
+static void motorSubMenuFunction(uint8_t currentPosition, buttons::Buttons *buttonsState) {
+	motor_driver::setSpeed(motor_driver::LEFT, 3);
+	motor_driver::setSpeed(motor_driver::RIGHT, 3);
+
+	motor::Direction direction = motor::STOP;
+	if (buttonsState->up) {
+		direction = motor::FORWARD;
+	} else if (buttonsState->down) {
+		direction = motor::BACKWARD;
+	}
+	if (buttonsState->enter) {
+		direction = motor::STOP;
+	}
+
+	switch (currentPosition) {
+	case 0:
+		lcd_putsP("MOTOR: left");
+		motor_driver::setDirection(motor_driver::LEFT, direction);
+		break;
+	case 1:
+		lcd_putsP("MOTOR: right");
+		motor_driver::setDirection(motor_driver::RIGHT, direction);
+		break;
+	case 2:
+		lcd_putsP("MOTOR: both");
+		motor_driver::setDirection(motor_driver::LEFT, direction);
+		motor_driver::setDirection(motor_driver::RIGHT, direction);
+		break;
+	}
+}
+
 void menu::init() {
 	armMenu.setParent(&mainMenu);
 	motorMenu.setParent(&mainMenu);
@@ -109,6 +141,7 @@ void menu::init() {
 	mainMenu.setHeaderFunction(batteryDisplay);
 
 	expanderMenu.setSubMenuFunction(expanderSubMenuFunction);
+	motorMenu.setSubMenuFunction(motorSubMenuFunction);
 
 	actualMenu = &mainMenu;
 }
@@ -123,8 +156,16 @@ void Menu::process() {
 	buttons::Buttons *buttons = buttons::getButtonsState();
 
 	if (inSubMenuFunction or itemsLength == 0) {
-		inSubMenuFunction = true;
-		(*subMenuFunction)(this->currentPosition, buttons);
+		if (subMenuFunction == NULL) {
+			lcd::clrscr();
+			lcd::putsp(PSTR("No submenu function nor menu items!"));
+		} else {
+			if (not inSubMenuFunction) {
+				killswitch::setActive(false);
+			}
+			inSubMenuFunction = true;
+			(*subMenuFunction)(this->currentPosition, buttons);
+		}
 	} else {
 		if (this->title != NULL) {
 			lcd::puts(title);
@@ -168,15 +209,18 @@ void Menu::process() {
 			if (subMenuFunction != NULL) {
 				if (not inSubMenuFunction) {
 					inSubMenuFunction = true;
+					killswitch::setActive(false);
 					(*subMenuFunction)(this->currentPosition, buttons);
 				} else {
 					inSubMenuFunction = false;
+					killswitch::setActive(true);
 					if (itemsLength == 0) {
 						actualMenu = parent;
 					}
 				}
 			} else if (menuItems[currentPosition].subMenu != NULL) {
 				actualMenu = menuItems[currentPosition].subMenu;
+				actualMenu->currentPosition = 0;
 			} else {
 				lcd::clrscr();
 				lcd::putsp(PSTR("No function nor submenu!"));

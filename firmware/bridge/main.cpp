@@ -14,6 +14,7 @@ extern "C" {
 #include "analog.h"
 #include "buttons.h"
 #include "menu.h"
+#include "killswitch.h"
 
 //
 static const bool WATCHDOG_ENABLE = false;
@@ -37,6 +38,7 @@ int main(void) {
 		wdt_enable(WDTO_1S);
 	}
 
+	killswitch::init();
 	usbInit();
 	usbDeviceDisconnect();
 
