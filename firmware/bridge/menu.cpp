@@ -106,7 +106,7 @@ static void motorSubMenuFunction(uint8_t currentPosition, buttons::Buttons *butt
 	motor_driver::setSpeed(motor_driver::LEFT, 3);
 	motor_driver::setSpeed(motor_driver::RIGHT, 3);
 
-	motor::Direction direction = motor::STOP;
+	auto direction = motor::STOP;
 	if (buttonsState->up) {
 		direction = motor::FORWARD;
 	} else if (buttonsState->down) {
@@ -131,6 +131,19 @@ static void motorSubMenuFunction(uint8_t currentPosition, buttons::Buttons *butt
 		motor_driver::setDirection(motor_driver::RIGHT, direction);
 		break;
 	}
+
+	static char speedText[] = "\nL: xxx, R: xxx";
+	auto motorSpeed = motor_driver::getSpeed(motor_driver::LEFT);
+	for (uint8_t i = 6; i > 3; i--) {
+		speedText[i] = (motorSpeed % 10 + '0');
+		motorSpeed /= 10;
+	}
+	motorSpeed = motor_driver::getSpeed(motor_driver::RIGHT);
+	for (uint8_t i = 14; i > 11; i--) {
+		speedText[i] = (motorSpeed % 10 + '0');
+		motorSpeed /= 10;
+	}
+	lcd::puts(speedText);
 }
 
 void menu::init() {
@@ -153,7 +166,7 @@ void menu::poll() {
 void Menu::process() {
 	lcd::clrscr();
 
-	buttons::Buttons *buttons = buttons::getButtonsState();
+	auto *buttons = buttons::getButtonsState();
 
 	if (inSubMenuFunction or itemsLength == 0) {
 		if (subMenuFunction == NULL) {
