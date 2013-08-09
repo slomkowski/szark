@@ -26,11 +26,11 @@ using namespace menu;
 /*
  * Hardware settings
  */
-const uint16_t BATTERY_VOLTAGE_FACTOR = 71;
+const double BATTERY_VOLTAGE_FACTOR = .01981590757978723404;
+
 const uint8_t MOTOR_SPEED = 3;
 
 const uint8_t ARM_SPEED = 5;
-
 const uint8_t ARM_SHOULDER_SPEED = ARM_SPEED;
 const uint8_t ARM_ELBOW_SPEED = ARM_SPEED;
 const uint8_t ARM_WRIST_SPEED = ARM_SPEED;
@@ -54,7 +54,7 @@ static void batteryDisplayHeaderFunction() {
 	static char text[] = "Batt: xx.xV\n";
 
 	uint8_t index;
-	uint16_t volt = (analog::getRawVoltage() / 4) * BATTERY_VOLTAGE_FACTOR / 10;
+	uint16_t volt = analog::getRawVoltage() * 100.0 * BATTERY_VOLTAGE_FACTOR;
 
 	if (volt % 10 >= 5) {
 		volt = volt / 10 + 1;

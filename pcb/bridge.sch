@@ -15805,9 +15805,9 @@ Source: 008-0260-0_E.pdf</description>
 <part name="GND25" library="supply1" deviceset="GND" device=""/>
 <part name="GND26" library="supply1" deviceset="GND" device=""/>
 <part name="R10" library="rcl" deviceset="R-EU_" device="M1206" value="100"/>
-<part name="R13" library="rcl" deviceset="R-EU_" device="M1206" value="10k"/>
+<part name="R13" library="rcl" deviceset="R-EU_" device="M1206" value="8k2"/>
 <part name="GND27" library="supply1" deviceset="GND" device=""/>
-<part name="R14" library="rcl" deviceset="R-EU_" device="M1206" value="1k"/>
+<part name="R14" library="rcl" deviceset="R-EU_" device="M1206" value="470"/>
 <part name="P+12" library="supply1" deviceset="+12V" device=""/>
 <part name="RSENSE" library="con-ptr500" deviceset="AK500/2" device=""/>
 <part name="+12V" library="con-ptr500" deviceset="AK500/2" device=""/>

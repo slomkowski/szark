@@ -20,13 +20,15 @@ static volatile uint16_t rawCurrent;
 
 void analog::init() {
 	DDRC &= ~((1 << ANALOG_VOLTAGE_CHANNEL) | (1 << ANALOG_CURRENT_CHANNEL)); // set as inputs
-	PORTC &= ~((1 << ANALOG_VOLTAGE_CHANNEL) | (1 << ANALOG_CURRENT_CHANNEL)); // disable pullup
+	PORTC &= ~((1 << ANALOG_VOLTAGE_CHANNEL) | (1 << ANALOG_CURRENT_CHANNEL)); // disable pull-up
 
-	// Internal 2.56V Voltage Reference with external capacitor at AREF pin
+	// Internal 1.1 V Voltage Reference with external capacitor at AREF pin
 	ADMUX = (1 << REFS0) | (1 << REFS1);
 
-	// enable ADC, start convertion, set prescaler to 64 - ADC freq: ~ 125kHz
-	ADCSRA = (1 << ADEN) | (1 << ADSC) | (1 << ADPS2) | (1 << ADPS1) | (1 << ADIE);
+	DIDR0 = (1 << ANALOG_VOLTAGE_CHANNEL) | (1 << ANALOG_CURRENT_CHANNEL);
+
+	// enable ADC, start conversion, set prescaler to 64 - ADC freq: ~ 125kHz
+	ADCSRA = (1 << ADEN) | (1 << ADSC) | (1 << ADPS2) | (1 << ADPS1) | (1 << ADPS0) | (1 << ADIE);
 }
 
 ISR(ADC_vect, ISR_NOBLOCK) {
