@@ -7,6 +7,7 @@
 
 #include "global.h"
 #include <avr/io.h>
+#include <avr/interrupt.h>
 #include "delay.h"
 #include "killswitch.h"
 
@@ -14,14 +15,18 @@
 #define KS_PIN 3
 
 void killswitch::init() {
-	DDR(KS_PORT) |= (1 << KS_PIN);
 	setActive(true);
+
+	PCICR |= (1 << PCIE1);
+	PCMSK1 |= (1 << PCINT11);
 }
 
 void killswitch::setActive(bool active) {
 	if (active == true) {
+		DDR(KS_PORT) |= (1 << KS_PIN);
 		PORT(KS_PORT) &= ~(1 << KS_PIN);
 	} else if (isActive() == true) {
+		DDR(KS_PORT) &= ~(1 << KS_PIN);
 		PORT(KS_PORT) |= (1 << KS_PIN);
 		delay::waitMs(100);
 	}
@@ -32,4 +37,10 @@ bool killswitch::isActive() {
 		return true;
 	}
 	return false;
+}
+
+ISR(PCINT0_vect, ISR_NOBLOCK) {
+	if (killswitch::isActive()) {
+		killswitch::setActive(true);
+	}
 }
