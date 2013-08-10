@@ -20,6 +20,11 @@ namespace i2c {
 			NACK = 0, ACK = 1
 	};
 
+	enum ErrorCode
+		:uint8_t {
+			OK = 0, TIMEOUT = 1
+	};
+
 	constexpr uint8_t addressToWrite(uint8_t address) {
 		return (address << 1);
 	}
@@ -35,6 +40,8 @@ namespace i2c {
 
 	void write(uint8_t byte);
 	uint8_t read(Acknowledgement ack);
+
+	ErrorCode getLastCommandStatus();
 }
 
 #endif /* I2C_H_ */

@@ -22,6 +22,8 @@ using namespace i2c;
 
 static volatile bool timerNotClear = true;
 
+static ErrorCode status = OK;
+
 void i2c::init() {
 	TWBR = (((F_CPU / 1000l) / CLOCK_FREQUENCY) - 16) / 2;
 	TWCR = 1 << TWEN | 1 << TWEA | 1 << TWINT;
@@ -35,15 +37,23 @@ void i2c::init() {
 static void setUpTimer() {
 #if TIMER_ENABLE
 	// TODO match to new clock speed for i2c timer
-	TCNT0 = 150;
+	TCNT0 = 250;
 	timerNotClear = true;
-	TCCR0B = (1 << CS01) | (1 << CS00); // clkio/64
+	TCCR0B = (1 << CS01) | (1 << CS00);// clkio/64
 #endif
 }
 
 static void waitForOperationComplete() {
 	while (!(TWCR & (1 << TWINT)) && timerNotClear) {
 	}
+
+#if TIMER_ENABLE
+	if (timerNotClear) {
+		status = OK;
+	} else {
+		status = TIMEOUT;
+	}
+#endif
 }
 
 #if TIMER_ENABLE
@@ -89,3 +99,6 @@ uint8_t i2c::read(Acknowledgement ack) {
 	return TWDR ;
 }
 
+ErrorCode i2c::getLastCommandStatus() {
+	return status;
+}

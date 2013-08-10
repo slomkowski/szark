@@ -19,6 +19,7 @@
 #include "analog.h"
 #include "menu.h"
 #include "killswitch.h"
+#include "i2c.h"
 #include "MenuClass.h"
 
 using namespace menu;
@@ -62,7 +63,6 @@ static void batteryDisplayHeaderFunction() {
 		volt /= 10;
 	}
 
-	// aka itoa
 	for (index = 9; index >= 6; index--) {
 		if (index != 8) {
 			text[index] = volt % 10 + '0';
@@ -75,6 +75,11 @@ static void batteryDisplayHeaderFunction() {
 
 //#pragma GCC diagnostic ignored "-Wunused-parameter"
 static void expanderSubMenuFunction(bool isFirstCall, uint8_t currentPosition, buttons::Buttons *buttonsState) {
+	if (not isFirstCall and i2c::getLastCommandStatus() != i2c::OK) {
+		lcd::putsp(PSTR("Could not connect to expander!"));
+		return;
+	}
+
 	static uint8_t currentDevice = 8;
 	lcd::putsp(PSTR("EXPANDER:\nDevice: "));
 
@@ -108,6 +113,11 @@ static void expanderSubMenuFunction(bool isFirstCall, uint8_t currentPosition, b
 }
 
 static void motorSubMenuFunction(bool isFirstCall, uint8_t currentPosition, buttons::Buttons *buttonsState) {
+	if (not isFirstCall and i2c::getLastCommandStatus() != i2c::OK) {
+		lcd::putsp(PSTR("Motor driver not visible!"));
+		return;
+	}
+
 	if (isFirstCall) {
 		lcd::puts("F");
 		motor::setSpeed(motor::LEFT, MOTOR_SPEED);
@@ -155,18 +165,13 @@ static void motorSubMenuFunction(bool isFirstCall, uint8_t currentPosition, butt
 	lcd::puts(speedText);
 }
 
-/*static void armCalibrationHeaderFunction() {
- lcd_putsP("ARM. Cal: ");
- if (arm::isCalibrated()) {
- lcd_putsP("Yes");
- } else {
- lcd_putsP("NO");
- }
- }*/
-
 static void armSubMenuFunction(bool isFirstCall, uint8_t currentPosition, buttons::Buttons *buttonsState) {
-	static bool calibrationFired;
+	if (not isFirstCall and i2c::getLastCommandStatus() != i2c::OK) {
+		lcd_putsP("Arm driver not visible!");
+		return;
+	}
 
+	static bool calibrationFired;
 	if (isFirstCall) {
 		calibrationFired = false;
 		lcd::puts("F");
