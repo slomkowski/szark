@@ -7,7 +7,7 @@
 
 #include "global.h"
 #include <avr/io.h>
-#include <util/delay.h>
+#include "delay.h"
 #include "killswitch.h"
 
 #define KS_PORT C
@@ -23,7 +23,7 @@ void killswitch::setActive(bool active) {
 		PORT(KS_PORT) &= ~(1 << KS_PIN);
 	} else if (isActive() == true) {
 		PORT(KS_PORT) |= (1 << KS_PIN);
-		_delay_ms(200);
+		delay::waitMs(100);
 	}
 }
 

@@ -2,7 +2,6 @@
 #include <avr/io.h>
 #include <avr/wdt.h>
 #include <avr/interrupt.h>
-#include <util/delay.h>
 #include <avr/pgmspace.h>
 
 extern "C" {
@@ -15,6 +14,7 @@ extern "C" {
 #include "analog.h"
 #include "buttons.h"
 #include "menu.h"
+#include "delay.h"
 #include "killswitch.h"
 
 //
@@ -48,12 +48,8 @@ int main(void) {
 	buttons::init();
 	menu::init();
 
-	for (uint8_t i = 0; i < 0xff; i++) {
-		if (WATCHDOG_ENABLE) {
-			wdt_reset();
-		}
-		_delay_ms(1);
-	}
+	delay::waitMs(255);
+
 	usbDeviceConnect();
 	sei();
 	analog::init();
@@ -66,6 +62,6 @@ int main(void) {
 		usbPoll();
 
 		menu::poll();
-		_delay_ms(100);
+		delay::waitMs(100);
 	}
 }

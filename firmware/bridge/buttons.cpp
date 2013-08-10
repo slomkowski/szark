@@ -7,7 +7,7 @@
 
 #include "global.h"
 #include <avr/io.h>
-#include <util/delay.h>
+#include "delay.h"
 #include "buttons.h"
 
 #define BUTTON_PORT	D
@@ -36,7 +36,7 @@ Buttons *buttons::getButtonsState() {
 		return &buttonsState;
 	}
 
-	_delay_ms(DEBOUNCE_TIME);
+	delay::waitMs(DEBOUNCE_TIME);
 
 	buttonsState.enter &= bit_is_clear(PIN(BUTTON_PORT), BUTTON_ENTER);
 	buttonsState.up &= bit_is_clear(PIN(BUTTON_PORT), BUTTON_UP);
