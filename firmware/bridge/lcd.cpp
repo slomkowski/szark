@@ -118,6 +118,11 @@ void lcd::init() {
 	DDR(LCD_D6_PORT) |= (1 << LCD_D6);
 	DDR(LCD_D7_PORT) |= (1 << LCD_D7);
 
+	PORT(LCD_RS_PORT) |= (1 << LCD_RS);
+	PORT(LCD_E_PORT) |= (1 << LCD_E);
+
+	delay::waitMs(15);
+
 	PORT(LCD_RS_PORT) &= ~(1 << LCD_RS);
 	PORT(LCD_E_PORT) &= ~(1 << LCD_E);
 
@@ -128,6 +133,9 @@ void lcd::init() {
 
 	pulseE();
 	delay::waitMs(5); // more than 4.1ms
+
+	pulseE();
+	delay::wait100us();
 
 	pulseE();
 	delay::wait100us();

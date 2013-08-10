@@ -25,8 +25,8 @@ CPPFLAGS=$(COMMONFLAGS) --std=c++11 -Wextra
 PROGRAMMER=stk500v2
 PORT=avrdoper
 
-FUSE_LOW=0xff
-FUSE_HIGH=0xdd
+FUSE_LOW=0xef
+FUSE_HIGH=0xdc
 FUSE_EXTENDED=0xf9
 
 EXTRA_DEPS = global.h
