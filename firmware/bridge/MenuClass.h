@@ -40,6 +40,10 @@ namespace menu {
 			this->headerFunction = headerFunction;
 		}
 
+		MenuClass *getActualMenu() {
+			return actualMenu;
+		}
+
 	private:
 		const char *title;
 		const MenuItem *menuItems;

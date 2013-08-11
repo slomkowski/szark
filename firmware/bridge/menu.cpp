@@ -51,6 +51,8 @@ static MenuItem mainMenuItems[] = { { "ARM DRIVER", &armMenu }, { "MOTOR DRIVER"
 
 static MenuClass mainMenu(NULL, 3, mainMenuItems);
 
+static MenuClass *actualMenu;
+
 static void batteryDisplayHeaderFunction() {
 	static char text[] = "Batt: xx.xV\n";
 
@@ -119,7 +121,6 @@ static void motorSubMenuFunction(bool isFirstCall, uint8_t currentPosition, butt
 	}
 
 	if (isFirstCall) {
-		lcd::puts("F");
 		motor::setSpeed(motor::LEFT, MOTOR_SPEED);
 		motor::setSpeed(motor::RIGHT, MOTOR_SPEED);
 	}
@@ -174,7 +175,6 @@ static void armSubMenuFunction(bool isFirstCall, uint8_t currentPosition, button
 	static bool calibrationFired;
 	if (isFirstCall) {
 		calibrationFired = false;
-		lcd::puts("F");
 		arm::setSpeed(arm::SHOULDER, ARM_SHOULDER_SPEED);
 		arm::setSpeed(arm::ELBOW, ARM_ELBOW_SPEED);
 		arm::setSpeed(arm::WRIST, ARM_WRIST_SPEED);
@@ -199,7 +199,6 @@ static void armSubMenuFunction(bool isFirstCall, uint8_t currentPosition, button
 	case 0: // calibrate
 		lcd_putsP("calibrate\n");
 		if (not calibrationFired) {
-			lcd::puts("C");
 			arm::calibrate();
 			calibrationFired = true;
 			return;
@@ -246,13 +245,17 @@ void menu::init() {
 	expanderMenu.setParent(&mainMenu);
 
 	mainMenu.setHeaderFunction(batteryDisplayHeaderFunction);
-	//armMenu.setHeaderFunction(armCalibrationHeaderFunction);
 
 	expanderMenu.setSubMenuFunction(expanderSubMenuFunction);
 	motorMenu.setSubMenuFunction(motorSubMenuFunction);
 	armMenu.setSubMenuFunction(armSubMenuFunction);
+
+	actualMenu = &mainMenu;
 }
 
 void menu::poll() {
-	mainMenu.process();
+	// this was done to limit stack
+	actualMenu = actualMenu->getActualMenu();
+
+	actualMenu->process();
 }
