@@ -2,41 +2,46 @@
 #define __ARM_COMMAND_CHARS_H__
 
 /** Description of the protocol used in the communication with the arm driver. Data is sent by I2C interface.
- This file is included to 'bridge' during compilation.
+ This file is included to 'bridge' and 'arm_driver' during compilation.
  */
 
-/* definition on the characters used in protocol */
-
-#define CHAR_ARM_GET_SPEED		'g'
-#define CHAR_ARM_SET_SPEED		's'
-
-#define CHAR_ARM_SET_DIRECTION	'd'
-#define CHAR_ARM_GET_DIRECTION	't'
-
-#define CHAR_ARM_GET_POSITION		'q'
-#define CHAR_ARM_SET_POSITION		'p'
-
-#define CHAR_ARM_BRAKE			'B'
-#define CHAR_ARM_CALIBRATE		'C'
-#define CHAR_ARM_GET_MODE		'M'
-
-#define CHAR_ARM_IS_CALIBRATED	'K'
-
-#define CHAR_ARM_TRUE			't'
-#define CHAR_ARM_FALSE			'f'
+#include <inttypes.h>
 
 namespace arm {
-	typedef enum {
-		STOP = '0', FORWARD = 'f', BACKWARD = 'b', BOTH = 0
-	} Direction;
 
-	typedef enum {
-		SHOULDER = 's', ELBOW = 'e', WRIST = 'w', GRIPPER = 'g'
-	} Motor;
+	enum Command
+		:uint8_t {
+			GET_SPEED = 1,
+		SET_SPEED,
+		SET_DIRECTION,
+		GET_DIRECTION,
+		SET_POSITION,
+		GET_POSITION,
+		BRAKE,
+		CALIBRATE,
+		GET_MODE,
+		IS_CALIBRATED
+	};
 
-	typedef enum {
-		DIR = 'D', POS = 'P', CAL = 'C'
-	} Mode;
+	enum BooleanVals
+		: uint8_t {
+			FALSE, TRUE
+	};
+
+	enum Direction
+		:uint8_t {
+			STOP, FORWARD, BACKWARD, BOTH
+	};
+
+	enum Motor
+		:uint8_t {
+			SHOULDER, ELBOW, WRIST, GRIPPER
+	};
+
+	enum Mode
+		:uint8_t {
+			DIR, POS, CAL
+	};
 }
 
 #endif

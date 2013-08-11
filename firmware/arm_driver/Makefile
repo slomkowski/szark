@@ -15,7 +15,7 @@ CPU-GCC=atmega88
 CPU-AVRDUDE=m88
 
 CFLAGS=-mmcu=$(CPU-GCC) -Os
-CFLAGS+=-Wall
+CFLAGS+=-std=c++11 -Wall
 CFLAGS+=-I../common
 
 # config for USB programmer

@@ -64,9 +64,6 @@ void TWI_Interrupt_Routine();
 #define TWI_ADR_BITS  1   // Bit position for LSB of the slave address bits in the init byte.
 #define TWI_GEN_BIT   0   // Bit position for LSB of the general call bit in the init byte.
 
-#define TRUE          1
-#define FALSE         0
-
 /****************************************************************************
   TWI State codes
 ****************************************************************************/
