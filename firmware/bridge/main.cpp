@@ -3,6 +3,7 @@
 #include <avr/wdt.h>
 #include <avr/interrupt.h>
 #include <avr/pgmspace.h>
+#include <util/delay.h>
 
 extern "C" {
 #include "usbdrv.h"
@@ -46,7 +47,7 @@ int main(void) {
 	buttons::init();
 	menu::init();
 
-	delay::waitMs(255);
+	_delay_ms(250);
 
 	usbDeviceConnect();
 	sei();
@@ -60,6 +61,6 @@ int main(void) {
 		usbPoll();
 
 		menu::poll();
-		delay::waitMs(100);
+		delay::waitMs(150);
 	}
 }

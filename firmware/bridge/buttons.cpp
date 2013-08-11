@@ -15,7 +15,7 @@
 #define BUTTON_UP		0
 #define BUTTON_DOWN	2
 
-static const uint8_t DEBOUNCE_TIME = 50; // ms
+static const uint8_t DEBOUNCE_TIME = 30; // ms
 
 using namespace buttons;
 

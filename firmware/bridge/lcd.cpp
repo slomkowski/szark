@@ -7,9 +7,10 @@
 
 #include "global.h"
 #include <avr/io.h>
-#include "delay.h"
 #include <avr/pgmspace.h>
+#include <util/delay.h>
 
+#include "delay.h"
 #include "lcd.h"
 
 #define LCD_D4_PORT	D
@@ -121,7 +122,7 @@ void lcd::init() {
 	PORT(LCD_RS_PORT) |= (1 << LCD_RS);
 	PORT(LCD_E_PORT) |= (1 << LCD_E);
 
-	delay::waitMs(15);
+	_delay_ms(15);
 
 	PORT(LCD_RS_PORT) &= ~(1 << LCD_RS);
 	PORT(LCD_E_PORT) &= ~(1 << LCD_E);
@@ -132,7 +133,7 @@ void lcd::init() {
 	PORT(LCD_D7_PORT) &= ~(1 << LCD_D7);
 
 	pulseE();
-	delay::waitMs(5); // more than 4.1ms
+	_delay_ms(5); // more than 4.1ms
 
 	pulseE();
 	delay::wait100us();
