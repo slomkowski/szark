@@ -39,7 +39,7 @@ bool killswitch::isActive() {
 	return false;
 }
 
-ISR(PCINT0_vect, ISR_NOBLOCK) {
+ISR(PCINT1_vect, ISR_NOBLOCK) {
 	if (killswitch::isActive()) {
 		killswitch::setActive(true);
 	}
