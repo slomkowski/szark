@@ -47,23 +47,23 @@ void motor::brake() {
 	i2c::start();
 
 	i2c::write(i2c::addressToWrite(MOTOR_DRIVER_ADDRESS));
-	i2c::write(CHAR_MOTOR_BRAKE);
+	i2c::write(BRAKE);
 
 	i2c::stop();
 }
 
 motor::Direction motor::getDirection(motor::Motor motor) {
-	return (Direction) get(CHAR_MOTOR_GET_DIRECTION, motor);
+	return (Direction) get(GET_DIRECTION, motor);
 }
 
 void motor::setDirection(motor::Motor motor, motor::Direction direction) {
-	set(CHAR_MOTOR_SET_DIRECTION, motor, (uint8_t) direction);
+	set(SET_DIRECTION, motor, (uint8_t) direction);
 }
 
 uint8_t motor::getSpeed(motor::Motor motor) {
-	return get(CHAR_MOTOR_GET_SPEED, motor);
+	return get(GET_SPEED, motor);
 }
 
 void motor::setSpeed(motor::Motor motor, uint8_t speed) {
-	set(CHAR_MOTOR_SET_SPEED, motor, speed);
+	set(SET_SPEED, motor, speed);
 }

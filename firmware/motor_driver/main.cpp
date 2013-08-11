@@ -35,7 +35,7 @@ int main() {
 		if (i2c_reply_ready()) {
 			motor::Motor motor = (motor::Motor) i2c_wrbuf[1];
 
-			if (i2c_wrbuf[0] == CHAR_MOTOR_GET_SPEED) {
+			if (i2c_wrbuf[0] == motor::GET_SPEED) {
 				i2c_rdbuf[0] = motor::getSpeed(motor);
 			} else {
 				i2c_rdbuf[0] = motor::getDirection(motor);
@@ -48,14 +48,14 @@ int main() {
 			motor::Motor motor = (motor::Motor) i2c_wrbuf[1];
 
 			switch (i2c_wrbuf[0]) {
-			case CHAR_MOTOR_BRAKE:
+			case motor::BRAKE:
 				motor::setDirection(motor::MOTOR1, motor::STOP);
 				motor::setDirection(motor::MOTOR2, motor::STOP);
 				break;
-			case CHAR_MOTOR_SET_SPEED:
+			case motor::SET_SPEED:
 				motor::setSpeed(motor, i2c_wrbuf[2]);
 				break;
-			case CHAR_MOTOR_SET_DIRECTION:
+			case motor::SET_DIRECTION:
 				motor::setDirection(motor, (motor::Direction) i2c_wrbuf[2]);
 				break;
 

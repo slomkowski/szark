@@ -15,7 +15,7 @@ CPU-GCC=attiny2313
 CPU-AVRDUDE=t2313
 
 CFLAGS=-mmcu=$(CPU-GCC) -Os 
-CFLAGS+=-Wall
+CFLAGS+=-Wall -std=c++11
 CFLAGS+=-I../common
 
 # config for USB programmer
