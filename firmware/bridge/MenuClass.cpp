@@ -26,8 +26,8 @@ MenuClass::MenuClass(const char* title, uint8_t itemsLength, MenuItem menuItems[
 	this->parent = parent;
 
 	this->currentPosition = 0;
-	this->headerFunction = NULL;
-	this->subMenuFunction = NULL;
+	this->headerFunction = nullptr;
+	this->subMenuFunction = nullptr;
 	this->inSubMenuFunction = false;
 	this->actualMenu = this;
 }
@@ -43,7 +43,7 @@ void MenuClass::process() {
 	auto *buttons = buttons::getButtonsState();
 
 	if (inSubMenuFunction or itemsLength == 0) {
-		if (subMenuFunction == NULL) {
+		if (subMenuFunction == nullptr) {
 			lcd::putsp(PSTR("No sub-menu function nor menu items!"));
 		} else {
 			if (not inSubMenuFunction) {
@@ -59,9 +59,9 @@ void MenuClass::process() {
 			inSubMenuFunction = true;
 		}
 	} else {
-		if (this->title != NULL) {
+		if (this->title != nullptr) {
 			lcd::puts(title);
-		} else if (this->headerFunction != NULL) {
+		} else if (this->headerFunction != nullptr) {
 			(*headerFunction)();
 		}
 
@@ -75,14 +75,14 @@ void MenuClass::process() {
 			lcd::putsp(PSTR(" >"));
 
 			if (buttons->up) {
-				if ((parent == NULL and currentPosition == itemsLength - 1) or currentPosition == itemsLength) {
+				if ((parent == nullptr and currentPosition == itemsLength - 1) or currentPosition == itemsLength) {
 					currentPosition = 0;
 				} else {
 					currentPosition++;
 				}
 			} else if (buttons->down) {
 				if (currentPosition == 0) {
-					if (parent == NULL) {
+					if (parent == nullptr) {
 						currentPosition = itemsLength - 1;
 					} else {
 						currentPosition = itemsLength;
@@ -98,7 +98,7 @@ void MenuClass::process() {
 		if (itemsLength > 0 and currentPosition == itemsLength) {
 			actualMenu = parent;
 		} else {
-			if (subMenuFunction != NULL) {
+			if (subMenuFunction != nullptr) {
 				if (not inSubMenuFunction) {
 					inSubMenuFunction = true;
 					killswitch::setActive(false);
@@ -111,7 +111,7 @@ void MenuClass::process() {
 						actualMenu = parent;
 					}
 				}
-			} else if (menuItems[currentPosition].subMenu != NULL) {
+			} else if (menuItems[currentPosition].subMenu != nullptr) {
 				actualMenu = menuItems[currentPosition].subMenu;
 				actualMenu->currentPosition = 0;
 			} else {

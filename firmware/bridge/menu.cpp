@@ -37,10 +37,10 @@ const uint8_t ARM_ELBOW_SPEED = ARM_SPEED;
 const uint8_t ARM_WRIST_SPEED = ARM_SPEED;
 const uint8_t ARM_GRIPPER_SPEED = ARM_SPEED;
 
-static MenuItem armMenuItems[] = { { "CALIBRATE", NULL }, { "SHOULDER", NULL }, { "ELBOW", NULL }, { "WRIST", NULL }, {
-	"GRIPPER", NULL } };
+static MenuItem armMenuItems[] = { { "CALIBRATE", nullptr }, { "SHOULDER", nullptr }, { "ELBOW", nullptr }, { "WRIST",
+	nullptr }, { "GRIPPER", nullptr } };
 
-static MenuItem motorMenuItems[] = { { "LEFT WHEEL", NULL }, { "RIGHT WHEEL", NULL }, { "BOTH WHEELS", NULL } };
+static MenuItem motorMenuItems[] = { { "LEFT WHEEL", nullptr }, { "RIGHT WHEEL", nullptr }, { "BOTH WHEELS", nullptr } };
 
 static MenuClass armMenu("Arm driver:", 5, armMenuItems);
 static MenuClass motorMenu("Motor driver:", 3, motorMenuItems);
@@ -49,7 +49,7 @@ static MenuClass expanderMenu("I2C expander:", 0);
 static MenuItem mainMenuItems[] = { { "ARM DRIVER", &armMenu }, { "MOTOR DRIVER", &motorMenu }, { "I2C EXPANDER",
 	&expanderMenu } };
 
-static MenuClass mainMenu(NULL, 3, mainMenuItems);
+static MenuClass mainMenu(nullptr, 3, mainMenuItems);
 
 static MenuClass *actualMenu;
 

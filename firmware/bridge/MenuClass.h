@@ -24,7 +24,7 @@ namespace menu {
 
 	class MenuClass {
 	public:
-		MenuClass(const char* title, uint8_t itemsLength, MenuItem menuItems[] = NULL, MenuClass *parent = NULL);
+		MenuClass(const char* title, uint8_t itemsLength, MenuItem menuItems[] = nullptr, MenuClass *parent = nullptr);
 		void process();
 
 		void setParent(MenuClass *parent) {
