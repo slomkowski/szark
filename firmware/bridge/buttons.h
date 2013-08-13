@@ -17,7 +17,7 @@ namespace buttons {
 
 	void init();
 
-	Buttons *getButtonsState();
+	Buttons *getButtonsState(bool debounce = true);
 }
 
 #endif /* BUTTON_H_ */

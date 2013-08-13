@@ -26,11 +26,15 @@ void buttons::init() {
 	PORT(BUTTON_PORT) |= (1 << BUTTON_UP) | (1 << BUTTON_DOWN) | (1 << BUTTON_ENTER);
 }
 
-Buttons *buttons::getButtonsState() {
+Buttons *buttons::getButtonsState(bool debounce) {
 
 	buttonsState.enter = bit_is_clear(PIN(BUTTON_PORT), BUTTON_ENTER);
 	buttonsState.up = bit_is_clear(PIN(BUTTON_PORT), BUTTON_UP);
 	buttonsState.down = bit_is_clear(PIN(BUTTON_PORT), BUTTON_DOWN);
+
+	if (debounce) {
+		return &buttonsState;
+	}
 
 	if (not (buttonsState.enter or buttonsState.up or buttonsState.down)) {
 		return &buttonsState;
