@@ -20,7 +20,7 @@ namespace USBCommands {
 	};
 
 	namespace bridge {
-		enum class KillSwitch
+		enum KillSwitch
 			:uint8_t {
 				INACTIVE, ACTIVE
 		};

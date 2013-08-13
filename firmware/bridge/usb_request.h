@@ -8,6 +8,8 @@
 #ifndef USB_REQUEST_H_
 #define USB_REQUEST_H_
 
-
+namespace usb {
+	void executeCommandsFromUSB();
+}
 
 #endif /* USB_REQUEST_H_ */

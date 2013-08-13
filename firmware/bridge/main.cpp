@@ -15,6 +15,7 @@ extern "C" {
 #include "menu.h"
 #include "delay.h"
 #include "killswitch.h"
+#include "usb_request.h"
 
 //
 static const bool WATCHDOG_ENABLE = false;
@@ -46,7 +47,9 @@ int main(void) {
 
 		usbPoll();
 
-		menu::poll();
-		delay::waitMs(150);
+		usb::executeCommandsFromUSB();
+
+		//menu::poll();
+		//delay::waitMs(150);
 	}
 }
