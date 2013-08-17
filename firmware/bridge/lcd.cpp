@@ -57,9 +57,6 @@
 #define LCDC_LINE1  	0x80
 #define LCDC_LINE2  	0xC0
 
-const uint8_t LCD_COLUMNS = 16;
-const uint8_t LCD_ROWS = 2;
-
 enum Type {
 	DATA, COMMAND
 };
@@ -185,9 +182,12 @@ void lcd::gotoxy(uint8_t x, uint8_t y) {
 	position = x;
 }
 
-void lcd::puts(const char *str) {
-	char c;
-	while ((c = *str++)) {
+void lcd::puts(const char *str, uint8_t length) {
+	for (uint8_t i = 0; i < length; i++) {
+		char c = static_cast<char>(str[i]);
+		if (c == '\0') {
+			break;
+		}
 		putc(c);
 	}
 }
