@@ -6,6 +6,12 @@
 #include "motor_driver-commands.h"
 
 namespace USBCommands {
+
+	enum USBRequest
+		:uint8_t {
+			USB_READ = 1, USB_WRITE
+	};
+
 	enum Request
 		: uint8_t {
 			BRIDGE_LCD_SET = 1,
