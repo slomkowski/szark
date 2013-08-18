@@ -55,9 +55,14 @@ namespace USBCommands {
 	}
 
 	namespace arm {
+
+		enum AdditionalCommands
+			:uint8_t {BRAKE = 100, CALIBRATE
+		};
+
 		struct GeneralState {
 			bool isCalibrated;
-			arm_commands::Mode dd;
+			arm_commands::Mode mode;
 		};
 
 		struct JointState {

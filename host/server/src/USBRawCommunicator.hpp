@@ -1,15 +1,21 @@
 /*
- * USB Geiger counter
- * 2013 Michał Słomkowski
- * This code is distributed under the terms of GNU General Public License version 3.0.
+ * RawCommunicator.h
+ *
+ *  Created on: 12-08-2013
+ *      Author: michal
  */
 
-#ifndef USBCOMMUNICATOR_H_
-#define USBCOMMUNICATOR_H_
+#ifndef RAWCOMMUNICATOR_H_
+#define RAWCOMMUNICATOR_H_
 
+extern "C" {
 #include <libusb.h>
+}
 #include <stdexcept>
 #include <string>
+#include <cstdint>
+
+#include "usb-commands.h"
 
 namespace USB {
 
@@ -19,9 +25,8 @@ namespace USB {
 	const std::string VENDOR_NAME = "slomkowski.eu";
 	const std::string DEVICE_NAME = "SZARK Bridge";
 
-	typedef enum {
-		SOME_TYPE = 1
-	} Request;
+	const int BUFFER_SIZE = 512;
+	const int MESSAGE_TIMEOUT = 2000; // ms
 
 	/**
 	 * This exception is thrown if an USB communication error occurs. You can view the error description
@@ -36,21 +41,18 @@ namespace USB {
 
 	class RawCommunicator {
 	public:
-		/**
-		 * Initiates the class and opens the device. Warning! The constructor assumes that only one bridge device
-		 * is connected to the bus. Otherwise, it opens the first-found one.
-		 */
-		RawCommunicator() throw (CommException);
-
+		RawCommunicator();
 		virtual ~RawCommunicator();
 
-		void sendMessage(Request request, unsigned int value);
-		unsigned int recvMessage(Request request);
+		void sendMessage(USBCommands::USBRequest request, unsigned int value);
+
+		void sendMessage(USBCommands::USBRequest request, uint8_t *data, unsigned int length);
+
+		unsigned int recvMessage(USBCommands::USBRequest request, uint8_t *data, unsigned int maxLength);
 
 	private:
 		libusb_device_handle *devHandle;
 	};
 
-}
-
-#endif /* USBCOMMUNICATOR_H_ */
+} /* namespace USB */
+#endif /* RAWCOMMUNICATOR_H_ */
