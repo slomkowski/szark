@@ -20,6 +20,8 @@ extern "C" {
 #include "delay.h"
 #include "killswitch.h"
 #include "expander.h"
+#include "motor_driver.h"
+#include "arm_driver.h"
 
 #include "usb-commands.h"
 
@@ -137,11 +139,39 @@ void usb::executeCommandsFromUSB() {
 			expander::setValue(inBuff.data[inBuff.currentPosition]);
 			inBuff.currentPosition++;
 			break;
-		case USBCommands::ARM_DRIVER_GET:
-			// TODO implement arm_driver_get
+		case USBCommands::ARM_DRIVER_GET: {
+			{
+				USBCommands::arm::GeneralState general;
+				general.isCalibrated = arm::isCalibrated();
+				general.mode = arm::getMode();
+				outBuff.push(&general, sizeof(USBCommands::arm::GeneralState));
+			}
+			USBCommands::arm::JointState joint;
+
+			const arm::Motor motorTab[] = { arm::GRIPPER, arm::ELBOW, arm::WRIST, arm::SHOULDER };
+
+			for (auto &m : motorTab) {
+				joint.motor = m;
+				joint.direction = arm::getDirection(m);
+				joint.speed = arm::getSpeed(m);
+				joint.position = arm::getPosition(m);
+				joint.setPosition = false;
+				outBuff.push(&joint, sizeof(USBCommands::arm::JointState));
+			}
+		}
 			break;
-		case USBCommands::MOTOR_DRIVER_GET:
-			// TODO implement arm_driver_set
+		case USBCommands::MOTOR_DRIVER_GET: {
+			USBCommands::motor::SpecificMotorState mState;
+
+			const motor::Motor motorTab[] = { motor::LEFT, motor::RIGHT };
+
+			for (auto &m : motorTab) {
+				mState.motor = m;
+				mState.speed = motor::getSpeed(m);
+				mState.direction = motor::getDirection(m);
+				outBuff.push(&mState, sizeof(USBCommands::motor::SpecificMotorState));
+			}
+		}
 			break;
 		case USBCommands::ARM_DRIVER_SET:
 // TODO implement arm driver set

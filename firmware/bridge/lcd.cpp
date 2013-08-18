@@ -119,7 +119,7 @@ void lcd::init() {
 	PORT(LCD_RS_PORT) |= (1 << LCD_RS);
 	PORT(LCD_E_PORT) |= (1 << LCD_E);
 
-	_delay_ms(15);
+	_delay_ms(25);
 
 	PORT(LCD_RS_PORT) &= ~(1 << LCD_RS);
 	PORT(LCD_E_PORT) &= ~(1 << LCD_E);
