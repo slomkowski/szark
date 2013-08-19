@@ -109,6 +109,11 @@ namespace bridge {
 				unsigned int getSpeed();
 				void setSpeed(unsigned int speed);
 
+				/**
+				 * Returns the actual PWM power delivered to the motor.
+				 */
+				unsigned int getPower();
+
 				Direction getDirection();
 				void setDirection(Direction direction);
 
