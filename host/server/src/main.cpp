@@ -10,6 +10,7 @@
 #include <chrono>
 #include <vector>
 #include "USBRawCommunicator.hpp"
+#include "Interface.hpp"
 
 using namespace std;
 using std::chrono::duration_cast;
@@ -52,5 +53,9 @@ int main(int argc, char *argv[]) {
 	cout << "killswitch: " << (bState->killSwitch == USBCommands::bridge::ACTIVE ? "active" : "inactive") << endl;
 
 	delete comm;
+
+	bridge::Interface interface;
+
+	interface.motor[bridge::Motor::LEFT].getMotor();
 }
 

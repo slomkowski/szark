@@ -9,12 +9,12 @@
 
 namespace USB {
 
-	USBCommunicator::USBCommunicator() {
+	Communicator::Communicator() {
 		// TODO Auto-generated constructor stub
 
 	}
 
-	USBCommunicator::~USBCommunicator() {
+	Communicator::~Communicator() {
 		// TODO Auto-generated destructor stub
 	}
 

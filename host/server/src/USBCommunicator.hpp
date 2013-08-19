@@ -10,14 +10,28 @@
 
 namespace USB {
 
-	class USBCommunicator {
+	class Communicator {
 	public:
-		USBCommunicator();
-		virtual ~USBCommunicator();
+		Communicator();
+		virtual ~Communicator();
 
 		void sendRequest();
 
 		void receiveRequest();
+	};
+
+	enum class Direction {
+		STOP, FORWARD, BACKWARD
+	};
+
+	class Motor {
+	private:
+		Direction direction;
+		unsigned int speed;
+		unsigned int position;
+		bool setPosition;
+	public:
+		int fase;
 	};
 
 } /* namespace USB */
