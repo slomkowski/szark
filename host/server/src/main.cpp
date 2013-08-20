@@ -17,6 +17,17 @@ using std::chrono::duration_cast;
 using std::chrono::microseconds;
 
 int main(int argc, char *argv[]) {
+	bridge::Interface i;
+
+	i.setLCDText("twoja star");
+	i.setKillSwitch(true);
+	i.setKillSwitch(false);
+
+	i.sendChanges();
+}
+
+/*
+int main(int argc, char *argv[]) {
 	auto comm = new USB::RawCommunicator();
 
 	string test = "hello world ala ma kota";
@@ -57,5 +68,5 @@ int main(int argc, char *argv[]) {
 	bridge::Interface interface;
 
 	interface.motor[bridge::Motor::LEFT].getMotor();
-}
+}*/
 

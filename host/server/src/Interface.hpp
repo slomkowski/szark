@@ -102,6 +102,9 @@ namespace bridge {
 		 */
 		bool isButtonPressed(Button button);
 
+		// TODO documentation and rename
+		void sendChanges();
+
 		class MotorClass {
 		public:
 			class SingleMotor: boost::noncopyable {
