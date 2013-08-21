@@ -75,8 +75,7 @@ static void batteryDisplayHeaderFunction() {
 	lcd::puts(text);
 }
 
-//#pragma GCC diagnostic ignored "-Wunused-parameter"
-static void expanderSubMenuFunction(bool isFirstCall, uint8_t currentPosition, buttons::Buttons *buttonsState) {
+static void expanderSubMenuFunction(bool isFirstCall, uint8_t, buttons::Buttons *buttonsState) {
 	if (not isFirstCall and i2c::getLastCommandStatus() != i2c::OK) {
 		lcd::putsp(PSTR("Could not connect to expander!"));
 		return;
