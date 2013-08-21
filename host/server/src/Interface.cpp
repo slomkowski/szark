@@ -29,6 +29,8 @@ namespace bridge {
 	const int VOLTAGE_ARRAY_SIZE = 5;
 	const int CURRENT_ARRAY_SIZE = 5;
 
+	const uint8_t MOTOR_DRIVER_MAX_SPEED = 12;
+
 	const string KILLSWITCH_STRING = "killswitch";
 
 	class DataHolder {
@@ -169,14 +171,6 @@ namespace bridge {
 	}
 
 	bool Interface::isKillSwitchActive() {
-		USBCommands::bridge::State test;
-		test.rawCurrent = 0xffff;
-		test.rawVoltage = 0xeeee;
-
-		impl->requests["bridge"] = DataHolder::create(USBCommands::BRIDGE_GET_STATE, test);
-
-		impl->requests["bridge"]->getPayload<USBCommands::bridge::State>()->rawVoltage = 0xaaaa;
-
 		return impl->killSwitchActive;
 	}
 
@@ -214,17 +208,51 @@ namespace bridge {
 		}
 	}
 
-	void Interface::MotorClass::SingleMotor::setSpeed(unsigned int speed) {
+	string Interface::MotorClass::SingleMotor::initStructure() {
 		string key = "motor_" + to_string(int(getMotor()));
+		if (impl->requests.find(key) == impl->requests.end()) {
+			USBCommands::motor::SpecificMotorState mState;
+			switch (getMotor()) {
+			case Motor::LEFT:
+				mState.motor = motor::MOTOR1;
+				break;
+			case Motor::RIGHT:
+				mState.motor = motor::MOTOR2;
+				break;
+			};
+			mState.direction = motor::STOP;
+			mState.speed = 0;
+			impl->requests[key] = DataHolder::create(USBCommands::MOTOR_DRIVER_SET, mState);
+		}
+		return key;
+	}
 
-		/*if (impl->requests.find(key) == impl->requests.end()) {
+	void Interface::MotorClass::SingleMotor::setSpeed(unsigned int speed) {
 
-		 }*/
+		string key = initStructure();
 
-		//impl->requests[key]
+		impl->requests[key]->getPayload<USBCommands::motor::SpecificMotorState>()->speed =
+			speed <= MOTOR_DRIVER_MAX_SPEED ? speed : MOTOR_DRIVER_MAX_SPEED;
 	}
 
 	void Interface::MotorClass::SingleMotor::setDirection(Direction direction) {
+		string key = initStructure();
+
+		motor::Direction dir;
+
+		switch (direction) {
+		case Direction::STOP:
+			dir = motor::STOP;
+			break;
+		case Direction::FORWARD:
+			dir = motor::FORWARD;
+			break;
+		case Direction::BACKWARD:
+			dir = motor::BACKWARD;
+			break;
+		};
+
+		impl->requests[key]->getPayload<USBCommands::motor::SpecificMotorState>()->direction = dir;
 	}
 
 	void Interface::MotorClass::brake() {
@@ -233,6 +261,7 @@ namespace bridge {
 	}
 
 	void Interface::ArmClass::SingleJoint::setSpeed(unsigned int speed) {
+
 	}
 
 	void Interface::ArmClass::SingleJoint::setDirection(Direction direction) {

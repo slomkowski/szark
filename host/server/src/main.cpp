@@ -28,7 +28,9 @@ int main(int argc, char *argv[]) {
 	i.setKillSwitch(false);
 	i.setKillSwitch(true);
 	i.isKillSwitchActive();
-	i.motor[bridge::Motor::LEFT].setSpeed(66);
+	i.motor[bridge::Motor::LEFT].setSpeed(8);
+	i.motor[bridge::Motor::LEFT].setDirection(bridge::Direction::BACKWARD);
+	i.motor[bridge::Motor::RIGHT].setSpeed(7);
 
 	i.sendChanges();
 

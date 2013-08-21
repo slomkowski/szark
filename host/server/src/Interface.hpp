@@ -144,6 +144,9 @@ namespace bridge {
 					this->motor = motor;
 					this->impl = impl;
 				}
+
+				std::string initStructure();
+
 				Motor motor;
 				Implementation *impl;
 
