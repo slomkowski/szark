@@ -19,11 +19,21 @@ using std::chrono::microseconds;
 int main(int argc, char *argv[]) {
 	bridge::Interface i;
 
-	i.setLCDText("twoja star");
+	typedef std::chrono::high_resolution_clock Clock;
+
+	auto t1 = Clock::now();
+
+	//i.setLCDText("twoja star");
 	i.setKillSwitch(true);
 	i.setKillSwitch(false);
+	i.setKillSwitch(true);
+	i.isKillSwitchActive();
+	i.motor[bridge::Motor::LEFT].setSpeed(66);
 
 	i.sendChanges();
+
+	auto t2 = Clock::now();
+	std::cout << "timer: " << duration_cast<microseconds>(t2 - t1).count() << " us\n";
 }
 
 /*
