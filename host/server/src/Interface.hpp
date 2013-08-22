@@ -57,8 +57,9 @@ namespace bridge {
 	 * Devices connected to the I2C expander. The enum numbers must match the bit number of the pin the device
 	 * is connected.
 	 */
-	enum class ExpanderDevice {
-		LIGHT_CAMERA = 3, LIGHT_LEFT = 2, LIGHT_RIGHT = 1
+	enum class ExpanderDevice
+		: uint8_t {
+			LIGHT_CAMERA = 3, LIGHT_LEFT = 2, LIGHT_RIGHT = 1
 	};
 
 	struct Implementation;

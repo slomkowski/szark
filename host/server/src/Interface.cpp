@@ -110,6 +110,8 @@ namespace bridge {
 		unordered_map<string, std::shared_ptr<DataHolder>> requests;
 
 		bool killSwitchActive;
+
+		uint8_t expanderByte = 0;
 	};
 
 	Interface::Interface() :
@@ -343,6 +345,13 @@ namespace bridge {
 	}
 
 	void Interface::ExpanderClass::Device::setEnabled(bool enabled) {
+		if (enabled) {
+			impl->expanderByte |= (1 << int(device));
+		} else {
+			impl->expanderByte &= ~(1 << int(device));
+		}
+
+		impl->requests["expander"] = DataHolder::create(USBCommands::EXPANDER_SET, impl->expanderByte);
 	}
 
 } /* namespace bridge */

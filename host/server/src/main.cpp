@@ -32,6 +32,7 @@ int main(int argc, char *argv[]) {
 	i.motor[bridge::Motor::LEFT].setDirection(bridge::Direction::BACKWARD);
 	i.motor[bridge::Motor::RIGHT].setSpeed(7);
 	i.arm[bridge::Joint::ELBOW].setPosition(24);
+	i.expander[bridge::ExpanderDevice::LIGHT_RIGHT].setEnabled(true);
 
 	i.sendChanges();
 
