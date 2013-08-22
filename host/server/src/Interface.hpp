@@ -183,7 +183,7 @@ namespace bridge {
 				Direction getDirection();
 				void setDirection(Direction direction);
 
-				Joint getJoint() {
+				Joint getJoint() const {
 					return joint;
 				}
 
@@ -194,6 +194,8 @@ namespace bridge {
 					this->joint = joint;
 					this->impl = impl;
 				}
+
+				std::string initStructure();
 
 				Joint joint;
 				Implementation *impl;

@@ -30,6 +30,10 @@ namespace bridge {
 	const int CURRENT_ARRAY_SIZE = 5;
 
 	const uint8_t MOTOR_DRIVER_MAX_SPEED = 12;
+	const unsigned int ARM_DRIVER_MAX_SPEED = 255;
+
+	map<bridge::Joint, unsigned int> ARM_DRIVER_MAX_POSITION = { { Joint::ELBOW, 105 }, { Joint::SHOULDER, 79 }, {
+		Joint::WRIST, 95 }, { Joint::GRIPPER, 255 } };
 
 	const string KILLSWITCH_STRING = "killswitch";
 
@@ -260,20 +264,82 @@ namespace bridge {
 		motors[Motor::RIGHT]->setDirection(Direction::STOP);
 	}
 
-	void Interface::ArmClass::SingleJoint::setSpeed(unsigned int speed) {
+	string Interface::ArmClass::SingleJoint::initStructure() {
+		string key = "arm_" + to_string(int(getJoint()));
+		if (impl->requests.find(key) == impl->requests.end()) {
+			USBCommands::arm::JointState jState;
 
+			switch (getJoint()) {
+			case Joint::ELBOW:
+				jState.motor = arm::ELBOW;
+				break;
+			case Joint::SHOULDER:
+				jState.motor = arm::SHOULDER;
+				break;
+			case Joint::WRIST:
+				jState.motor = arm::WRIST;
+				break;
+			case Joint::GRIPPER:
+				jState.motor = arm::GRIPPER;
+				break;
+			};
+
+			jState.direction = arm::STOP;
+			jState.speed = 0;
+			jState.position = 0;
+			jState.setPosition = false;
+
+			impl->requests[key] = DataHolder::create(USBCommands::ARM_DRIVER_SET, jState);
+		}
+
+		return key;
+	}
+
+	void Interface::ArmClass::SingleJoint::setSpeed(unsigned int speed) {
+		string key = initStructure();
+
+		impl->requests[key]->getPayload<USBCommands::arm::JointState>()->speed =
+			speed <= ARM_DRIVER_MAX_SPEED ? speed : ARM_DRIVER_MAX_SPEED;
 	}
 
 	void Interface::ArmClass::SingleJoint::setDirection(Direction direction) {
+		string key = initStructure();
+
+		arm::Direction dir;
+
+		switch (direction) {
+		case Direction::STOP:
+			dir = arm::STOP;
+			break;
+		case Direction::FORWARD:
+			dir = arm::FORWARD;
+			break;
+		case Direction::BACKWARD:
+			dir = arm::BACKWARD;
+			break;
+		};
+
+		auto state = impl->requests[key]->getPayload<USBCommands::arm::JointState>();
+		state->direction = dir;
+		state->setPosition = false;
 	}
 
 	void Interface::ArmClass::SingleJoint::setPosition(unsigned int position) {
+		string key = initStructure();
+
+		auto state = impl->requests[key]->getPayload<USBCommands::arm::JointState>();
+
+		state->position =
+			position <= ARM_DRIVER_MAX_POSITION[getJoint()] ? position : ARM_DRIVER_MAX_POSITION[getJoint()];
+		state->setPosition = true;
 	}
 
 	void Interface::ArmClass::brake() {
+		impl->requests["arm_addon"] = DataHolder::create(USBCommands::ARM_DRIVER_SET, USBCommands::arm::BRAKE);
 	}
 
 	void Interface::ArmClass::calibrate() {
+		impl->requests["arm_addon"] = DataHolder::create(USBCommands::ARM_DRIVER_SET, USBCommands::arm::CALIBRATE);
 	}
 
 	void Interface::ExpanderClass::Device::setEnabled(bool enabled) {

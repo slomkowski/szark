@@ -31,6 +31,7 @@ int main(int argc, char *argv[]) {
 	i.motor[bridge::Motor::LEFT].setSpeed(8);
 	i.motor[bridge::Motor::LEFT].setDirection(bridge::Direction::BACKWARD);
 	i.motor[bridge::Motor::RIGHT].setSpeed(7);
+	i.arm[bridge::Joint::ELBOW].setPosition(24);
 
 	i.sendChanges();
 
