@@ -174,10 +174,30 @@ void usb::executeCommandsFromUSB() {
 		}
 			break;
 		case USBCommands::ARM_DRIVER_SET:
-// TODO implement arm driver set
+			if (inBuff.data[inBuff.currentPosition] == USBCommands::arm::BRAKE) {
+				arm::brake();
+				inBuff.currentPosition++;
+			} else if (inBuff.data[inBuff.currentPosition] == USBCommands::arm::CALIBRATE) {
+				arm::calibrate();
+				inBuff.currentPosition++;
+			} else {
+				auto joint = reinterpret_cast<USBCommands::arm::JointState*>(&inBuff.data[inBuff.currentPosition]);
+				arm::setSpeed(static_cast<arm::Motor>(joint->motor), joint->speed);
+				if (joint->setPosition) {
+					arm::setPosition(static_cast<arm::Motor>(joint->motor), joint->position);
+				} else {
+					arm::setDirection(static_cast<arm::Motor>(joint->motor),
+						static_cast<arm::Direction>(joint->direction));
+				}
+				inBuff.currentPosition += sizeof(USBCommands::arm::JointState);
+			}
 			break;
-		case USBCommands::MOTOR_DRIVER_SET:
-// TODO implement motor driver set
+		case USBCommands::MOTOR_DRIVER_SET: {
+			auto m = reinterpret_cast<USBCommands::motor::SpecificMotorState*>(&inBuff.data[inBuff.currentPosition]);
+			motor::setSpeed(static_cast<motor::Motor>(m->motor), m->speed);
+			motor::setDirection(static_cast<motor::Motor>(m->motor), static_cast<motor::Direction>(m->direction));
+			inBuff.currentPosition += sizeof(USBCommands::motor::SpecificMotorState);
+		}
 			break;
 		case USBCommands::BRIDGE_LCD_SET:
 			lcd::clrscr();
