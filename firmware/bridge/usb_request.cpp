@@ -26,7 +26,7 @@ extern "C" {
 #include "usb-commands.h"
 
 struct Buffer {
-	uint8_t data[64];
+	uint8_t data[90];
 	uint8_t currentPosition;
 	uint8_t length;
 
@@ -37,7 +37,8 @@ struct Buffer {
 
 void Buffer::push(void *data, uint8_t length) {
 	for (uint8_t i = 0; i < length; i++) {
-		this->data[currentPosition++] = *((uint8_t*) data + i);
+		this->data[currentPosition] = *((uint8_t*) data + i);
+		currentPosition++;
 	}
 	this->length += length;
 }
@@ -139,38 +140,33 @@ void usb::executeCommandsFromUSB() {
 			expander::setValue(inBuff.data[inBuff.currentPosition]);
 			inBuff.currentPosition++;
 			break;
+		case USBCommands::ARM_DRIVER_GET_GENERAL_STATE: {
+			USBCommands::arm::GeneralState general;
+			general.isCalibrated = arm::isCalibrated();
+			general.mode = arm::getMode();
+			outBuff.push(&general, sizeof(USBCommands::arm::GeneralState));
+		}
+			break;
 		case USBCommands::ARM_DRIVER_GET: {
-			{
-				USBCommands::arm::GeneralState general;
-				general.isCalibrated = arm::isCalibrated();
-				general.mode = arm::getMode();
-				outBuff.push(&general, sizeof(USBCommands::arm::GeneralState));
-			}
 			USBCommands::arm::JointState joint;
-
-			const arm::Motor motorTab[] = { arm::GRIPPER, arm::ELBOW, arm::WRIST, arm::SHOULDER };
-
-			for (auto &m : motorTab) {
-				joint.motor = m;
-				joint.direction = arm::getDirection(m);
-				joint.speed = arm::getSpeed(m);
-				joint.position = arm::getPosition(m);
-				joint.setPosition = false;
-				outBuff.push(&joint, sizeof(USBCommands::arm::JointState));
-			}
+			arm::Motor m = static_cast<arm::Motor>(inBuff.data[inBuff.currentPosition]);
+			joint.motor = m;
+			joint.direction = arm::getDirection(m);
+			joint.speed = arm::getSpeed(m);
+			joint.position = arm::getPosition(m);
+			joint.setPosition = false;
+			outBuff.push(&joint, sizeof(USBCommands::arm::JointState));
+			inBuff.currentPosition++;
 		}
 			break;
 		case USBCommands::MOTOR_DRIVER_GET: {
 			USBCommands::motor::SpecificMotorState mState;
-
-			const motor::Motor motorTab[] = { motor::LEFT, motor::RIGHT };
-
-			for (auto &m : motorTab) {
-				mState.motor = m;
-				mState.speed = motor::getSpeed(m);
-				mState.direction = motor::getDirection(m);
-				outBuff.push(&mState, sizeof(USBCommands::motor::SpecificMotorState));
-			}
+			motor::Motor m = static_cast<motor::Motor>(inBuff.data[inBuff.currentPosition]);
+			mState.motor = m;
+			mState.speed = motor::getSpeed(m);
+			//mState.direction = motor::getDirection(m);
+			outBuff.push(&mState, sizeof(USBCommands::motor::SpecificMotorState));
+			inBuff.currentPosition++;
 		}
 			break;
 		case USBCommands::ARM_DRIVER_SET:
