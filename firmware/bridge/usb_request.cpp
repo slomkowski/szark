@@ -61,11 +61,11 @@ usbMsgLen_t usbFunctionSetup(uchar data[8]) {
 		return 0;
 	}
 
-	usbMsgPtr = uint16_t(&outBuff.data);
 	usbMsgLen_t len;
 
 	switch (static_cast<USBCommands::USBRequest>(rq->bRequest)) {
 	case USBCommands::USB_READ:
+		usbMsgPtr = uint16_t(&outBuff.data);
 		len = outBuff.length;
 		if (len > rq->wLength.word) {
 			len = rq->wLength.word;
@@ -195,11 +195,14 @@ void usb::executeCommandsFromUSB() {
 			inBuff.currentPosition += sizeof(USBCommands::motor::SpecificMotorState);
 		}
 			break;
-		case USBCommands::BRIDGE_LCD_SET:
+		case USBCommands::BRIDGE_LCD_SET: {
+			uint8_t length = inBuff.data[inBuff.currentPosition];
+			char* text = reinterpret_cast<char*>(&(inBuff.data[inBuff.currentPosition + 1]));
+
 			lcd::clrscr();
-			lcd::puts(reinterpret_cast<char*>(&(inBuff.data[inBuff.currentPosition + 1])),
-				inBuff.data[inBuff.currentPosition]);
-			inBuff.currentPosition += inBuff.data[inBuff.currentPosition] + 1;
+			lcd::puts(text, length);
+			inBuff.currentPosition += length + 1;
+		}
 			break;
 		};
 	}
