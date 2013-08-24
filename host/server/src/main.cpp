@@ -10,14 +10,14 @@
 #include <chrono>
 #include <vector>
 #include "USBRawCommunicator.hpp"
-#include "Interface.hpp"
+#include "InterfaceManager.hpp"
 
 using namespace std;
 using std::chrono::duration_cast;
 using std::chrono::microseconds;
 
 int main(int argc, char *argv[]) {
-	bridge::Interface i;
+	bridge::InterfaceManager i;
 
 	typedef std::chrono::high_resolution_clock Clock;
 
@@ -26,15 +26,15 @@ int main(int argc, char *argv[]) {
 	//i.setLCDText("twoja star");
 	i.setKillSwitch(true);
 	i.setKillSwitch(false);
-	i.setKillSwitch(true);
 	i.isKillSwitchActive();
+	//i.arm.calibrate();
 	i.motor[bridge::Motor::LEFT].setSpeed(8);
-	i.motor[bridge::Motor::LEFT].setDirection(bridge::Direction::BACKWARD);
-	i.motor[bridge::Motor::RIGHT].setSpeed(7);
-	i.arm[bridge::Joint::ELBOW].setPosition(24);
-	i.expander[bridge::ExpanderDevice::LIGHT_RIGHT].setEnabled(true);
-
-	i.sendChanges();
+	i.motor[bridge::Motor::LEFT].setDirection(bridge::Direction::STOP);
+	i.expander[bridge::ExpanderDevice::LIGHT_LEFT].setEnabled(false);
+	i.arm[bridge::Joint::ELBOW].setDirection(bridge::Direction::BACKWARD);
+	i.arm[bridge::Joint::ELBOW].setSpeed(70);
+	i.setLCDText("hello world ala ma kota");
+	i.arm.calibrate();
 
 	auto t2 = Clock::now();
 	std::cout << "timer: " << duration_cast<microseconds>(t2 - t1).count() << " us\n";

@@ -14,7 +14,7 @@ namespace USBCommands {
 
 	enum Request
 		: uint8_t {
-			BRIDGE_LCD_SET = 1,
+			BRIDGE_LCD_SET = 200,
 		BRIDGE_GET_STATE,
 		BRIDGE_SET_KILLSWITCH,
 		MOTOR_DRIVER_SET,

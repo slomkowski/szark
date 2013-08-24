@@ -7,14 +7,10 @@
 
 #include <cstdint>
 #include <vector>
-#include <unordered_map>
-#include <typeinfo>
-#include <cstring>
-
-#include <boost/circular_buffer.hpp>
-#include <boost/utility/enable_if.hpp>
+#include <map>
 
 #include "Interface.hpp"
+#include "DataHolder.hpp"
 
 #include "usb-commands.h"
 
@@ -37,111 +33,38 @@ namespace bridge {
 
 	const string KILLSWITCH_STRING = "killswitch";
 
-	class DataHolder {
-	private:
-		uint8_t* data = nullptr;
-		unsigned int length = 0;
-
-		void initData(USBCommands::Request request, unsigned int dataSize = 0) {
-			length = dataSize + 1;
-			data = new uint8_t[length];
-			data[0] = request;
-		}
-	public:
-		DataHolder(USBCommands::Request request) {
-			initData(request);
-		}
-
-		~DataHolder() {
-			delete[] data;
-		}
-
-		template<typename TYPE,
-			typename = typename std::enable_if<not std::is_same<TYPE, std::vector<uint8_t>>::value>::type>
-		DataHolder(USBCommands::Request request, TYPE& structure) {
-			initData(request, sizeof(TYPE));
-
-			std::memcpy(data + 1, &structure, sizeof(TYPE));
-		}
-
-		DataHolder(USBCommands::Request request, const std::vector<uint8_t>& arr) {
-			initData(request, arr.size());
-
-			unsigned int idx = 1;
-			for (auto& val : arr) {
-				data[idx] = val;
-				idx++;
-			}
-		}
-
-		template<typename ... ARGS> static std::shared_ptr<DataHolder> create(ARGS ... args) {
-			return std::shared_ptr<DataHolder>(new DataHolder(args...));
-		}
-
-		uint8_t* getPlainData() {
-			return data;
-		}
-
-		template<typename TYPE> TYPE* getPayload() {
-			return reinterpret_cast<TYPE*>(data + 1);
-		}
-
-		USBCommands::Request getRequest() {
-			return static_cast<USBCommands::Request>(data[0]);
-		}
-
-		unsigned int getSize() {
-			return length;
-		}
-
-		void appendTo(std::vector<uint8_t>& vec) {
-			vec.insert(vec.end(), data, data + length);
-		}
-	};
-
-	struct Implementation: noncopyable {
-		unique_ptr<circular_buffer<unsigned int>> rawVoltage;
-		unique_ptr<circular_buffer<unsigned int>> rawCurrent;
-
-		string lcdText;
-
-		map<Button, bool> buttons;
-
-		unordered_map<string, std::shared_ptr<DataHolder>> requests;
-
-		bool killSwitchActive;
-
-		uint8_t expanderByte = 0;
-	};
-
 	Interface::Interface() :
-		impl(new Implementation), expander(*(new ExpanderClass(impl))), motor(*(new MotorClass(impl))), arm(
-			*(new ArmClass(impl))) {
-		impl->rawVoltage.reset(new circular_buffer<unsigned int>(VOLTAGE_ARRAY_SIZE));
-		impl->rawCurrent.reset(new circular_buffer<unsigned int>(CURRENT_ARRAY_SIZE));
+		expander(*(new ExpanderClass(requests))), motor(*(new MotorClass(requests))), arm(*(new ArmClass(requests))) {
 
+		rawVoltage.reset(new circular_buffer<unsigned int>(VOLTAGE_ARRAY_SIZE));
+		rawCurrent.reset(new circular_buffer<unsigned int>(CURRENT_ARRAY_SIZE));
+
+		extDevListeners.push_back(this);
+		extDevListeners.push_back(&arm);
+		extDevListeners.push_back(&expander);
+		for (auto d : arm.joints) {
+			extDevListeners.push_back(d.second.get());
+		}
+		for (auto d : motor.motors) {
+			extDevListeners.push_back(d.second.get());
+		}
+
+		killSwitchActive = true;
+		setKillSwitch(true);
 	}
 
 	Interface::~Interface() {
 		delete &arm;
 		delete &motor;
 		delete &expander;
-
-		delete impl;
 	}
 
 	double Interface::getVoltage() {
-		return VOLTAGE_FACTOR * accumulate(impl->rawVoltage->begin(), impl->rawVoltage->end(), 0)
-			/ impl->rawVoltage->size();
+		return VOLTAGE_FACTOR * accumulate(rawVoltage->begin(), rawVoltage->end(), 0) / rawVoltage->size();
 	}
 
 	double Interface::getCurrent() {
-		return CURRENT_FACTOR * accumulate(impl->rawCurrent->begin(), impl->rawCurrent->end(), 0)
-			/ impl->rawCurrent->size();
-	}
-
-	std::string Interface::getLCDText() {
-		return impl->lcdText;
+		return CURRENT_FACTOR * accumulate(rawCurrent->begin(), rawCurrent->end(), 0) / rawCurrent->size();
 	}
 
 	void Interface::setLCDText(std::string text) {
@@ -153,11 +76,11 @@ namespace bridge {
 			newString = text;
 		}
 
-		if (newString == impl->lcdText) {
+		if (newString == lcdText) {
 			return;
 		}
 
-		impl->lcdText = newString;
+		lcdText = newString;
 
 		vector<uint8_t> data = { uint8_t(newString.length()) };
 
@@ -165,7 +88,7 @@ namespace bridge {
 			data.push_back(character);
 		}
 
-		impl->requests["lcdtext"] = DataHolder::create(USBCommands::BRIDGE_LCD_SET, data);
+		requests["lcdtext"] = DataHolder::create(USBCommands::BRIDGE_LCD_SET, data);
 	}
 
 	void Interface::setKillSwitch(bool active) {
@@ -173,52 +96,24 @@ namespace bridge {
 		if (active) {
 			state = USBCommands::bridge::ACTIVE;
 		}
-		impl->requests[KILLSWITCH_STRING] = DataHolder::create(USBCommands::BRIDGE_SET_KILLSWITCH, state);
-	}
-
-	bool Interface::isKillSwitchActive() {
-		return impl->killSwitchActive;
+		requests[KILLSWITCH_STRING] = DataHolder::create(USBCommands::BRIDGE_SET_KILLSWITCH, state);
 	}
 
 	bool Interface::isButtonPressed(Button button) {
-		return impl->buttons[button];
+		return buttons[button];
 	}
 
-	void Interface::sendChanges() {
-		vector<uint8_t> concatenated;
-
-		// ensure that disabling kill switch is the first command
-		auto killSwitchRequest = impl->requests.find(KILLSWITCH_STRING);
-		if (killSwitchRequest != impl->requests.end()
-			and killSwitchRequest->second->getPlainData()[1] == USBCommands::bridge::INACTIVE) {
-			killSwitchRequest->second->appendTo(concatenated);
-		}
-
-		for (auto& request : impl->requests) {
-			if (request.first == KILLSWITCH_STRING) {
-				continue;
-			}
-
-			cout << request.first << ": " << request.second->getSize() << endl;
-			request.second->appendTo(concatenated);
-		}
-
-		if (killSwitchRequest != impl->requests.end()
-			and killSwitchRequest->second->getPlainData()[1] == USBCommands::bridge::ACTIVE) {
-			killSwitchRequest->second->appendTo(concatenated);
-		}
-
-		cout << concatenated.size() << " " << concatenated.capacity() << endl;
-		for (unsigned int i = 0; i < concatenated.size(); i++) {
-			cout << i << "i: " << (int) concatenated[i] << endl;
-		}
+	void Interface::MotorClass::SingleMotor::onKillSwitchActivated() {
+		power = 0;
+		programmedSpeed = 0;
+		direction = Direction::STOP;
 	}
 
 	string Interface::MotorClass::SingleMotor::initStructure() {
-		string key = "motor_" + to_string(int(getMotor()));
-		if (impl->requests.find(key) == impl->requests.end()) {
+		string key = "motor_" + to_string(int(motor));
+		if (requests.find(key) == requests.end()) {
 			USBCommands::motor::SpecificMotorState mState;
-			switch (getMotor()) {
+			switch (motor) {
 			case Motor::LEFT:
 				mState.motor = motor::MOTOR1;
 				break;
@@ -228,7 +123,7 @@ namespace bridge {
 			};
 			mState.direction = motor::STOP;
 			mState.speed = 0;
-			impl->requests[key] = DataHolder::create(USBCommands::MOTOR_DRIVER_SET, mState);
+			requests[key] = DataHolder::create(USBCommands::MOTOR_DRIVER_SET, mState);
 		}
 		return key;
 	}
@@ -237,8 +132,9 @@ namespace bridge {
 
 		string key = initStructure();
 
-		impl->requests[key]->getPayload<USBCommands::motor::SpecificMotorState>()->speed =
-			speed <= MOTOR_DRIVER_MAX_SPEED ? speed : MOTOR_DRIVER_MAX_SPEED;
+		programmedSpeed = speed <= MOTOR_DRIVER_MAX_SPEED ? speed : MOTOR_DRIVER_MAX_SPEED;
+
+		requests[key]->getPayload<USBCommands::motor::SpecificMotorState>()->speed = programmedSpeed;
 	}
 
 	void Interface::MotorClass::SingleMotor::setDirection(Direction direction) {
@@ -258,7 +154,7 @@ namespace bridge {
 			break;
 		};
 
-		impl->requests[key]->getPayload<USBCommands::motor::SpecificMotorState>()->direction = dir;
+		requests[key]->getPayload<USBCommands::motor::SpecificMotorState>()->direction = dir;
 	}
 
 	void Interface::MotorClass::brake() {
@@ -266,12 +162,17 @@ namespace bridge {
 		motors[Motor::RIGHT]->setDirection(Direction::STOP);
 	}
 
+	void Interface::ArmClass::SingleJoint::onKillSwitchActivated() {
+		direction = Direction::STOP;
+		speed = 0;
+	}
+
 	string Interface::ArmClass::SingleJoint::initStructure() {
-		string key = "arm_" + to_string(int(getJoint()));
-		if (impl->requests.find(key) == impl->requests.end()) {
+		string key = "arm_" + to_string(int(joint));
+		if (requests.find(key) == requests.end()) {
 			USBCommands::arm::JointState jState;
 
-			switch (getJoint()) {
+			switch (joint) {
 			case Joint::ELBOW:
 				jState.motor = arm::ELBOW;
 				break;
@@ -291,7 +192,7 @@ namespace bridge {
 			jState.position = 0;
 			jState.setPosition = false;
 
-			impl->requests[key] = DataHolder::create(USBCommands::ARM_DRIVER_SET, jState);
+			requests[key] = DataHolder::create(USBCommands::ARM_DRIVER_SET, jState);
 		}
 
 		return key;
@@ -300,7 +201,7 @@ namespace bridge {
 	void Interface::ArmClass::SingleJoint::setSpeed(unsigned int speed) {
 		string key = initStructure();
 
-		impl->requests[key]->getPayload<USBCommands::arm::JointState>()->speed =
+		requests[key]->getPayload<USBCommands::arm::JointState>()->speed =
 			speed <= ARM_DRIVER_MAX_SPEED ? speed : ARM_DRIVER_MAX_SPEED;
 	}
 
@@ -321,7 +222,7 @@ namespace bridge {
 			break;
 		};
 
-		auto state = impl->requests[key]->getPayload<USBCommands::arm::JointState>();
+		auto state = requests[key]->getPayload<USBCommands::arm::JointState>();
 		state->direction = dir;
 		state->setPosition = false;
 	}
@@ -329,29 +230,201 @@ namespace bridge {
 	void Interface::ArmClass::SingleJoint::setPosition(unsigned int position) {
 		string key = initStructure();
 
-		auto state = impl->requests[key]->getPayload<USBCommands::arm::JointState>();
+		auto state = requests[key]->getPayload<USBCommands::arm::JointState>();
 
-		state->position =
-			position <= ARM_DRIVER_MAX_POSITION[getJoint()] ? position : ARM_DRIVER_MAX_POSITION[getJoint()];
+		state->position = position <= ARM_DRIVER_MAX_POSITION[joint] ? position : ARM_DRIVER_MAX_POSITION[joint];
 		state->setPosition = true;
 	}
 
 	void Interface::ArmClass::brake() {
-		impl->requests["arm_addon"] = DataHolder::create(USBCommands::ARM_DRIVER_SET, USBCommands::arm::BRAKE);
+		requests["arm_addon"] = DataHolder::create(USBCommands::ARM_DRIVER_SET, USBCommands::arm::BRAKE);
 	}
 
 	void Interface::ArmClass::calibrate() {
-		impl->requests["arm_addon"] = DataHolder::create(USBCommands::ARM_DRIVER_SET, USBCommands::arm::CALIBRATE);
+		requests["arm_addon"] = DataHolder::create(USBCommands::ARM_DRIVER_SET, USBCommands::arm::CALIBRATE);
 	}
 
 	void Interface::ExpanderClass::Device::setEnabled(bool enabled) {
 		if (enabled) {
-			impl->expanderByte |= (1 << int(device));
+			expanderByte |= (1 << int(device));
 		} else {
-			impl->expanderByte &= ~(1 << int(device));
+			expanderByte &= ~(1 << int(device));
 		}
 
-		impl->requests["expander"] = DataHolder::create(USBCommands::EXPANDER_SET, impl->expanderByte);
+		requests["expander"] = DataHolder::create(USBCommands::EXPANDER_SET, expanderByte);
+	}
+
+	bool Interface::ExpanderClass::Device::isEnabled() {
+		return ((1 << int(device)) & expanderByte);
+	}
+
+	void Interface::updateDataStructures(std::vector<USBCommands::Request> getterRequests,
+		std::vector<uint8_t> deviceResponse) {
+
+		unsigned int actualPosition = 0;
+		unsigned int actualRequestPos = 0;
+
+		while (actualPosition < deviceResponse.size()) {
+			for (auto listener : extDevListeners) {
+				unsigned int bytesTaken;
+				bytesTaken = listener->updateFields(getterRequests[actualRequestPos], &deviceResponse[actualPosition]);
+
+				if (bytesTaken > 0) {
+					actualRequestPos++;
+					actualPosition += bytesTaken;
+				}
+			}
+		}
+	}
+
+	unsigned int Interface::ExpanderClass::updateFields(USBCommands::Request request, uint8_t* data) {
+		if (request != USBCommands::EXPANDER_GET) {
+			return 0;
+		}
+
+		expanderByte = data[0];
+
+		return 2;
+	}
+
+	unsigned int Interface::ArmClass::updateFields(USBCommands::Request request, uint8_t* data) {
+		if (request != USBCommands::ARM_DRIVER_GET_GENERAL_STATE) {
+			return 0;
+		}
+
+		auto state = reinterpret_cast<USBCommands::arm::GeneralState*>(data);
+
+		calibrated = state->isCalibrated;
+
+		switch (state->mode) {
+		case arm::DIR:
+			mode = ArmDriverMode::DIRECTIONAL;
+			break;
+		case arm::POS:
+			mode = ArmDriverMode::POSITIONAL;
+			break;
+		case arm::CAL:
+			mode = ArmDriverMode::CALIBRATING;
+			break;
+		};
+
+		return sizeof(USBCommands::arm::GeneralState) + 1;
+	}
+
+	unsigned int Interface::MotorClass::SingleMotor::updateFields(USBCommands::Request request, uint8_t* data) {
+		if (request != USBCommands::MOTOR_DRIVER_GET) {
+			return 0;
+		}
+
+		auto state = reinterpret_cast<USBCommands::motor::SpecificMotorState*>(data);
+
+		Motor motorNo;
+		switch (state->motor) {
+		case motor::MOTOR1:
+			motorNo = Motor::LEFT;
+			break;
+		default:
+			motorNo = Motor::RIGHT;
+			break;
+		}
+
+		if (motorNo != motor) {
+			return 0;
+		}
+
+		/*
+		 switch (state->direction) {
+		 case Direction::STOP:
+		 case motor::BACKWARD:
+		 direction = Direction::FORWARD;
+		 break;
+		 case motor::BACKWARD:
+		 direction = Direction::BACKWARD;
+		 break;
+		 default:
+		 direction = Direction::STOP;
+		 break;
+		 };*/
+
+		power = state->speed;
+
+		return sizeof(USBCommands::motor::SpecificMotorState) + 1;
+	}
+
+	unsigned int Interface::ArmClass::SingleJoint::updateFields(USBCommands::Request request, uint8_t* data) {
+		if (request != USBCommands::ARM_DRIVER_GET) {
+			return 0;
+		}
+
+		auto state = reinterpret_cast<USBCommands::arm::JointState*>(data);
+
+		Joint jointNo;
+
+		switch (state->motor) {
+		case arm::ELBOW:
+			jointNo = Joint::ELBOW;
+			break;
+		case arm::GRIPPER:
+			jointNo = Joint::GRIPPER;
+			break;
+		case arm::WRIST:
+			jointNo = Joint::WRIST;
+			break;
+		case arm::SHOULDER:
+			jointNo = Joint::SHOULDER;
+			break;
+		};
+
+		if (jointNo != joint) {
+			return 0;
+		}
+
+		switch (state->direction) {
+		case arm::FORWARD:
+			direction = Direction::FORWARD;
+			break;
+		case arm::BACKWARD:
+			direction = Direction::BACKWARD;
+			break;
+		default:
+			direction = Direction::STOP;
+			break;
+		};
+
+		speed = state->speed;
+		position = state->position;
+
+		return sizeof(USBCommands::arm::JointState) + 1;
+	}
+
+	unsigned int Interface::updateFields(USBCommands::Request request, uint8_t* data) {
+		if (request != USBCommands::BRIDGE_GET_STATE) {
+			return 0;
+		}
+
+		auto state = reinterpret_cast<USBCommands::bridge::State*>(data);
+
+		killSwitchActive = state->killSwitch == USBCommands::bridge::ACTIVE ? true : false;
+
+		buttons[Button::UP] = state->buttonUp;
+		buttons[Button::DOWN] = state->buttonDown;
+		buttons[Button::ENTER] = state->buttonEnter;
+
+		rawCurrent->push_back(state->rawCurrent);
+		rawVoltage->push_back(state->rawVoltage);
+
+		return sizeof(USBCommands::bridge::State) + 1;
+	}
+
+	void Interface::ArmClass::onKillSwitchActivated() {
+		mode = ArmDriverMode::DIRECTIONAL;
+	}
+
+	void Interface::ExpanderClass::onKillSwitchActivated() {
+	}
+
+	void Interface::onKillSwitchActivated() {
+		lcdText = "";
 	}
 
 } /* namespace bridge */

@@ -13,6 +13,9 @@
 #include <memory>
 
 #include <boost/noncopyable.hpp>
+#include <boost/circular_buffer.hpp>
+
+#include "DataHolder.hpp"
 
 namespace bridge {
 
@@ -62,12 +65,37 @@ namespace bridge {
 			LIGHT_CAMERA = 3, LIGHT_LEFT = 2, LIGHT_RIGHT = 1
 	};
 
-	struct Implementation;
+	typedef std::map<std::string, std::shared_ptr<DataHolder>> RequestMap;
+
+	class IExternalDevice: boost::noncopyable {
+	private:
+		/**
+		 * This method is called when the device returns data requested by sending getters. Each device like arm driver
+		 * and motor driver classes implement it.
+		 * @param request USB request identifier.
+		 * @param data pointer to payload of the request. The concrete method implementation must cast it to its own structure.
+		 * @return number of bytes taken by the message including request. If the request doesn't match,
+		 * return 0.
+		 */
+		virtual unsigned int updateFields(USBCommands::Request request, uint8_t* data) = 0;
+
+		/**
+		 * This method is called when kill switch is activated. It should set internal variables to 0, STOP etc. because
+		 * the external device is made into reset state.
+		 */
+		virtual void onKillSwitchActivated() = 0;
+
+	public:
+		virtual ~IExternalDevice() {
+		}
+
+		friend class Interface;
+	};
 
 	/**
 	 * This class provides full interface to SHARK device. TODO write documentation for interface class
 	 */
-	class Interface: boost::noncopyable {
+	class Interface: public IExternalDevice {
 	public:
 		Interface();
 		virtual ~Interface();
@@ -87,11 +115,13 @@ namespace bridge {
 		 * since bridge doesn't support this functionality. If you haven't send any text previously,
 		 * empty string will be returned.
 		 */
-		std::string getLCDText();
+		std::string getLCDText() {
+			return lcdText;
+		}
 
 		/**
 		 * Sends the text to the on-board LCD display. Up to 32 characters will be displayed, the rest will
-		 * be ignored. Every time you send the new text the old one will be cleared. You can't simply append
+		 * be ignored. Every time you send the new text the old one will be cleared. You can't srequestsy append
 		 * to the existing one.
 		 */
 		void setLCDText(std::string text);
@@ -107,66 +137,132 @@ namespace bridge {
 		/**
 		 * Returns the kill switch state.
 		 */
-		bool isKillSwitchActive();
+		bool isKillSwitchActive() {
+			return killSwitchActive;
+		}
 
 		/**
 		 * Returns true if the given button is pressed.
 		 */
 		bool isButtonPressed(Button button);
 
-		// TODO documentation and rename
-		void sendChanges();
+	protected:
+		RequestMap requests;
+
+		/**
+		 * Fills the interface's structures with data from the device. Because of that the getters like getSpeed()
+		 * could work.
+		 * @param getterRequests vector of getter requests.
+		 * @param deviceResponse response from the device. The responses order must match the request's.
+		 */
+		void updateDataStructures(std::vector<USBCommands::Request> getterRequests,
+			std::vector<uint8_t> deviceResponse);
+
+		/**
+		 * If the kill switch is requested by the user or detected by hardware, this function should be called.
+		 * It basically resets interface getter structures to match the actual state.
+		 */
+		void updateStructsWhenKillSwitchActivated();
 
 	private:
-		Implementation *impl;
+		std::unique_ptr<boost::circular_buffer<unsigned int>> rawVoltage;
+		std::unique_ptr<boost::circular_buffer<unsigned int>> rawCurrent;
+
+		std::string lcdText;
+
+		std::map<Button, bool> buttons;
+
+		bool killSwitchActive;
+
+		std::vector<IExternalDevice*> extDevListeners;
+
+		unsigned int updateFields(USBCommands::Request request, uint8_t* data);
+		void onKillSwitchActivated();
 
 	public:
 
-		class MotorClass {
+		class MotorClass: boost::noncopyable {
 		public:
-			class SingleMotor: boost::noncopyable {
+			class SingleMotor: public IExternalDevice {
 			public:
-				unsigned int getSpeed();
+				/**
+				 * Returns the programmed motor speed.
+				 * @return speed value from 0 to 12
+				 */
+				unsigned int getSpeed() {
+					return programmedSpeed;
+				}
+
+				/**
+				 * Sets the motor speed.
+				 * @param speed value from 0 to 12
+				 */
 				void setSpeed(unsigned int speed);
 
 				/**
 				 * Returns the actual PWM power delivered to the motor.
+				 * @return power in range 0 to 255.
 				 */
-				unsigned int getPower();
+				unsigned int getPower() {
+					return power;
+				}
 
-				Direction getDirection();
+				/**
+				 * Returns actual motor's direction.
+				 * @return Direction::FORWARD, Direction::BACKWARD or Direction::STOP.
+				 */
+				Direction getDirection() {
+					return direction;
+				}
+
+				/**
+				 * Sets the motor's direction.
+				 * @param direction one of Direction::FORWARD, Direction::BACKWARD or Direction::STOP.
+				 */
 				void setDirection(Direction direction);
 
-				Motor getMotor() {
-					return motor;
-				}
 			private:
-				SingleMotor(Implementation* impl, Motor motor) {
-					this->motor = motor;
-					this->impl = impl;
+				SingleMotor(RequestMap& requests, Motor motor) :
+					requests(requests), motor(motor) {
+					direction = Direction::STOP;
+					programmedSpeed = 0;
+					power = 0;
 				}
+
+				unsigned int updateFields(USBCommands::Request request, uint8_t* data);
+
+				void onKillSwitchActivated();
 
 				std::string initStructure();
 
+				RequestMap& requests;
 				Motor motor;
-				Implementation *impl;
+
+				Direction direction;
+				uint8_t programmedSpeed;
+
+				uint8_t power;
 
 				friend class MotorClass;
 			};
 
+			/**
+			 * Convenience operator for getting one of the available motors.
+			 * @param motor
+			 * @return reference to motor class providing manipulation methods.
+			 */
 			SingleMotor& operator[](Motor motor) {
 				return *motors[motor];
 			}
 
-			SingleMotor& m(Motor motor) {
-				return *motors[motor];
-			}
-
+			/**
+			 * Stops all the motors.
+			 */
 			void brake();
 		private:
-			MotorClass(Implementation* impl) {
-				motors[Motor::LEFT] = std::shared_ptr<SingleMotor>(new SingleMotor(impl, Motor::LEFT));
-				motors[Motor::RIGHT] = std::shared_ptr<SingleMotor>(new SingleMotor(impl, Motor::RIGHT));
+			MotorClass(RequestMap& requests) {
+				motors[Motor::LEFT] = std::shared_ptr<SingleMotor>(new SingleMotor(requests, Motor::LEFT));
+				motors[Motor::RIGHT] = std::shared_ptr<SingleMotor>(new SingleMotor(requests, Motor::RIGHT));
 			}
 
 			std::map<Motor, std::shared_ptr<SingleMotor>> motors;
@@ -174,32 +270,53 @@ namespace bridge {
 			friend class Interface;
 		};
 
-		class ArmClass: boost::noncopyable {
+		class ArmClass: public IExternalDevice {
 		public:
-			class SingleJoint: boost::noncopyable {
+			class SingleJoint: public IExternalDevice {
 			public:
-				unsigned int getSpeed();
+				unsigned int getSpeed() {
+					return speed;
+				}
+
 				void setSpeed(unsigned int speed);
 
-				Direction getDirection();
+				Direction getDirection() {
+					return direction;
+				}
+
 				void setDirection(Direction direction);
 
-				Joint getJoint() const {
-					return joint;
+				unsigned int getPosition() {
+					return position;
 				}
 
-				unsigned int getPosition();
+				/**
+				 * Enables arm position mode and sets the position of the joint. Each joint has limited number of positions.
+				 * If the position is limited to the maximal allowed for the given joint.
+				 * @param position value of position in the valid range.
+				 */
 				void setPosition(unsigned int position);
+
 			private:
-				SingleJoint(Implementation* impl, Joint joint) {
-					this->joint = joint;
-					this->impl = impl;
+				SingleJoint(RequestMap& requests, Joint joint) :
+					requests(requests), joint(joint) {
+					speed = 0;
+					direction = Direction::STOP;
+					position = 0;
 				}
+
+				unsigned int updateFields(USBCommands::Request request, uint8_t* data);
+
+				void onKillSwitchActivated();
 
 				std::string initStructure();
 
+				RequestMap& requests;
 				Joint joint;
-				Implementation *impl;
+
+				uint8_t speed;
+				Direction direction;
+				uint8_t position;
 
 				friend class ArmClass;
 			};
@@ -212,38 +329,53 @@ namespace bridge {
 
 			void calibrate();
 
-			bool isCalibrated();
-
-			ArmDriverMode getMode();
-
-		private:
-			ArmClass(Implementation* impl) {
-				this->impl = impl;
-
-				for (auto j : { Joint::ELBOW, Joint::GRIPPER, Joint::SHOULDER, Joint::WRIST }) {
-					joints[j] = std::shared_ptr<SingleJoint>(new SingleJoint(impl, j));
-				}
+			bool isCalibrated() {
+				return calibrated;
 			}
 
+			ArmDriverMode getMode() {
+				return mode;
+			}
+
+		private:
+			ArmClass(RequestMap& requests) :
+				requests(requests) {
+				for (auto j : { Joint::ELBOW, Joint::GRIPPER, Joint::SHOULDER, Joint::WRIST }) {
+					joints[j] = std::shared_ptr<SingleJoint>(new SingleJoint(requests, j));
+				}
+
+				mode = ArmDriverMode::DIRECTIONAL;
+				calibrated = false;
+			}
+
+			unsigned int updateFields(USBCommands::Request request, uint8_t* data);
+			void onKillSwitchActivated();
+
 			std::map<Joint, std::shared_ptr<SingleJoint>> joints;
-			Implementation* impl;
+			RequestMap& requests;
+
+			ArmDriverMode mode;
+
+			bool calibrated;
 
 			friend class Interface;
 		};
 
-		class ExpanderClass: boost::noncopyable {
+		class ExpanderClass: public IExternalDevice {
 		public:
 			class Device: boost::noncopyable {
 			public:
 				void setEnabled(bool enabled);
 				bool isEnabled();
+
 			private:
-				Device(Implementation* impl, ExpanderDevice device) {
-					this->device = device;
-					this->impl = impl;
+				Device(RequestMap& requests, uint8_t& expanderByte, ExpanderDevice device) :
+					requests(requests), device(device), expanderByte(expanderByte) {
 				}
+
+				RequestMap& requests;
 				ExpanderDevice device;
-				Implementation* impl;
+				uint8_t& expanderByte;
 
 				friend class ExpanderClass;
 			};
@@ -253,20 +385,25 @@ namespace bridge {
 			}
 
 		private:
-			ExpanderClass(Implementation* impl) {
+			ExpanderClass(RequestMap& requests) {
 				for (auto d : { ExpanderDevice::LIGHT_CAMERA, ExpanderDevice::LIGHT_LEFT, ExpanderDevice::LIGHT_RIGHT }) {
-					devices[d] = std::shared_ptr<Device>(new Device(impl, d));
+					devices[d] = std::shared_ptr<Device>(new Device(requests, expanderByte, d));
 				}
 			}
+
+			unsigned int updateFields(USBCommands::Request request, uint8_t* data);
+			void onKillSwitchActivated();
+
+			uint8_t expanderByte = 0;
 
 			std::map<ExpanderDevice, std::shared_ptr<Device>> devices;
 
 			friend class Interface;
 		};
 	public:
+		ExpanderClass& expander;
 		MotorClass& motor;
 		ArmClass& arm;
-		ExpanderClass& expander;
 	};
 }
 /* namespace bridge */
