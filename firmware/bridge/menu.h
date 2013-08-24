@@ -13,6 +13,8 @@ namespace menu {
 	void init();
 
 	void poll();
+
+	void goOutOfMenu();
 }
 
 #endif /* MENU_H_ */

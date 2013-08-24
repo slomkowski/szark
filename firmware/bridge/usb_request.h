@@ -10,6 +10,8 @@
 
 namespace usb {
 	void executeCommandsFromUSB();
+
+	bool wasKillSwitchDisabled();
 }
 
 #endif /* USB_REQUEST_H_ */

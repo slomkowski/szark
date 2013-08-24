@@ -34,6 +34,8 @@ int main(void) {
 	buttons::init();
 	menu::init();
 
+	lcd_putsP("SZARK - Loading\n2013 Slomkowski");
+
 	_delay_ms(250);
 
 	usbDeviceConnect();
@@ -49,7 +51,9 @@ int main(void) {
 
 		usb::executeCommandsFromUSB();
 
-		//menu::poll();
-		//delay::waitMs(150);
+		if (not usb::wasKillSwitchDisabled()) {
+			menu::poll();
+			delay::waitMs(150);
+		}
 	}
 }

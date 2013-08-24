@@ -37,7 +37,7 @@ static void setUpTimer() {
 #if TIMER_ENABLE
 	TCNT0 = 0;
 	timerNotClear = true;
-	TCCR0B = (1 << CS01) | (1 << CS00);// clkio/64
+	TCCR0B = (1 << CS02);// | (1 << CS00);// clkio/64
 #endif
 }
 

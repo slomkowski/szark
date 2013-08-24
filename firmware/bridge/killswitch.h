@@ -14,6 +14,8 @@ namespace killswitch {
 	void setActive(bool active);
 
 	bool isActive();
+
+	bool isCausedByHardware();
 }
 
 #endif /* KILLSWITCH_H_ */

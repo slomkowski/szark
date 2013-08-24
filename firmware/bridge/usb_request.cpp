@@ -26,7 +26,7 @@ extern "C" {
 #include "usb-commands.h"
 
 struct Buffer {
-	uint8_t data[90];
+	uint8_t data[90] = { 0xff };
 	uint8_t currentPosition;
 	uint8_t length;
 
@@ -49,6 +49,8 @@ void Buffer::init() {
 }
 
 static Buffer inBuff, outBuff;
+
+static bool killSwitchDisabled = false;
 
 static volatile bool newCommandAvailable = false;
 
@@ -106,7 +108,7 @@ void usb::executeCommandsFromUSB() {
 
 	outBuff.init();
 
-	while (inBuff.currentPosition < inBuff.length - 1) {
+	do {
 		inBuff.currentPosition++;
 		switch (static_cast<USBCommands::Request>(inBuff.data[inBuff.currentPosition - 1])) {
 		case USBCommands::BRIDGE_GET_STATE: {
@@ -125,8 +127,10 @@ void usb::executeCommandsFromUSB() {
 			break;
 		case USBCommands::BRIDGE_SET_KILLSWITCH:
 			if (inBuff.data[inBuff.currentPosition] == USBCommands::bridge::INACTIVE) {
+				killSwitchDisabled = true;
 				killswitch::setActive(false);
 			} else {
+				killSwitchDisabled = false;
 				killswitch::setActive(true);
 			}
 			inBuff.currentPosition++;
@@ -205,8 +209,11 @@ void usb::executeCommandsFromUSB() {
 		}
 			break;
 		};
-	}
+	} while (inBuff.currentPosition < inBuff.length - 1);
 
 	newCommandAvailable = false;
 }
 
+bool usb::wasKillSwitchDisabled() {
+	return killSwitchDisabled;
+}
