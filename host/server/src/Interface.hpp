@@ -62,7 +62,7 @@ namespace bridge {
 	 */
 	enum class ExpanderDevice
 		: uint8_t {
-			LIGHT_CAMERA = 3, LIGHT_LEFT = 2, LIGHT_RIGHT = 1
+			LIGHT_CAMERA = 4, LIGHT_LEFT = 2, LIGHT_RIGHT = 3
 	};
 
 	typedef std::map<std::string, std::shared_ptr<DataHolder>> RequestMap;
@@ -74,7 +74,7 @@ namespace bridge {
 		 * and motor driver classes implement it.
 		 * @param request USB request identifier.
 		 * @param data pointer to payload of the request. The concrete method implementation must cast it to its own structure.
-		 * @return number of bytes taken by the message including request. If the request doesn't match,
+		 * @return number of bytes taken by the message without request. If the request doesn't match,
 		 * return 0.
 		 */
 		virtual unsigned int updateFields(USBCommands::Request request, uint8_t* data) = 0;
@@ -163,6 +163,8 @@ namespace bridge {
 		 * It basically resets interface getter structures to match the actual state.
 		 */
 		void updateStructsWhenKillSwitchActivated();
+
+		const std::string KILLSWITCH_STRING = "killswitch";
 
 	private:
 		std::unique_ptr<boost::circular_buffer<unsigned int>> rawVoltage;

@@ -12,15 +12,18 @@
  */
 
 #include "InterfaceManager.hpp"
-#include "USBRawCommunicator.hpp"
+#include "USBCommunicator.hpp"
+
+#include <cstring>
+#include <thread>
+#include <chrono>
 
 using namespace std;
 
 namespace bridge {
 
 	InterfaceManager::InterfaceManager() {
-		// TODO Auto-generated constructor stub
-
+		counter = 0;
 	}
 
 	InterfaceManager::~InterfaceManager() {
@@ -35,9 +38,10 @@ namespace bridge {
 		getterRequests.push_back(USBCommands::Request::BRIDGE_GET_STATE);
 
 		// if the kill switch is active, devices are in reset state and won't repond anyway
-		if (killSwitchActive) {
-			return requests;
-		}
+		// TODO reenable
+		/*if (killSwitchActive) {
+		 return requests;
+		 }*/
 
 		requests.push_back(USBCommands::Request::MOTOR_DRIVER_GET);
 		getterRequests.push_back(USBCommands::Request::MOTOR_DRIVER_GET);
@@ -77,17 +81,19 @@ namespace bridge {
 	}
 
 	void InterfaceManager::stageChanges() {
+
 		vector<uint8_t> concatenated;
 
+		auto diff = generateDifferentialRequests();
+
 		// ensure that disabling kill switch is the first command
-		/*auto killSwitchRequest = impl->requests.find(KILLSWITCH_STRING);
-		if (killSwitchRequest != impl->requests.end()
+		auto killSwitchRequest = diff.find(KILLSWITCH_STRING);
+		if (killSwitchRequest != diff.end()
 			and killSwitchRequest->second->getPlainData()[1] == USBCommands::bridge::INACTIVE) {
 			killSwitchRequest->second->appendTo(concatenated);
-			impl->killSwitchActive = false;
 		}
 
-		for (auto& request : impl->requests) {
+		for (auto& request : diff) {
 			if (request.first == KILLSWITCH_STRING) {
 				continue;
 			}
@@ -97,22 +103,50 @@ namespace bridge {
 		}
 
 		// append getter requests
-		vector<uint8_t> getterReqs = impl->generateGetRequests(impl->killSwitchActive);
+		auto getterReqs = generateGetRequests(isKillSwitchActive());
+
 		concatenated.insert(concatenated.end(), getterReqs.begin(), getterReqs.end());
 
-		if (killSwitchRequest != impl->requests.end()
+		if (killSwitchRequest != diff.end()
 			and killSwitchRequest->second->getPlainData()[1] == USBCommands::bridge::ACTIVE) {
 			killSwitchRequest->second->appendTo(concatenated);
-			impl->killSwitchActive = true;
 		}
 
-		cout << concatenated.size() << " " << concatenated.capacity() << endl;
-		for (unsigned int i = 0; i < concatenated.size(); i++) {
-			cout << i << "i: " << (int) concatenated[i] << endl;
+		/*cout << concatenated.size() << " " << concatenated.capacity() << endl;
+		 for (unsigned int i = 0; i < concatenated.size(); i++) {
+		 cout << i << "i: " << (int) concatenated[i] << endl;
+		 }*/
+
+		usbComm.sendData(concatenated);
+
+		auto response = usbComm.receiveData();
+
+		/*std::cout << "response size: " << response.size() << std::endl;
+		for (auto req : getterRequests) {
+			std::cout << "re: " << int(req) << std::endl;
+		}
+		for (uint8_t r : response) {
+			std::cout << "r: " << int(r) << std::endl;
 		}*/
 
-		USB::RawCommunicator comm;
-		comm.sendMessage(USBCommands::USB_WRITE, (uint8_t*) &concatenated[0], concatenated.size());
+		updateDataStructures(getterRequests, response);
+
+	}
+
+	RequestMap InterfaceManager::generateDifferentialRequests() {
+		RequestMap diff;
+
+		for (auto& newRequest : requests) {
+			if (previousRequests.find(newRequest.first) == previousRequests.end()
+				or memcmp(previousRequests[newRequest.first]->getPlainData(), newRequest.second->getPlainData(),
+					newRequest.second->getSize())) {
+				diff[newRequest.first] = newRequest.second;
+			}
+		}
+
+		previousRequests = requests;
+
+		return diff;
 	}
 
 } /* namespace bridge */

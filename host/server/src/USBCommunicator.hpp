@@ -1,38 +1,67 @@
 /*
- * USBCommunicator.hpp
+ * RawCommunicator.h
  *
- *  Created on: 18-08-2013
+ *  Created on: 12-08-2013
  *      Author: michal
  */
 
-#ifndef USBCOMMUNICATOR_HPP_
-#define USBCOMMUNICATOR_HPP_
+#ifndef RAWCOMMUNICATOR_H_
+#define RAWCOMMUNICATOR_H_
+
+extern "C" {
+#include <libusb.h>
+}
+#include <stdexcept>
+#include <string>
+#include <cstdint>
+#include <vector>
+#include <boost/noncopyable.hpp>
+
+#include "usb-commands.h"
 
 namespace USB {
 
-	class Communicator {
+	const int VENDOR_ID = 0x16c0;
+	const int DEVICE_ID = 0x05df;
+
+	const std::string VENDOR_NAME = "slomkowski.eu";
+	const std::string DEVICE_NAME = "SZARK Bridge";
+
+	const int BUFFER_SIZE = 128;
+	const int MESSAGE_TIMEOUT = 2000; // ms
+
+	/**
+	 * This exception is thrown if an USB communication error occurs. You can view the error description
+	 * by calling exception.what()
+	 */
+	class CommException: public std::runtime_error {
 	public:
-		Communicator();
-		virtual ~Communicator();
-
-		void sendRequest();
-
-		void receiveRequest();
+		CommException(const std::string& message) :
+			std::runtime_error(message) {
+		}
 	};
 
-	enum class Direction {
-		STOP, FORWARD, BACKWARD
-	};
+	class RawCommunicator: boost::noncopyable {
+	public:
+		RawCommunicator();
+		virtual ~RawCommunicator();
 
-	class Motor {
+		void sendMessage(USBCommands::USBRequest request, unsigned int value);
+
+		void sendMessage(USBCommands::USBRequest request, uint8_t *data, unsigned int length);
+
+		unsigned int recvMessage(USBCommands::USBRequest request, uint8_t *data, unsigned int maxLength);
+
 	private:
-		Direction direction;
-		unsigned int speed;
-		unsigned int position;
-		bool setPosition;
+		libusb_device_handle *devHandle;
+	};
+
+	class Communicator: RawCommunicator {
 	public:
-		int fase;
+		void sendData(const std::vector<uint8_t>& data);
+
+		std::vector<uint8_t> receiveData();
 	};
 
 } /* namespace USB */
-#endif /* USBCOMMUNICATOR_HPP_ */
+#endif /* RAWCOMMUNICATOR_H_ */

@@ -15,6 +15,7 @@
 #define INTERFACEMANAGER_HPP_
 
 #include "Interface.hpp"
+#include "USBCommunicator.hpp"
 
 namespace bridge {
 
@@ -27,7 +28,13 @@ namespace bridge {
 	private:
 		std::vector<uint8_t> generateGetRequests(bool killSwitchActive);
 		std::vector<USBCommands::Request> getterRequests;
-		long counter = 0;
+		long counter;
+
+		USB::Communicator usbComm;
+
+		RequestMap previousRequests;
+
+		RequestMap generateDifferentialRequests();
 	};
 
 } /* namespace bridge */

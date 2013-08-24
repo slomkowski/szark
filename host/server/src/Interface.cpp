@@ -6,6 +6,7 @@
  */
 
 #include <cstdint>
+#include <cmath>
 #include <vector>
 #include <map>
 
@@ -31,13 +32,14 @@ namespace bridge {
 	map<bridge::Joint, unsigned int> ARM_DRIVER_MAX_POSITION = { { Joint::ELBOW, 105 }, { Joint::SHOULDER, 79 }, {
 		Joint::WRIST, 95 }, { Joint::GRIPPER, 255 } };
 
-	const string KILLSWITCH_STRING = "killswitch";
-
 	Interface::Interface() :
 		expander(*(new ExpanderClass(requests))), motor(*(new MotorClass(requests))), arm(*(new ArmClass(requests))) {
 
 		rawVoltage.reset(new circular_buffer<unsigned int>(VOLTAGE_ARRAY_SIZE));
 		rawCurrent.reset(new circular_buffer<unsigned int>(CURRENT_ARRAY_SIZE));
+
+		rawVoltage->push_back(0);
+		rawCurrent->push_back(0);
 
 		extDevListeners.push_back(this);
 		extDevListeners.push_back(&arm);
@@ -60,11 +62,13 @@ namespace bridge {
 	}
 
 	double Interface::getVoltage() {
-		return VOLTAGE_FACTOR * accumulate(rawVoltage->begin(), rawVoltage->end(), 0) / rawVoltage->size();
+		return round(10.0 * VOLTAGE_FACTOR * accumulate(rawVoltage->begin(), rawVoltage->end(), 0) / rawVoltage->size())
+			/ 10.0;
 	}
 
 	double Interface::getCurrent() {
-		return CURRENT_FACTOR * accumulate(rawCurrent->begin(), rawCurrent->end(), 0) / rawCurrent->size();
+		return round(10.0 * CURRENT_FACTOR * accumulate(rawCurrent->begin(), rawCurrent->end(), 0) / rawCurrent->size())
+			/ 10.0;
 	}
 
 	void Interface::setLCDText(std::string text) {
@@ -262,17 +266,21 @@ namespace bridge {
 		std::vector<uint8_t> deviceResponse) {
 
 		unsigned int actualPosition = 0;
-		unsigned int actualRequestPos = 0;
 
-		while (actualPosition < deviceResponse.size()) {
+		for (auto gReq : getterRequests) {
+			unsigned int bytesTaken = 0;
+
 			for (auto listener : extDevListeners) {
-				unsigned int bytesTaken;
-				bytesTaken = listener->updateFields(getterRequests[actualRequestPos], &deviceResponse[actualPosition]);
+				bytesTaken = listener->updateFields(gReq, &deviceResponse[actualPosition]);
 
 				if (bytesTaken > 0) {
-					actualRequestPos++;
 					actualPosition += bytesTaken;
+					break;
 				}
+			}
+
+			if (bytesTaken == 0) {
+				throw runtime_error(string("Request ") + to_string(int(gReq)) + " hasn't been handled by any listener");
 			}
 		}
 	}
@@ -284,7 +292,7 @@ namespace bridge {
 
 		expanderByte = data[0];
 
-		return 2;
+		return 1;
 	}
 
 	unsigned int Interface::ArmClass::updateFields(USBCommands::Request request, uint8_t* data) {
@@ -308,7 +316,7 @@ namespace bridge {
 			break;
 		};
 
-		return sizeof(USBCommands::arm::GeneralState) + 1;
+		return sizeof(USBCommands::arm::GeneralState);
 	}
 
 	unsigned int Interface::MotorClass::SingleMotor::updateFields(USBCommands::Request request, uint8_t* data) {
@@ -348,7 +356,7 @@ namespace bridge {
 
 		power = state->speed;
 
-		return sizeof(USBCommands::motor::SpecificMotorState) + 1;
+		return sizeof(USBCommands::motor::SpecificMotorState);
 	}
 
 	unsigned int Interface::ArmClass::SingleJoint::updateFields(USBCommands::Request request, uint8_t* data) {
@@ -394,7 +402,7 @@ namespace bridge {
 		speed = state->speed;
 		position = state->position;
 
-		return sizeof(USBCommands::arm::JointState) + 1;
+		return sizeof(USBCommands::arm::JointState);
 	}
 
 	unsigned int Interface::updateFields(USBCommands::Request request, uint8_t* data) {
@@ -404,7 +412,12 @@ namespace bridge {
 
 		auto state = reinterpret_cast<USBCommands::bridge::State*>(data);
 
-		killSwitchActive = state->killSwitch == USBCommands::bridge::ACTIVE ? true : false;
+		if (state->killSwitch == USBCommands::bridge::ACTIVE) {
+			killSwitchActive = true;
+			updateStructsWhenKillSwitchActivated();
+		} else {
+			killSwitchActive = false;
+		}
 
 		buttons[Button::UP] = state->buttonUp;
 		buttons[Button::DOWN] = state->buttonDown;
@@ -413,7 +426,7 @@ namespace bridge {
 		rawCurrent->push_back(state->rawCurrent);
 		rawVoltage->push_back(state->rawVoltage);
 
-		return sizeof(USBCommands::bridge::State) + 1;
+		return sizeof(USBCommands::bridge::State);
 	}
 
 	void Interface::ArmClass::onKillSwitchActivated() {
@@ -421,6 +434,12 @@ namespace bridge {
 	}
 
 	void Interface::ExpanderClass::onKillSwitchActivated() {
+	}
+
+	void Interface::updateStructsWhenKillSwitchActivated() {
+		for (auto listener : extDevListeners) {
+			listener->onKillSwitchActivated();
+		}
 	}
 
 	void Interface::onKillSwitchActivated() {

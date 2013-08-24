@@ -9,7 +9,6 @@
 #include <boost/timer.hpp>
 #include <chrono>
 #include <vector>
-#include "USBRawCommunicator.hpp"
 #include "InterfaceManager.hpp"
 
 using namespace std;
@@ -36,51 +35,64 @@ int main(int argc, char *argv[]) {
 	i.setLCDText("hello world ala ma kota");
 	i.arm.calibrate();
 
+	for (int t = 0; t < 150; t++) {
+		 auto tstart = Clock::now();
+
+		i.stageChanges();
+		 auto tstop = Clock::now();
+
+		std::cout << "timer single: " << duration_cast<microseconds>(tstop - tstart).count() << " us\n";
+
+		i.expander[bridge::ExpanderDevice::LIGHT_LEFT].setEnabled(true);
+
+		std::cout << "voltage: " << i.getVoltage() << std::endl;
+	}
+
 	auto t2 = Clock::now();
 	std::cout << "timer: " << duration_cast<microseconds>(t2 - t1).count() << " us\n";
 }
 
 /*
-int main(int argc, char *argv[]) {
-	auto comm = new USB::RawCommunicator();
+ int main(int argc, char *argv[]) {
+ auto comm = new USB::RawCommunicator();
 
-	string test = "hello world ala ma kota";
-	typedef std::chrono::high_resolution_clock Clock;
+ string test = "hello world ala ma kota";
+ typedef std::chrono::high_resolution_clock Clock;
 
-	vector<uint8_t> buffer;
+ vector<uint8_t> buffer;
 
-	buffer.push_back(USBCommands::BRIDGE_GET_STATE);
+ buffer.push_back(USBCommands::BRIDGE_GET_STATE);
 
-	buffer.push_back(USBCommands::BRIDGE_SET_KILLSWITCH);
-	buffer.push_back(USBCommands::bridge::INACTIVE);
+ buffer.push_back(USBCommands::BRIDGE_SET_KILLSWITCH);
+ buffer.push_back(USBCommands::bridge::INACTIVE);
 
-	buffer.push_back(USBCommands::BRIDGE_LCD_SET);
-	buffer.push_back(test.length());
+ buffer.push_back(USBCommands::BRIDGE_LCD_SET);
+ buffer.push_back(test.length());
 
-	for (int i = 0; i <= test.length(); i++) {
-		buffer.push_back(test[i]);
-	}
+ for (int i = 0; i <= test.length(); i++) {
+ buffer.push_back(test[i]);
+ }
 
-	auto t1 = Clock::now();
-	comm->sendMessage(USBCommands::USB_WRITE, (uint8_t*) &buffer[0], buffer.size());
-	auto t2 = Clock::now();
+ auto t1 = Clock::now();
+ comm->sendMessage(USBCommands::USB_WRITE, (uint8_t*) &buffer[0], buffer.size());
+ auto t2 = Clock::now();
 
-	std::cout << "timer: " << duration_cast<microseconds>(t2 - t1).count() << " us\n";
+ std::cout << "timer: " << duration_cast<microseconds>(t2 - t1).count() << " us\n";
 
-	uint8_t buff[100];
-	t1 = Clock::now();
-	auto length = comm->recvMessage(USBCommands::USB_READ, buff, 100);
-	t2 = Clock::now();
-	std::cout << "timer: " << duration_cast<microseconds>(t2 - t1).count() << " us\n";
-	auto bState = reinterpret_cast<USBCommands::bridge::State*>(buff);
-	cout << "volt: " << bState->rawVoltage << ", curr: " << bState->rawCurrent << endl;
-	cout << "buttons: " << bState->buttonDown << ", " << bState->buttonUp << ", " << bState->buttonEnter << endl;
-	cout << "killswitch: " << (bState->killSwitch == USBCommands::bridge::ACTIVE ? "active" : "inactive") << endl;
+ uint8_t buff[100];
+ t1 = Clock::now();
+ auto length = comm->recvMessage(USBCommands::USB_READ, buff, 100);
+ t2 = Clock::now();
+ std::cout << "timer: " << duration_cast<microseconds>(t2 - t1).count() << " us\n";
+ auto bState = reinterpret_cast<USBCommands::bridge::State*>(buff);
+ cout << "volt: " << bState->rawVoltage << ", curr: " << bState->rawCurrent << endl;
+ cout << "buttons: " << bState->buttonDown << ", " << bState->buttonUp << ", " << bState->buttonEnter << endl;
+ cout << "killswitch: " << (bState->killSwitch == USBCommands::bridge::ACTIVE ? "active" : "inactive") << endl;
 
-	delete comm;
+ delete comm;
 
-	bridge::Interface interface;
+ bridge::Interface interface;
 
-	interface.motor[bridge::Motor::LEFT].getMotor();
-}*/
+ interface.motor[bridge::Motor::LEFT].getMotor();
+ }*/
 
