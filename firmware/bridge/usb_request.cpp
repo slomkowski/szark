@@ -211,6 +211,25 @@ void usb::executeCommandsFromUSB() {
 		};
 	} while (inBuff.currentPosition < inBuff.length - 1);
 
+	outBuff.currentPosition = 0;
+	uint8_t len = 8;
+
+	while (outBuff.currentPosition < outBuff.length) {
+		len = outBuff.length - outBuff.currentPosition >= 8 ? 8 : outBuff.length - outBuff.currentPosition;
+
+		usbSetInterrupt(&outBuff.data[outBuff.currentPosition], len);
+
+		outBuff.currentPosition += len;
+
+		while (not usbInterruptIsReady()) {
+			usbPoll();
+		}
+	}
+
+	if (len == 8) {
+		usbSetInterrupt(&outBuff.data[outBuff.currentPosition], 1);
+	}
+
 	newCommandAvailable = false;
 }
 
