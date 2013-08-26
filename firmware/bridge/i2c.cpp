@@ -37,13 +37,15 @@ static void setUpTimer() {
 #if TIMER_ENABLE
 	TCNT0 = 0;
 	timerNotClear = true;
-	TCCR0B = (1 << CS02);// | (1 << CS00);// clkio/64
+	TCCR0B = (1 << CS02); // | (1 << CS00);// clkio/64
 #endif
 }
 
 static void waitForOperationComplete() {
 	while (!(TWCR & (1 << TWINT)) && timerNotClear) {
 	}
+
+	TCCR0B = 0; // stop timer
 
 #if TIMER_ENABLE
 	if (timerNotClear) {
