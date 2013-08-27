@@ -4,6 +4,7 @@
 #include <inttypes.h>
 #include <avr/interrupt.h>
 #include <util/delay.h>
+#include <avr/wdt.h>
 
 #include "joint.h"
 
@@ -357,8 +358,9 @@ void joint::calibrate() {
 
 	setTimerMs(800);
 
-	while (timerNotClear && !interruptCalibration)
-		;
+	while (timerNotClear && !interruptCalibration) {
+		wdt_reset();
+	}
 
 	if (interruptCalibration) // if it was aborted by external signal
 	{
@@ -384,8 +386,9 @@ void joint::calibrate() {
 
 	setTimerMs(700);
 
-	while (timerNotClear && !interruptCalibration)
-		;
+	while (timerNotClear && !interruptCalibration) {
+		wdt_reset();
+	}
 
 	setDirection(SHOULDER, BACKWARD);
 	setDirection(GRIPPER, BACKWARD);
@@ -406,6 +409,8 @@ void joint::calibrate() {
 
 	// wait till all the joints are calibrated
 	while (!interruptCalibration) {
+		wdt_reset();
+
 		if (joints[S_ELBOW].calibrated && joints[S_SHOULDER].calibrated && joints[S_WRIST].calibrated
 			&& joints[S_GRIPPER].calibrated) break;
 	}

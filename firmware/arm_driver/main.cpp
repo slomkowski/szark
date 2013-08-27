@@ -33,7 +33,7 @@ int main() {
 		if (joint::startCalibration) joint::calibrate();
 
 #if WATCHD0G_ENABLE
-		wdt_enable(WDTO_120MS);
+		wdt_reset();
 #endif
 	}
 }
