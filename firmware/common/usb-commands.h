@@ -9,7 +9,7 @@ namespace USBCommands {
 
 	enum USBRequest
 		:uint8_t {
-			USB_READ = 1, USB_WRITE
+			USB_READ = 1, USB_WRITE, IS_RESPONSE_READY
 	};
 
 	enum Request

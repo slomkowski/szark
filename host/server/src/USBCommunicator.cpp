@@ -6,6 +6,7 @@
  */
 
 #include "USBCommunicator.hpp"
+#include <iostream>
 
 namespace USB {
 
@@ -133,14 +134,12 @@ namespace USB {
 
 	unsigned int RawCommunicator::recvMessage(USBCommands::USBRequest request, uint8_t *data, unsigned int maxLength) {
 
-		/*int length = libusb_control_transfer(devHandle,
-		 LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE | LIBUSB_ENDPOINT_IN, request, 0, 0, data, maxLength,
-		 MESSAGE_TIMEOUT);*/
-
-		int length = 0;
-
-		int status = libusb_interrupt_transfer(devHandle, (1 | LIBUSB_ENDPOINT_IN), data, maxLength, &length,
+		int status = libusb_control_transfer(devHandle,
+			LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE | LIBUSB_ENDPOINT_IN, request, 0, 0, data, maxLength,
 			MESSAGE_TIMEOUT);
+
+		/*int status = libusb_interrupt_transfer(devHandle, (1 | LIBUSB_ENDPOINT_IN), data, maxLength, &length,
+		 MESSAGE_TIMEOUT);*/
 
 		if (status < 0) {
 			std::string mesg = "error at receiving data from the device (";
@@ -148,8 +147,9 @@ namespace USB {
 			mesg += ")";
 			throw CommException(mesg);
 		}
+		//std::cout << "l: " << status << std::endl;
 
-		return length;
+		return status;
 	}
 
 	void Communicator::sendData(const std::vector<uint8_t>& data) {
@@ -163,7 +163,19 @@ namespace USB {
 
 		out.resize(length);
 
+		/*if (out[length - 1] == 66) {
+		 std::cout << "8\n";
+		 }*/
+
 		return out;
+	}
+
+	bool Communicator::isResponseReady() {
+		unsigned char ready = 0;
+
+		recvMessage(USBCommands::IS_RESPONSE_READY, &ready, 1);
+
+		return ready != 0;
 	}
 
 } /* namespace USB */

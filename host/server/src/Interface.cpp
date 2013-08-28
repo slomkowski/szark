@@ -283,6 +283,19 @@ namespace bridge {
 				throw runtime_error(string("Request ") + to_string(int(gReq)) + " hasn't been handled by any listener");
 			}
 		}
+
+		if (actualPosition != deviceResponse.size()) {
+			for(auto r : getterRequests) {
+				cout << "req: " << int(r) << endl;
+			}
+
+			for(auto r : deviceResponse) {
+							cout << "resp: " << int(r) << endl;
+						}
+			throw runtime_error(
+				string("Calculated device response and real response sizes don't match: cal: ")
+					+ to_string(actualPosition) + ", real: " + to_string(deviceResponse.size()));
+		}
 	}
 
 	unsigned int Interface::ExpanderClass::updateFields(USBCommands::Request request, uint8_t* data) {

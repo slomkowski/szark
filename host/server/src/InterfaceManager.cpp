@@ -98,7 +98,7 @@ namespace bridge {
 				continue;
 			}
 
-			cout << request.first << ": " << request.second->getSize() << endl;
+			//cout << request.first << ": " << request.second->getSize() << endl;
 			request.second->appendTo(concatenated);
 		}
 
@@ -119,15 +119,23 @@ namespace bridge {
 
 		usbComm.sendData(concatenated);
 
+		/*std::chrono::milliseconds dura(200);
+		std::this_thread::sleep_for(dura);*/
+		do {
+			std::chrono::milliseconds dura(10);
+			std::this_thread::sleep_for(dura);
+			//cout << "nie" << endl;
+		} while (not usbComm.isResponseReady());
+
 		auto response = usbComm.receiveData();
 
 		/*std::cout << "response size: " << response.size() << std::endl;
-		for (auto req : getterRequests) {
-			std::cout << "re: " << int(req) << std::endl;
-		}
-		for (uint8_t r : response) {
-			std::cout << "r: " << int(r) << std::endl;
-		}*/
+		 for (auto req : getterRequests) {
+		 std::cout << "re: " << int(req) << std::endl;
+		 }
+		 for (uint8_t r : response) {
+		 std::cout << "r: " << int(r) << std::endl;
+		 }*/
 
 		updateDataStructures(getterRequests, response);
 
