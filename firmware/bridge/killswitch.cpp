@@ -33,7 +33,7 @@ void killswitch::setActive(bool active) {
 		DDR(KS_PORT) &= ~(1 << KS_PIN);
 		PORT(KS_PORT) |= (1 << KS_PIN);
 
-		delay::waitMs(150);
+		delay::waitMs(5);
 	}
 }
 

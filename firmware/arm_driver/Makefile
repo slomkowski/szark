@@ -22,8 +22,8 @@ CFLAGS+=-I../common
 PROGRAMMER=stk500v2
 PORT=avrdoper
 
-FUSE_LOW=0xe2
-FUSE_HIGH=0xdf
+FUSE_LOW=0xc2
+FUSE_HIGH=0xdc
 FUSE_EXTENDED=0xf9
 
 EXTRA_DEPS = global.h
