@@ -42,16 +42,16 @@ static void setUpTimer() {
 }
 
 static void waitForOperationComplete() {
-	while (!(TWCR & (1 << TWINT)) && timerNotClear) {
+	while (!(TWCR & (1 << TWINT)) and timerNotClear) {
 	}
 
 	TCCR0B = 0; // stop timer
 
 #if TIMER_ENABLE
-	if (timerNotClear) {
-		status = OK;
-	} else {
+	if (!(TWCR & (1 << TWINT))) {
 		status = TIMEOUT;
+	} else {
+		status = OK;
 	}
 #endif
 }
@@ -73,7 +73,7 @@ void i2c::start() {
 // I2C Stop
 void i2c::stop() {
 	TWCR = (1 << TWINT) | (1 << TWEN) | (1 << TWSTO);
-	while (!(TWCR & (1 << TWSTO)) && timerNotClear) {
+	while (!(TWCR & (1 << TWSTO))) {
 	}
 }
 

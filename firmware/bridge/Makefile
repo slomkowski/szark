@@ -53,7 +53,7 @@ directories:
 # generic code
 $(OUTPUT).hex : directories $(BIN_DIR)/$(OUTPUT).elf
 	$(AVR-OBJCOPY) -O ihex $(BIN_DIR)/$(OUTPUT).elf $(OUTPUT).hex
-	$(AVR-SIZE) $(OUTPUT).hex
+	$(AVR-SIZE) --mcu=$(CPU-GCC) -C $(BIN_DIR)/$(OUTPUT).elf
 
 $(BIN_DIR)/$(OUTPUT).elf : $(OBJ) 
 	$(AVR-CC) $(CFLAGS) -o $(BIN_DIR)/$(OUTPUT).elf $(OBJ)

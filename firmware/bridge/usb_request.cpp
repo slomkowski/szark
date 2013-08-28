@@ -53,6 +53,7 @@ static Buffer inBuff, outBuff;
 static bool killSwitchDisabled = false;
 
 static volatile bool newCommandAvailable = false;
+static volatile bool responseReady = false;
 
 using namespace usb;
 
@@ -76,22 +77,23 @@ usbMsgLen_t usbFunctionSetup(uchar data[8]) {
 	case USBCommands::USB_WRITE:
 		inBuff.currentPosition = 0;
 		inBuff.length = rq->wLength.word;
+		responseReady = false;
 		return USB_NO_MSG ;
+	case USBCommands::IS_RESPONSE_READY:
+		usbMsgPtr = uint16_t(&responseReady);
+		return 1;
 	};
 
 	return 0;
 }
 
 uint8_t usbFunctionWrite(uint8_t *data, uint8_t len) {
-	if (len > inBuff.length - inBuff.currentPosition) {
-		len = inBuff.length - inBuff.currentPosition;
-	}
-
 	for (uint8_t i = 0; i < len; i++) {
-		inBuff.data[inBuff.currentPosition++] = data[i];
+		inBuff.data[inBuff.currentPosition] = data[i];
+		inBuff.currentPosition++;
 	}
 
-	if (inBuff.currentPosition >= inBuff.length - 1) {
+	if (len != 8) {
 		newCommandAvailable = true;
 		return 1;
 	} else {
@@ -108,8 +110,7 @@ void usb::executeCommandsFromUSB() {
 
 	outBuff.init();
 
-	do {
-		inBuff.currentPosition++;
+	for (inBuff.currentPosition = 1; inBuff.currentPosition <= inBuff.length; inBuff.currentPosition++) {
 		switch (static_cast<USBCommands::Request>(inBuff.data[inBuff.currentPosition - 1])) {
 		case USBCommands::BRIDGE_GET_STATE: {
 			USBCommands::bridge::State bState;
@@ -146,8 +147,8 @@ void usb::executeCommandsFromUSB() {
 			break;
 		case USBCommands::ARM_DRIVER_GET_GENERAL_STATE: {
 			USBCommands::arm::GeneralState general;
-			general.isCalibrated = arm::isCalibrated();
-			general.mode = arm::getMode();
+			general.isCalibrated = 66; //arm::isCalibrated();
+			general.mode = (arm::Mode) 66; //arm::getMode();
 			outBuff.push(&general, sizeof(USBCommands::arm::GeneralState));
 		}
 			break;
@@ -209,27 +210,11 @@ void usb::executeCommandsFromUSB() {
 		}
 			break;
 		};
-	} while (inBuff.currentPosition < inBuff.length - 1);
 
-	outBuff.currentPosition = 0;
-	uint8_t len = 8;
-
-	while (outBuff.currentPosition < outBuff.length) {
-		len = outBuff.length - outBuff.currentPosition >= 8 ? 8 : outBuff.length - outBuff.currentPosition;
-
-		usbSetInterrupt(&outBuff.data[outBuff.currentPosition], len);
-
-		outBuff.currentPosition += len;
-
-		while (not usbInterruptIsReady()) {
-			usbPoll();
-		}
+		usbPoll();
 	}
 
-	if (len == 8) {
-		usbSetInterrupt(&outBuff.data[outBuff.currentPosition], 1);
-	}
-
+	responseReady = true;
 	newCommandAvailable = false;
 }
 
