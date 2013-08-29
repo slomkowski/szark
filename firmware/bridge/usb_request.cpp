@@ -93,7 +93,7 @@ uint8_t usbFunctionWrite(uint8_t *data, uint8_t len) {
 		inBuff.currentPosition++;
 	}
 
-	if (len != 8) {
+	if (inBuff.currentPosition >= inBuff.length) {
 		newCommandAvailable = true;
 		return 1;
 	} else {
