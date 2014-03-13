@@ -12128,6 +12128,7 @@ Source: http://eshop.phoenixcontact.com .. 1751248.pdf</description>
 <part name="GND14" library="supply1" deviceset="GND" device=""/>
 <part name="C7" library="rcl" deviceset="C-EU" device="C1206" value="100n"/>
 <part name="GND15" library="supply1" deviceset="GND" device=""/>
+<part name="GND16" library="supply1" deviceset="GND" device=""/>
 </parts>
 <sheets>
 <sheet>
@@ -12183,7 +12184,7 @@ Source: http://eshop.phoenixcontact.com .. 1751248.pdf</description>
 <instance part="C10" gate="G$1" x="215.9" y="48.26"/>
 <instance part="GND20" gate="1" x="215.9" y="35.56"/>
 <instance part="P+11" gate="1" x="215.9" y="66.04"/>
-<instance part="IC2" gate="A" x="139.7" y="20.32"/>
+<instance part="IC2" gate="A" x="139.7" y="25.4"/>
 <instance part="IC2" gate="B" x="104.14" y="53.34"/>
 <instance part="R6" gate="G$1" x="78.74" y="55.88"/>
 <instance part="R7" gate="G$1" x="78.74" y="43.18"/>
@@ -12228,6 +12229,7 @@ Source: http://eshop.phoenixcontact.com .. 1751248.pdf</description>
 <instance part="GND14" gate="1" x="203.2" y="35.56"/>
 <instance part="C7" gate="G$1" x="160.02" y="99.06"/>
 <instance part="GND15" gate="1" x="160.02" y="88.9"/>
+<instance part="GND16" gate="1" x="124.46" y="15.24"/>
 </instances>
 <busses>
 <bus name="B$1">
@@ -12381,6 +12383,12 @@ Source: http://eshop.phoenixcontact.com .. 1751248.pdf</description>
 <pinref part="C7" gate="G$1" pin="2"/>
 <pinref part="GND15" gate="1" pin="GND"/>
 <wire x1="160.02" y1="91.44" x2="160.02" y2="93.98" width="0.1524" layer="91"/>
+</segment>
+<segment>
+<pinref part="IC2" gate="A" pin="+IN"/>
+<pinref part="GND16" gate="1" pin="GND"/>
+<wire x1="132.08" y1="27.94" x2="124.46" y2="27.94" width="0.1524" layer="91"/>
+<wire x1="124.46" y1="27.94" x2="124.46" y2="17.78" width="0.1524" layer="91"/>
 </segment>
 </net>
 <net name="+5V" class="0">
@@ -12694,14 +12702,6 @@ Source: http://eshop.phoenixcontact.com .. 1751248.pdf</description>
 <pinref part="X2" gate="-1" pin="K"/>
 </segment>
 </net>
-<net name="RX" class="0">
-<segment>
-<wire x1="104.14" y1="129.54" x2="106.68" y2="132.08" width="0.1524" layer="91"/>
-<pinref part="IC1" gate="G$1" pin="RXI"/>
-<wire x1="106.68" y1="132.08" x2="127" y2="132.08" width="0.1524" layer="91"/>
-<label x="109.22" y="132.08" size="1.778" layer="95"/>
-</segment>
-</net>
 <net name="SDA" class="0">
 <segment>
 <wire x1="104.14" y1="121.92" x2="106.68" y2="124.46" width="0.1524" layer="91"/>
@@ -12752,14 +12752,6 @@ Source: http://eshop.phoenixcontact.com .. 1751248.pdf</description>
 <pinref part="IC1" gate="G$1" pin="A0"/>
 <wire x1="172.72" y1="116.84" x2="149.86" y2="116.84" width="0.1524" layer="91"/>
 <label x="162.56" y="116.84" size="1.778" layer="95"/>
-</segment>
-</net>
-<net name="TX" class="0">
-<segment>
-<wire x1="104.14" y1="132.08" x2="106.68" y2="134.62" width="0.1524" layer="91"/>
-<pinref part="IC1" gate="G$1" pin="TXO"/>
-<wire x1="106.68" y1="134.62" x2="127" y2="134.62" width="0.1524" layer="91"/>
-<label x="109.22" y="134.62" size="1.778" layer="95"/>
 </segment>
 </net>
 <net name="BTN3" class="0">
@@ -12819,9 +12811,62 @@ Source: http://eshop.phoenixcontact.com .. 1751248.pdf</description>
 <pinref part="S2" gate="1" pin="S"/>
 </segment>
 </net>
+<net name="N$12" class="0">
+<segment>
+<pinref part="IC2" gate="A" pin="OUT"/>
+<wire x1="147.32" y1="25.4" x2="152.4" y2="25.4" width="0.1524" layer="91"/>
+<wire x1="152.4" y1="25.4" x2="152.4" y2="15.24" width="0.1524" layer="91"/>
+<wire x1="152.4" y1="15.24" x2="129.54" y2="15.24" width="0.1524" layer="91"/>
+<wire x1="129.54" y1="15.24" x2="129.54" y2="22.86" width="0.1524" layer="91"/>
+<pinref part="IC2" gate="A" pin="-IN"/>
+<wire x1="129.54" y1="22.86" x2="132.08" y2="22.86" width="0.1524" layer="91"/>
+</segment>
+</net>
 </nets>
 </sheet>
 </sheets>
+<errors>
+<approved hash="104,1,218.44,132.08,LCD1,VSS,GND,,,"/>
+<approved hash="104,1,218.44,152.4,LCD1,VDD,+5V,,,"/>
+<approved hash="104,1,218.44,127,LCD1,A,N$2,,,"/>
+<approved hash="104,1,218.44,124.46,LCD1,K,GND,,,"/>
+<approved hash="104,1,187.96,53.34,IC2P,V+,+5V,,,"/>
+<approved hash="104,1,187.96,38.1,IC2P,V-,GND,,,"/>
+<approved hash="113,1,193.429,91.44,S1,,,,,"/>
+<approved hash="113,1,211.209,91.44,S2,,,,,"/>
+<approved hash="113,1,228.989,91.44,S3,,,,,"/>
+<approved hash="113,1,130.071,89.431,FRAME1,,,,,"/>
+<approved hash="211,1,175.26,55.88,ACURR,B$1,,,,"/>
+<approved hash="211,1,175.26,119.38,ACURR,B$1,,,,"/>
+<approved hash="211,1,104.14,88.9,AVLTG,B$1,,,,"/>
+<approved hash="211,1,175.26,121.92,AVLTG,B$1,,,,"/>
+<approved hash="211,1,104.14,124.46,STOP,B$1,,,,"/>
+<approved hash="211,1,104.14,116.84,STOP,B$1,,,,"/>
+<approved hash="211,1,175.26,149.86,DRS,B$1,,,,"/>
+<approved hash="211,1,175.26,116.84,DRS,B$1,,,,"/>
+<approved hash="211,1,175.26,144.78,DE,B$1,,,,"/>
+<approved hash="211,1,175.26,111.76,DE,B$1,,,,"/>
+<approved hash="211,1,175.26,129.54,DDB4,B$1,,,,"/>
+<approved hash="211,1,175.26,109.22,DDB4,B$1,,,,"/>
+<approved hash="211,1,175.26,127,DDB5,B$1,,,,"/>
+<approved hash="211,1,175.26,106.68,DDB5,B$1,,,,"/>
+<approved hash="211,1,175.26,124.46,DDB6,B$1,,,,"/>
+<approved hash="211,1,175.26,104.14,DDB6,B$1,,,,"/>
+<approved hash="211,1,175.26,121.92,DDB7,B$1,,,,"/>
+<approved hash="211,1,104.14,104.14,DDB7,B$1,,,,"/>
+<approved hash="211,1,104.14,121.92,SDA,B$1,,,,"/>
+<approved hash="211,1,104.14,121.92,SDA,B$1,,,,"/>
+<approved hash="211,1,104.14,119.38,SCL,B$1,,,,"/>
+<approved hash="211,1,104.14,119.38,SCL,B$1,,,,"/>
+<approved hash="211,1,175.26,147.32,DRW,B$1,,,,"/>
+<approved hash="211,1,175.26,114.3,DRW,B$1,,,,"/>
+<approved hash="211,1,104.14,106.68,BTN3,B$1,,,,"/>
+<approved hash="211,1,175.26,96.52,BTN3,B$1,,,,"/>
+<approved hash="211,1,104.14,111.76,BTN1,B$1,,,,"/>
+<approved hash="211,1,175.26,101.6,BTN1,B$1,,,,"/>
+<approved hash="211,1,104.14,109.22,BTN2,B$1,,,,"/>
+<approved hash="211,1,175.26,99.06,BTN2,B$1,,,,"/>
+</errors>
 </schematic>
 </drawing>
 </eagle>
