@@ -12088,8 +12088,8 @@ Source: http://eshop.phoenixcontact.com .. 1751248.pdf</description>
 <part name="GND20" library="supply1" deviceset="GND" device=""/>
 <part name="P+11" library="supply1" deviceset="+12V" device=""/>
 <part name="IC2" library="linear" deviceset="LM358" device="D"/>
-<part name="R6" library="rcl" deviceset="R-EU_" device="M1206" value="8k2"/>
-<part name="R7" library="rcl" deviceset="R-EU_" device="M1206" value="8k2"/>
+<part name="R6" library="rcl" deviceset="R-EU_" device="M1206" value="4k7"/>
+<part name="R7" library="rcl" deviceset="R-EU_" device="M1206" value="4k7"/>
 <part name="R8" library="rcl" deviceset="R-EU_" device="M1206" value="10k"/>
 <part name="R9" library="rcl" deviceset="R-EU_" device="M1206" value="10k"/>
 <part name="C3" library="rcl" deviceset="C-EU" device="C1210" value="100n"/>
@@ -12098,7 +12098,7 @@ Source: http://eshop.phoenixcontact.com .. 1751248.pdf</description>
 <part name="R10" library="rcl" deviceset="R-EU_" device="M1206" value="1k"/>
 <part name="R1" library="rcl" deviceset="R-EU_" device="M1206" value="8k2"/>
 <part name="GND27" library="supply1" deviceset="GND" device=""/>
-<part name="R2" library="rcl" deviceset="R-EU_" device="M1206" value="470"/>
+<part name="R2" library="rcl" deviceset="R-EU_" device="M1206" value="1k"/>
 <part name="P+12" library="supply1" deviceset="+12V" device=""/>
 <part name="GND30" library="supply1" deviceset="GND" device=""/>
 <part name="C4" library="rcl" deviceset="C-EU" device="C1206" value="100n"/>
@@ -12111,9 +12111,9 @@ Source: http://eshop.phoenixcontact.com .. 1751248.pdf</description>
 <part name="GND3" library="supply1" deviceset="GND" device=""/>
 <part name="P+1" library="supply1" deviceset="+12V" device=""/>
 <part name="P+4" library="supply1" deviceset="+5V" device=""/>
-<part name="C1" library="rcl" deviceset="CPOL-EU" device="B/3528-21W" value="4u7"/>
+<part name="C1" library="rcl" deviceset="CPOL-EU" device="B/3528-21W" value="22u"/>
 <part name="GND6" library="supply1" deviceset="GND" device=""/>
-<part name="C5" library="rcl" deviceset="CPOL-EU" device="B/3528-21W" value="4u7"/>
+<part name="C5" library="rcl" deviceset="CPOL-EU" device="B/3528-21W" value="22u"/>
 <part name="GND7" library="supply1" deviceset="GND" device=""/>
 <part name="C6" library="rcl" deviceset="C-EU" device="C1206" value="100n"/>
 <part name="GND8" library="supply1" deviceset="GND" device=""/>
