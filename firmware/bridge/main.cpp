@@ -5,9 +5,6 @@
 #include <avr/pgmspace.h>
 #include <util/delay.h>
 
-extern "C" {
-#include "usbdrv.h"
-}
 #include "i2c.h"
 #include "lcd.h"
 #include "analog.h"
@@ -26,8 +23,6 @@ int main(void) {
 	}
 
 	killswitch::init();
-	usbInit();
-	usbDeviceDisconnect();
 
 	i2c::init();
 	lcd::init();
@@ -38,7 +33,6 @@ int main(void) {
 
 	_delay_ms(250);
 
-	usbDeviceConnect();
 	sei();
 	analog::init();
 
@@ -46,8 +40,6 @@ int main(void) {
 		if (WATCHDOG_ENABLE) {
 			wdt_reset();
 		}
-
-		usbPoll();
 
 		usb::executeCommandsFromUSB();
 

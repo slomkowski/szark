@@ -10,10 +10,6 @@
 #include <avr/io.h>
 #include <util/delay.h>
 
-extern "C" {
-#include "usbdrv.h"
-}
-
 #include "delay.h"
 
 void delay::wait100us() {
@@ -38,10 +34,6 @@ void delay::wait100us() {
 void delay::waitMs(uint8_t milliseconds) {
 	for (uint8_t i = 0; i < milliseconds; i++) {
 		_delay_ms(1);
-		// call usbPoll every 3 iterations
-		if(i % 3 == 0) {
-			usbPoll();
-		}
 	}
 }
 

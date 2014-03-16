@@ -8,10 +8,6 @@
 #include "global.h"
 #include <inttypes.h>
 
-extern "C" {
-#include "usbdrv.h"
-}
-
 #include "usb_request.h"
 #include "lcd.h"
 #include "analog.h"
@@ -57,7 +53,7 @@ static volatile bool responseReady = false;
 
 using namespace usb;
 
-usbMsgLen_t usbFunctionSetup(uchar data[8]) {
+/*usbMsgLen_t usbFunctionSetup(uchar data[8]) {
 	usbRequest_t *rq = (usbRequest_t *) data;
 
 	if ((rq->bmRequestType & USBRQ_TYPE_MASK) != USBRQ_TYPE_VENDOR) {
@@ -85,7 +81,7 @@ usbMsgLen_t usbFunctionSetup(uchar data[8]) {
 	};
 
 	return 0;
-}
+}*/
 
 uint8_t usbFunctionWrite(uint8_t *data, uint8_t len) {
 	for (uint8_t i = 0; i < len; i++) {
@@ -210,8 +206,6 @@ void usb::executeCommandsFromUSB() {
 		}
 			break;
 		};
-
-		usbPoll();
 	}
 
 	responseReady = true;
