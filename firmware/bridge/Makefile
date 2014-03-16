@@ -1,6 +1,6 @@
 #
 # SZARK - motor driver
-# 2013 Michał Słomkowski
+# 2014 Michał Słomkowski
 # This code is distributed under the terms of GNU General Public License version 3.0.
 #
  
@@ -12,7 +12,7 @@ AVRDUDE=avrdude
 
 OUTPUT=bridge
 
-CPU-GCC=atmega168
+CPU-GCC=atmega32u4
 CPU-AVRDUDE=m168
 
 COMMONFLAGS=-mmcu=$(CPU-GCC) -Os

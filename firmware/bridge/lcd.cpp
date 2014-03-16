@@ -13,23 +13,23 @@
 #include "delay.h"
 #include "lcd.h"
 
-#define LCD_D4_PORT	D
-#define LCD_D4		7
+#define LCD_D4_PORT	B
+#define LCD_D4			3
 
 #define LCD_D5_PORT	B
-#define LCD_D5		0
+#define LCD_D5			2
 
 #define LCD_D6_PORT	B
-#define LCD_D6		1
+#define LCD_D6			6
 
 #define LCD_D7_PORT	B
-#define LCD_D7		2
+#define LCD_D7			5
 
-#define LCD_E_PORT	D
-#define LCD_E		6
+#define LCD_E_PORT		B
+#define LCD_E			1
 
-#define LCD_RS_PORT D
-#define LCD_RS		5
+#define LCD_RS_PORT	F
+#define LCD_RS			6
 
 #define LCDC_CLS		0x01
 #define LCDC_HOME		0x02

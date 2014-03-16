@@ -10,10 +10,14 @@
 #include "delay.h"
 #include "buttons.h"
 
-#define BUTTON_PORT	D
-#define BUTTON_ENTER	1
-#define BUTTON_UP		0
-#define BUTTON_DOWN	2
+#define BUTTON_PORT_ENTER	E
+#define BUTTON_ENTER		7
+
+#define BUTTON_PORT_UP	B
+#define BUTTON_UP		4
+
+#define BUTTON_PORT_DOWN	D
+#define BUTTON_DOWN		7
 
 static const uint8_t DEBOUNCE_TIME = 30; // ms
 
@@ -22,15 +26,20 @@ using namespace buttons;
 static Buttons buttonsState;
 
 void buttons::init() {
-	DDR(BUTTON_PORT) &= ~((1 << BUTTON_UP) | (1 << BUTTON_DOWN) | (1 << BUTTON_ENTER));
-	PORT(BUTTON_PORT) |= (1 << BUTTON_UP) | (1 << BUTTON_DOWN) | (1 << BUTTON_ENTER);
+	DDR(BUTTON_PORT_UP) &= ~(1 << BUTTON_UP);
+	DDR(BUTTON_PORT_DOWN) &= ~(1 << BUTTON_DOWN);
+	DDR(BUTTON_PORT_ENTER) &= ~(1 << BUTTON_ENTER);
+
+	PORT(BUTTON_PORT_UP) |= (1 << BUTTON_UP);
+	PORT(BUTTON_PORT_DOWN) |= (1 << BUTTON_DOWN);
+	PORT(BUTTON_PORT_ENTER) |= (1 << BUTTON_ENTER);
 }
 
 Buttons *buttons::getButtonsState(bool debounce) {
 
-	buttonsState.enter = bit_is_clear(PIN(BUTTON_PORT), BUTTON_ENTER);
-	buttonsState.up = bit_is_clear(PIN(BUTTON_PORT), BUTTON_UP);
-	buttonsState.down = bit_is_clear(PIN(BUTTON_PORT), BUTTON_DOWN);
+	buttonsState.enter = bit_is_clear(PIN(BUTTON_PORT_ENTER), BUTTON_ENTER);
+	buttonsState.up = bit_is_clear(PIN(BUTTON_PORT_UP), BUTTON_UP);
+	buttonsState.down = bit_is_clear(PIN(BUTTON_PORT_DOWN), BUTTON_DOWN);
 
 	if (debounce) {
 		return &buttonsState;
@@ -42,9 +51,9 @@ Buttons *buttons::getButtonsState(bool debounce) {
 
 	delay::waitMs(DEBOUNCE_TIME);
 
-	buttonsState.enter &= bit_is_clear(PIN(BUTTON_PORT), BUTTON_ENTER);
-	buttonsState.up &= bit_is_clear(PIN(BUTTON_PORT), BUTTON_UP);
-	buttonsState.down &= bit_is_clear(PIN(BUTTON_PORT), BUTTON_DOWN);
+	buttonsState.enter &= bit_is_clear(PIN(BUTTON_PORT_ENTER), BUTTON_ENTER);
+	buttonsState.up &= bit_is_clear(PIN(BUTTON_PORT_UP), BUTTON_UP);
+	buttonsState.down &= bit_is_clear(PIN(BUTTON_PORT_DOWN), BUTTON_DOWN);
 
 	return &buttonsState;
 }

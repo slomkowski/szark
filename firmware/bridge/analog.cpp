@@ -12,8 +12,8 @@
 
 #include "analog.h"
 
-#define ANALOG_VOLTAGE_CHANNEL 0x1
-#define ANALOG_CURRENT_CHANNEL 0x0
+#define ANALOG_VOLTAGE_CHANNEL 0x4
+#define ANALOG_CURRENT_CHANNEL 0x5
 
 static volatile uint16_t rawVoltage;
 static volatile uint16_t rawCurrent;
