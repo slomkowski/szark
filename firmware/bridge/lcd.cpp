@@ -31,6 +31,9 @@
 #define LCD_RS_PORT	F
 #define LCD_RS			6
 
+#define LCD_RW_PORT	F
+#define LCD_RW			7
+
 #define LCDC_CLS		0x01
 #define LCDC_HOME		0x02
 #define LCDC_MODE		0x04
@@ -110,6 +113,7 @@ void lcd::init() {
 	// setting D4-D7, RS and E as outputs
 	DDR(LCD_E_PORT) |= (1 << LCD_E);
 	DDR(LCD_RS_PORT) |= (1 << LCD_RS);
+	DDR(LCD_RW_PORT) |= (1 << LCD_RW);
 
 	DDR(LCD_D4_PORT) |= (1 << LCD_D4);
 	DDR(LCD_D5_PORT) |= (1 << LCD_D5);

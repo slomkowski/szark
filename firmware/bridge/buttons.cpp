@@ -11,7 +11,7 @@
 #include "buttons.h"
 
 #define BUTTON_PORT_ENTER	E
-#define BUTTON_ENTER		7
+#define BUTTON_ENTER		6
 
 #define BUTTON_PORT_UP	B
 #define BUTTON_UP		4
@@ -41,7 +41,7 @@ Buttons *buttons::getButtonsState(bool debounce) {
 	buttonsState.up = bit_is_clear(PIN(BUTTON_PORT_UP), BUTTON_UP);
 	buttonsState.down = bit_is_clear(PIN(BUTTON_PORT_DOWN), BUTTON_DOWN);
 
-	if (debounce) {
+	if (not debounce) {
 		return &buttonsState;
 	}
 
