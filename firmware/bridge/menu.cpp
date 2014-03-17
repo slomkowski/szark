@@ -24,10 +24,14 @@
 
 using namespace menu;
 
+constexpr double BATTERY_VOLTAGE_FACTOR2(double R_up, double R_down, double V_ref, double factor = 1.0) {
+	return (V_ref / 1023.0 * (R_up + R_down) / R_down) * factor;
+}
+
 /*
  * Hardware settings
  */
-const double BATTERY_VOLTAGE_FACTOR = .01981590757978723404;
+const double BATTERY_VOLTAGE_FACTOR = BATTERY_VOLTAGE_FACTOR2(8200, 1000, 2.56);
 
 const uint8_t MOTOR_SPEED = 3;
 
