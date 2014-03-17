@@ -13,7 +13,7 @@
 #include "Interface.hpp"
 #include "DataHolder.hpp"
 
-#include "usb-commands.h"
+#include "usb-commands.hpp"
 
 using namespace std;
 using namespace boost;

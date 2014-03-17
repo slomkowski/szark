@@ -27,7 +27,7 @@
 #define PWM1_REG OCR0A
 #define PWM2_REG OCR0B
 
-#include "motor_driver-commands.h"
+#include "motor_driver-commands.hpp"
 
 namespace motor {
 	void init();

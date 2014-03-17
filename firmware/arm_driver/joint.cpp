@@ -8,7 +8,7 @@
 
 #include "joint.h"
 
-#include "arm_driver-commands.h"
+#include "arm_driver-commands.hpp"
 
 using namespace arm;
 using namespace joint;

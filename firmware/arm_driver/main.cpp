@@ -12,7 +12,7 @@
 
 #include "joint.h"
 #include "i2c-slave.h"
-#include "arm_driver-commands.h"
+#include "arm_driver-commands.hpp"
 
 void processCommands(uint8_t *rxbuf, uint8_t *txbuf);
 

@@ -17,7 +17,7 @@ extern "C" {
 #include <vector>
 #include <boost/noncopyable.hpp>
 
-#include "usb-commands.h"
+#include "usb-commands.hpp"
 
 namespace USB {
 

@@ -42,7 +42,7 @@ static inline void debugDown() {
 	PORT(DEBUG_PORT) &= ~(1 << DEBUG_PIN);
 }
 
-#include "motor_driver-commands.h"
+#include "motor_driver-commands.hpp"
 
 #endif
 

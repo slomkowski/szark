@@ -13,7 +13,7 @@
 #include <vector>
 #include <boost/utility/enable_if.hpp>
 
-#include "usb-commands.h"
+#include "usb-commands.hpp"
 
 namespace bridge {
 
