@@ -2,8 +2,8 @@
 #define _USB_COMMANDS_
 
 #include <stdint.h>
-#include "arm_driver-commands.h"
-#include "motor_driver-commands.h"
+#include "arm_driver-commands.hpp"
+#include "motor_driver-commands.hpp"
 
 namespace USBCommands {
 

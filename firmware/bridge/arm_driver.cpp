@@ -5,9 +5,9 @@
  *      Author: michal
  */
 
-#include "global.h"
-#include "i2c.h"
-#include "arm_driver.h"
+#include "global.hpp"
+#include "i2c.hpp"
+#include "arm_driver.hpp"
 
 static const uint8_t ARM_DRIVER_ADDRESS = 0x30;
 

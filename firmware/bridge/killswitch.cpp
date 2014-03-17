@@ -5,11 +5,11 @@
  *      Author: michal
  */
 
-#include "global.h"
+#include "global.hpp"
 #include <avr/io.h>
 #include <avr/interrupt.h>
-#include "delay.h"
-#include "killswitch.h"
+#include "delay.hpp"
+#include "killswitch.hpp"
 
 #define KS_PORT D
 #define KS_PIN 4

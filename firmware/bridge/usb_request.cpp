@@ -5,21 +5,21 @@
  *      Author: michal
  */
 
-#include "global.h"
+#include "global.hpp"
 #include <inttypes.h>
 
-#include "usb_request.h"
-#include "lcd.h"
-#include "analog.h"
-#include "buttons.h"
-#include "menu.h"
-#include "delay.h"
-#include "killswitch.h"
-#include "expander.h"
-#include "motor_driver.h"
-#include "arm_driver.h"
+#include "usb_request.hpp"
+#include "lcd.hpp"
+#include "analog.hpp"
+#include "buttons.hpp"
+#include "menu.hpp"
+#include "delay.hpp"
+#include "killswitch.hpp"
+#include "expander.hpp"
+#include "motor_driver.hpp"
+#include "arm_driver.hpp"
 
-#include "usb-commands.h"
+#include "usb-commands.hpp"
 
 struct Buffer {
 	uint8_t data[90] = { 0xff };
@@ -54,34 +54,34 @@ static volatile bool responseReady = false;
 using namespace usb;
 
 /*usbMsgLen_t usbFunctionSetup(uchar data[8]) {
-	usbRequest_t *rq = (usbRequest_t *) data;
+ usbRequest_t *rq = (usbRequest_t *) data;
 
-	if ((rq->bmRequestType & USBRQ_TYPE_MASK) != USBRQ_TYPE_VENDOR) {
-		return 0;
-	}
+ if ((rq->bmRequestType & USBRQ_TYPE_MASK) != USBRQ_TYPE_VENDOR) {
+ return 0;
+ }
 
-	usbMsgLen_t len;
+ usbMsgLen_t len;
 
-	switch (static_cast<USBCommands::USBRequest>(rq->bRequest)) {
-	case USBCommands::USB_READ:
-		usbMsgPtr = uint16_t(&outBuff.data);
-		len = outBuff.length;
-		if (len > rq->wLength.word) {
-			len = rq->wLength.word;
-		}
-		return len;
-	case USBCommands::USB_WRITE:
-		inBuff.currentPosition = 0;
-		inBuff.length = rq->wLength.word;
-		responseReady = false;
-		return USB_NO_MSG ;
-	case USBCommands::IS_RESPONSE_READY:
-		usbMsgPtr = uint16_t(&responseReady);
-		return 1;
-	};
+ switch (static_cast<USBCommands::USBRequest>(rq->bRequest)) {
+ case USBCommands::USB_READ:
+ usbMsgPtr = uint16_t(&outBuff.data);
+ len = outBuff.length;
+ if (len > rq->wLength.word) {
+ len = rq->wLength.word;
+ }
+ return len;
+ case USBCommands::USB_WRITE:
+ inBuff.currentPosition = 0;
+ inBuff.length = rq->wLength.word;
+ responseReady = false;
+ return USB_NO_MSG ;
+ case USBCommands::IS_RESPONSE_READY:
+ usbMsgPtr = uint16_t(&responseReady);
+ return 1;
+ };
 
-	return 0;
-}*/
+ return 0;
+ }*/
 
 uint8_t usbFunctionWrite(uint8_t *data, uint8_t len) {
 	for (uint8_t i = 0; i < len; i++) {

@@ -5,8 +5,8 @@
  *      Author: michal
  */
 
-#include "i2c.h"
-#include "expander.h"
+#include "i2c.hpp"
+#include "expander.hpp"
 
 static const uint8_t EXPANDER_ADDRESS = 0x64;
 

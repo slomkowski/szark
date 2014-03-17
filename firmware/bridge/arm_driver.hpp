@@ -9,7 +9,7 @@
 #define ARM_DRIVER_H_
 
 #include <stdint.h>
-#include "arm_driver-commands.h"
+#include "arm_driver-commands.hpp"
 
 namespace arm {
 	void calibrate();

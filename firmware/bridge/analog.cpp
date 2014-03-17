@@ -5,12 +5,12 @@
  *      Author: michal
  */
 
-#include "global.h"
+#include "global.hpp"
 
 #include <avr/io.h>
 #include <avr/interrupt.h>
 
-#include "analog.h"
+#include "analog.hpp"
 
 #define ANALOG_VOLTAGE_CHANNEL 0x4
 #define ANALOG_CURRENT_CHANNEL 0x5

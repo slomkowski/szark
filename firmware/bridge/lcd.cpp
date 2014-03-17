@@ -11,13 +11,13 @@
  *	published by the Free Software Foundation.
  */
 
-#include "global.h"
+#include "global.hpp"
 #include <avr/io.h>
 #include <avr/pgmspace.h>
 #include <util/delay.h>
 
-#include "delay.h"
-#include "lcd.h"
+#include "delay.hpp"
+#include "lcd.hpp"
 
 #define LCD_D4_PORT	B
 #define LCD_D4			3

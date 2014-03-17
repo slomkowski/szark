@@ -11,7 +11,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <avr/pgmspace.h>
-#include "buttons.h"
+#include "buttons.hpp"
 
 namespace menu {
 

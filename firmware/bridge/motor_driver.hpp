@@ -8,7 +8,7 @@
 #ifndef MOTOR_DRIVER_H_
 #define MOTOR_DRIVER_H_
 
-#include "motor_driver-commands.h"
+#include "motor_driver-commands.hpp"
 #include <stdint.h>
 
 namespace motor {

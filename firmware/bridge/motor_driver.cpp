@@ -5,9 +5,9 @@
  *      Author: michal
  */
 
-#include "global.h"
-#include "motor_driver.h"
-#include "i2c.h"
+#include "global.hpp"
+#include "motor_driver.hpp"
+#include "i2c.hpp"
 
 static const uint8_t MOTOR_DRIVER_ADDRESS = 0x12;
 

@@ -5,15 +5,15 @@
  *      Author: michal
  */
 
-#include "global.h"
+#include "global.hpp"
 
 #include <avr/pgmspace.h>
 #include <stdlib.h>
 
-#include "lcd.h"
-#include "buttons.h"
-#include "killswitch.h"
-#include "MenuClass.h"
+#include "lcd.hpp"
+#include "buttons.hpp"
+#include "killswitch.hpp"
+#include "MenuClass.hpp"
 
 using namespace menu;
 

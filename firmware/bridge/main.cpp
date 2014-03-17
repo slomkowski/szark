@@ -1,18 +1,18 @@
-#include "global.h"
+#include "global.hpp"
 #include <avr/io.h>
 #include <avr/wdt.h>
 #include <avr/interrupt.h>
 #include <avr/pgmspace.h>
 #include <util/delay.h>
 
-#include "i2c.h"
-#include "lcd.h"
-#include "analog.h"
-#include "buttons.h"
-#include "menu.h"
-#include "delay.h"
-#include "killswitch.h"
-#include "usb_request.h"
+#include "i2c.hpp"
+#include "lcd.hpp"
+#include "analog.hpp"
+#include "buttons.hpp"
+#include "menu.hpp"
+#include "delay.hpp"
+#include "killswitch.hpp"
+#include "usb_request.hpp"
 
 //
 static const bool WATCHDOG_ENABLE = false;

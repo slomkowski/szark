@@ -5,22 +5,22 @@
  *      Author: michal
  */
 
-#include "global.h"
+#include "global.hpp"
 
 #include <avr/pgmspace.h>
 #include <util/delay.h>
 #include <stdlib.h>
 
-#include "lcd.h"
-#include "arm_driver.h"
-#include "motor_driver.h"
-#include "expander.h"
-#include "buttons.h"
-#include "analog.h"
-#include "menu.h"
-#include "killswitch.h"
-#include "i2c.h"
-#include "MenuClass.h"
+#include "lcd.hpp"
+#include "arm_driver.hpp"
+#include "motor_driver.hpp"
+#include "expander.hpp"
+#include "buttons.hpp"
+#include "analog.hpp"
+#include "menu.hpp"
+#include "killswitch.hpp"
+#include "i2c.hpp"
+#include "MenuClass.hpp"
 
 using namespace menu;
 

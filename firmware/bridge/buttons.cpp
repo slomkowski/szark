@@ -5,10 +5,10 @@
  *      Author: michal
  */
 
-#include "global.h"
+#include "global.hpp"
 #include <avr/io.h>
-#include "delay.h"
-#include "buttons.h"
+#include "delay.hpp"
+#include "buttons.hpp"
 
 #define BUTTON_PORT_ENTER	E
 #define BUTTON_ENTER		6

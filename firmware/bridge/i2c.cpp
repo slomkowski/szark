@@ -8,8 +8,8 @@
 #include <avr/io.h>
 #include <avr/interrupt.h>
 
-#include "global.h"
-#include "i2c.h"
+#include "global.hpp"
+#include "i2c.hpp"
 
 using namespace i2c;
 
