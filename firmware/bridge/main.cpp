@@ -29,7 +29,7 @@ int main(void) {
 	buttons::init();
 	menu::init();
 
-	lcd_putsP("SZARK - Loading\n2013 Slomkowski");
+	lcd_putsP("SZARK - Loading\n2014 Slomkowski");
 
 	_delay_ms(250);
 

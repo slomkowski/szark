@@ -1,8 +1,14 @@
 /*
  * lcd.cpp
  *
- *  Created on: 06-08-2013
- *      Author: michal
+ *  Project: bridge
+ *  Created on: 24-08-2013
+ *
+ *  Copyright 2014 Michał Słomkowski m.slomkowski@gmail.com
+ *
+ *	This program is free software; you can redistribute it and/or modify it
+ *	under the terms of the GNU General Public License version 3 as
+ *	published by the Free Software Foundation.
  */
 
 #include "global.h"
@@ -60,19 +66,35 @@
 #define LCDC_LINE1  	0x80
 #define LCDC_LINE2  	0xC0
 
-enum Type {
+enum class Type {
 	DATA, COMMAND
+};
+
+enum class LcdDir {
+	IN, OUT
 };
 
 using namespace lcd;
 
 static uint8_t position;
 
-static void pulseE() {
-	PORT(LCD_E_PORT) |= (1 << LCD_E);
-	delay::wait100us();
-	delay::wait100us();
-	PORT(LCD_E_PORT) &= ~(1 << LCD_E);
+static void setDirection(LcdDir direction) {
+	if (direction == LcdDir::OUT) {
+		DDR(LCD_D4_PORT) |= (1 << LCD_D4);
+		DDR(LCD_D5_PORT) |= (1 << LCD_D5);
+		DDR(LCD_D6_PORT) |= (1 << LCD_D6);
+		DDR(LCD_D7_PORT) |= (1 << LCD_D7);
+	} else {
+		DDR(LCD_D4_PORT) &= ~(1 << LCD_D4);
+		DDR(LCD_D5_PORT) &= ~(1 << LCD_D5);
+		DDR(LCD_D6_PORT) &= ~(1 << LCD_D6);
+		DDR(LCD_D7_PORT) &= ~(1 << LCD_D7);
+
+		PORT(LCD_D4_PORT) &= ~(1 << LCD_D4);
+		PORT(LCD_D5_PORT) &= ~(1 << LCD_D5);
+		PORT(LCD_D6_PORT) &= ~(1 << LCD_D6);
+		PORT(LCD_D7_PORT) &= ~(1 << LCD_D7);
+	}
 }
 
 static void updateBus(uint8_t data) {
@@ -87,38 +109,89 @@ static void updateBus(uint8_t data) {
 	if (data & 0x10) PORT(LCD_D4_PORT) |= (1 << LCD_D4);
 }
 
-static void send(uint8_t data, Type type) {
+static uint8_t readBus() {
+	uint8_t output = 0;
 
-	if (type == COMMAND) {
+	if (PIN(LCD_D7_PORT) & (1 << LCD_D7)) {
+		output |= 0x80;
+	}
+
+	if (PIN(LCD_D6_PORT) & (1 << LCD_D6)) {
+		output |= 0x40;
+	}
+
+	if (PIN(LCD_D5_PORT) & (1 << LCD_D5)) {
+		output |= 0x20;
+	}
+
+	if (PIN(LCD_D4_PORT) & (1 << LCD_D4)) {
+		output |= 0x10;
+	}
+
+	return output;
+}
+
+static uint8_t receive() {
+
+	uint8_t output = 0;
+
+	setDirection(LcdDir::IN);
+
+	PORT(LCD_RW_PORT) |= (1 << LCD_RW);
+
+	PORT(LCD_E_PORT) |= (1 << LCD_E);
+	output |= readBus();
+	PORT(LCD_E_PORT) &= ~(1 << LCD_E);
+
+	PORT(LCD_E_PORT) |= (1 << LCD_E);
+	output |= readBus() >> 4;
+	PORT(LCD_E_PORT) &= ~(1 << LCD_E);
+
+	return output;
+}
+
+static uint8_t receiveStatus() {
+	PORT(LCD_RS_PORT) &= ~(1 << LCD_RS);
+	return receive();
+}
+
+static void send(uint8_t data, Type type) {
+	setDirection(LcdDir::OUT);
+
+	if (type == Type::COMMAND) {
 		PORT(LCD_RS_PORT) &= ~(1 << LCD_RS);
 	} else {
 		PORT(LCD_RS_PORT) |= (1 << LCD_RS);
 	}
+
+	PORT(LCD_RW_PORT) &= ~(1 << LCD_RW);
+
+	PORT(LCD_E_PORT) |= (1 << LCD_E);
 	updateBus(data);
-	pulseE();
+	PORT(LCD_E_PORT) &= ~(1 << LCD_E);
+
+	PORT(LCD_E_PORT) |= (1 << LCD_E);
 	updateBus(data << 4);
-	pulseE();
+	PORT(LCD_E_PORT) &= ~(1 << LCD_E);
 
-	// Delay 636 cycles
-	// 39us 750 ns at 16 MHz
+	while (receiveStatus() & 0x80) {
+	}
+}
 
-	asm volatile (
-		"    ldi  r18, 212" "\n"
-		"1:  dec  r18" "\n"
-		"    brne 1b" "\n"
-	);
+static void pulseE() {
+	PORT(LCD_E_PORT) |= (1 << LCD_E);
+	delay::wait100us();
+	delay::wait100us();
+	PORT(LCD_E_PORT) &= ~(1 << LCD_E);
 }
 
 void lcd::init() {
-	// setting D4-D7, RS and E as outputs
+	// setting D4-D7, RS, RW and E as outputs
 	DDR(LCD_E_PORT) |= (1 << LCD_E);
 	DDR(LCD_RS_PORT) |= (1 << LCD_RS);
 	DDR(LCD_RW_PORT) |= (1 << LCD_RW);
 
-	DDR(LCD_D4_PORT) |= (1 << LCD_D4);
-	DDR(LCD_D5_PORT) |= (1 << LCD_D5);
-	DDR(LCD_D6_PORT) |= (1 << LCD_D6);
-	DDR(LCD_D7_PORT) |= (1 << LCD_D7);
+	setDirection(LcdDir::OUT);
 
 	PORT(LCD_RS_PORT) |= (1 << LCD_RS);
 	PORT(LCD_E_PORT) |= (1 << LCD_E);
@@ -127,6 +200,7 @@ void lcd::init() {
 
 	PORT(LCD_RS_PORT) &= ~(1 << LCD_RS);
 	PORT(LCD_E_PORT) &= ~(1 << LCD_E);
+	PORT(LCD_RW_PORT) &= ~(1 << LCD_RW);
 
 	PORT(LCD_D4_PORT) |= (1 << LCD_D4);
 	PORT(LCD_D5_PORT) |= (1 << LCD_D5);
@@ -146,42 +220,40 @@ void lcd::init() {
 	pulseE();
 	delay::wait100us();
 
-	send(LCDC_FUNC | LCDC_FUNC4b | LCDC_FUNC2L | LCDC_FUNC5x7, COMMAND);
-	send(LCDC_ON | 0, COMMAND);
+	send(LCDC_FUNC | LCDC_FUNC4b | LCDC_FUNC2L | LCDC_FUNC5x7, Type::COMMAND);
+	send(LCDC_ON | 0, Type::COMMAND);
 
 	clrscr();
 
-	send(LCDC_MODE | LCDC_MODER, COMMAND);
-	send(LCDC_ON | LCDC_ONDISPLAY, COMMAND);
+	send(LCDC_MODE | LCDC_MODER, Type::COMMAND);
+	send(LCDC_ON | LCDC_ONDISPLAY, Type::COMMAND);
 }
 
 void lcd::clrscr() {
 	gotoxy(0, 0);
 
-	send(LCDC_CLS, COMMAND);
-
-	delay::waitMs(2);
+	send(LCDC_CLS, Type::COMMAND);
 }
 
 void lcd::putc(char character) {
 	if ((character == '\n')) {
-		send(LCDC_LINE2 | 64, COMMAND);
+		send(LCDC_LINE2 | 64, Type::COMMAND);
 		position = 0;
 	} else {
 		if (position == LCD_COLUMNS) {
-			send(LCDC_LINE2 | 64, COMMAND);
+			send(LCDC_LINE2 | 64, Type::COMMAND);
 			position = 0;
 		}
-		send(character, DATA);
+		send(character, Type::DATA);
 		position++;
 	}
 }
 
 void lcd::gotoxy(uint8_t x, uint8_t y) {
 	if (y == 0) {
-		send(LCDC_LINE1 | x, COMMAND);
+		send(LCDC_LINE1 | x, Type::COMMAND);
 	} else {
-		send(LCDC_LINE2 | x, COMMAND);
+		send(LCDC_LINE2 | x, Type::COMMAND);
 	}
 	position = x;
 }

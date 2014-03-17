@@ -1,8 +1,14 @@
 /*
- * lcd.h
+ * lcd.hpp
  *
- *  Created on: 06-08-2013
- *      Author: michal
+ *  Project: bridge
+ *  Created on: 24-08-2013
+ *
+ *  Copyright 2014 Michał Słomkowski m.slomkowski@gmail.com
+ *
+ *	This program is free software; you can redistribute it and/or modify it
+ *	under the terms of the GNU General Public License version 3 as
+ *	published by the Free Software Foundation.
  */
 
 #ifndef LCD_H_
