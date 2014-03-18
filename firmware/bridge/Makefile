@@ -12,17 +12,16 @@ AVRDUDE=avrdude
 
 OUTPUT=bridge
 
-CPU-GCC=atmega32u4
-CPU-AVRDUDE=atmega32u4
+MPU=atmega32u4
 
-COMMONFLAGS=-mmcu=$(CPU-GCC) -Os
+COMMONFLAGS=-mmcu=$(MPU) -Os
 COMMONFLAGS+=-Wall
 COMMONFLAGS+=-I../common -I.
 CPPFLAGS=$(COMMONFLAGS) --std=c++11 -Wextra
 
 # config for USB programmer
-PROGRAMMER=stk500v2
-PORT=avrdoper
+PROGRAMMER=avr109
+PORT=/dev/ttyACM0
 
 FUSE_LOW=0xde
 FUSE_HIGH=0xd8
@@ -45,10 +44,9 @@ all : $(OUTPUT).hex
 directories:
 	mkdir -p $(BIN_DIR)
 
-# generic code
 $(OUTPUT).hex : directories $(BIN_DIR)/$(OUTPUT).elf
 	$(AVR-OBJCOPY) -O ihex $(BIN_DIR)/$(OUTPUT).elf $(OUTPUT).hex
-	$(AVR-SIZE) --mcu=$(CPU-GCC) -C $(BIN_DIR)/$(OUTPUT).elf
+	$(AVR-SIZE) --mcu=$(MPU) -C $(BIN_DIR)/$(OUTPUT).elf
 
 $(BIN_DIR)/$(OUTPUT).elf : $(OBJ) 
 	$(AVR-CPP) $(CPPFLAGS) -o $(BIN_DIR)/$(OUTPUT).elf $(OBJ)
@@ -59,20 +57,17 @@ $(BIN_DIR)/main.o : main.cpp $(EXTRA_DEPS) directories
 $(BIN_DIR)/%.o : %.cpp %.hpp $(EXTRA_DEPS) directories
 	$(AVR-CPP) $(CPPFLAGS) -c $< -o $@
 	
-run: burn
+burn: $(OUTPUT).hex
+	$(AVRDUDE) -c $(PROGRAMMER) -p $(MPU) -P $(PORT) -U flash:w:"$(OUTPUT).hex"
 
 reset:
-	$(AVRDUDE) -c $(PROGRAMMER) -p $(CPU-AVRDUDE) -P $(PORT)
-
-burn: $(OUTPUT).hex
-	$(AVRDUDE) -c $(PROGRAMMER) -p $(CPU-AVRDUDE) -P $(PORT) -U flash:w:"$(OUTPUT).hex":a -e
-
-burn_fuses:
-	$(AVRDUDE) -c $(PROGRAMMER) -p $(CPU-AVRDUDE) -P $(PORT) -U lfuse:w:$(FUSE_LOW):m -U hfuse:w:$(FUSE_HIGH):m -U efuse:w:$(FUSE_EXTENDED):m
+	$(AVRDUDE) -c $(PROGRAMMER) -p $(MPU) -P $(PORT)
 	
-
+burn_fuses:
+	$(AVRDUDE) -c stk500v2 -p $(MPU) -P avrdoper -U lfuse:w:$(FUSE_LOW):m -U hfuse:w:$(FUSE_HIGH):m -U efuse:w:$(FUSE_EXTENDED):m
+	
 clean:
 	rm -rf $(OUTPUT).* $(BIN_DIR)
 
-.PHONY: all clean burn burn_fuses run reset directories
+.PHONY: all clean burn burn_fuses run reset directories avrdoper
 
