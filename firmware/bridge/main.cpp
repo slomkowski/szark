@@ -47,5 +47,16 @@ int main(void) {
 			menu::poll();
 			delay::waitMs(150);
 		}
+
+		auto btn = buttons::getButtonsState(false);
+		// reset the device when special combination happens
+		if (btn->down and btn->up) {
+			lcd::clrscr();
+			lcd_putsP("FIRMWARE UPDATE");
+
+			wdt_enable(WDTO_15MS);
+			while (true) {
+			}
+		}
 	}
 }
