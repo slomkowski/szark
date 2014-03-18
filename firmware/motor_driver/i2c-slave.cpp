@@ -10,7 +10,7 @@
 #include <stdint.h>
 #include <avr/io.h>
 #include <avr/interrupt.h>
-#include "i2c-slave.h"
+#include "i2c-slave.hpp"
 
 #define DEBUG 0
 

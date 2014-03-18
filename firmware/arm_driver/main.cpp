@@ -4,14 +4,14 @@
  #  www.flylab.ovh.org m.slomkowski@gmail.com
  */
 
-#include "global.h"
+#include "global.hpp"
 
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include <avr/wdt.h>
 
-#include "joint.h"
-#include "i2c-slave.h"
+#include "joint.hpp"
+#include "i2c-slave.hpp"
 #include "arm_driver-commands.hpp"
 
 void processCommands(uint8_t *rxbuf, uint8_t *txbuf);

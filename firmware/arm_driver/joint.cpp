@@ -1,4 +1,4 @@
-#include "global.h"
+#include "global.hpp"
 
 #include <avr/io.h>
 #include <inttypes.h>
@@ -6,7 +6,7 @@
 #include <util/delay.h>
 #include <avr/wdt.h>
 
-#include "joint.h"
+#include "joint.hpp"
 
 #include "arm_driver-commands.hpp"
 

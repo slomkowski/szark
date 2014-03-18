@@ -1,4 +1,4 @@
-#include "global.h"
+#include "global.hpp"
 
 #include <avr/io.h>
 #include <inttypes.h>
@@ -9,8 +9,8 @@
 
 #include <stdlib.h>
 
-#include "motor.h"
-#include "controller.h"
+#include "motor.hpp"
+#include "controller.hpp"
 
 /* Interrupt interval - after this time the PD controller interrupt is called.
  * The base is (f_clk/1024) ~= 0.25ms. Current setting 500 = 125ms

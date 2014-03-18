@@ -1,8 +1,8 @@
-#include "global.h"
+#include "global.hpp"
 
 #include <inttypes.h>
-#include "motor.h"
-#include "controller.h"
+#include "motor.hpp"
+#include "controller.hpp"
 
 using namespace motor;
 

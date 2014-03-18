@@ -35,11 +35,11 @@
  * * (MISRA C rule 109) use of union - overlapping storage shall not be used
  * * (MISRA C rule 61) every non-empty case clause in a switch statement shall be terminated with a break statement
  */
-#include "global.h"
+#include "global.hpp"
 
 #include <avr/io.h>
 #include <avr/interrupt.h>
-#include "i2c-slave.h"
+#include "i2c-slave.hpp"
 
 #define TRUE          1
 #define FALSE         0

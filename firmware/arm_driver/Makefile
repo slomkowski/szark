@@ -26,16 +26,16 @@ FUSE_LOW=0xc2
 FUSE_HIGH=0xdc
 FUSE_EXTENDED=0xf9
 
-EXTRA_DEPS = global.h
+EXTRA_DEPS = global.hpp
 
 BIN_DIR=obj
 
 SRC_CPP = $(shell ls *.cpp)
 
 .SUFFIXES:
-.SUFFIXES: .h .cpp .c .o
+.SUFFIXES: .h .cpp .c .o .hpp
 
-HEADERS = $(SRC_CPP:%.cpp=%.h) 
+HEADERS = $(SRC_CPP:%.cpp=%.hpp) 
 OBJ = $(SRC_CPP:%.cpp=$(BIN_DIR)/%.o)
 
 all : $(OUTPUT).hex
@@ -54,7 +54,7 @@ $(BIN_DIR)/$(OUTPUT).elf : $(OBJ)
 $(BIN_DIR)/main.o : main.cpp $(EXTRA_DEPS) directories
 	$(AVR-CC) $(CFLAGS) -c $< -o $@
 
-$(BIN_DIR)/%.o : %.cpp %.h $(EXTRA_DEPS) directories
+$(BIN_DIR)/%.o : %.cpp %.hpp $(EXTRA_DEPS) directories
 	$(AVR-CC) $(CFLAGS) -c $< -o $@
 
 run: burn

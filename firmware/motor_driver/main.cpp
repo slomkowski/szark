@@ -5,14 +5,14 @@
  */
 
 // main module
-#include "global.h"
+#include "global.hpp"
 
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include <avr/wdt.h>
 
-#include "motor.h"
-#include "i2c-slave.h"
+#include "motor.hpp"
+#include "i2c-slave.hpp"
 
 int main() {
 #if DEBUG

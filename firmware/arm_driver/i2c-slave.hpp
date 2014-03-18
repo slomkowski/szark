@@ -23,7 +23,7 @@
 #ifndef _I2C_SLAVE_H_
 #define _I2C_SLAVE_H_
 
-#include "global.h"
+#include "global.hpp"
 
 /****************************************************************************
   Global definitions

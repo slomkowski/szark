@@ -3,7 +3,7 @@
 
 #include <inttypes.h>
 
-#include "global.h"
+#include "global.hpp"
 #include "arm_driver-commands.hpp"
 
 //*** I/O configuration - bound to hardware
