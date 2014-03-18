@@ -1,7 +1,14 @@
-# Object files
+# Object and compilation files
 *.o
+*.obj
 *.hex
 *.elf
+*.d
+*.eep
+*.map
+*.sym
+*.bin
+*.lss
 */obj/
 
 # Libraries
