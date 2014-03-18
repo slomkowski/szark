@@ -54,7 +54,7 @@ static uint32_t CurrAddress;
  *  via a watchdog reset. When cleared the bootloader will exit, starting the watchdog and entering an infinite
  *  loop until the AVR restarts and the application runs.
  */
-static bool RunBootloader = true;
+static volatile bool RunBootloader = true;
 
 /** Magic lock for forced application start. If the HWBE fuse is programmed and BOOTRST is unprogrammed, the bootloader
  *  will start if the /HWB line of the AVR is held low and the system is reset. However, if the /HWB line is still held
@@ -62,6 +62,9 @@ static bool RunBootloader = true;
  *  \ref MAGIC_BOOT_KEY the special init function \ref Application_Jump_Check() will force the application to start.
  */
 uint16_t MagicBootKey ATTR_NO_INIT;
+
+#define TIMEOUT_VALUE 10
+static volatile uint16_t timeout = 0;
 
 
 /** Special startup routine to check if the bootloader was started via a watchdog reset, and if the magic application
@@ -166,6 +169,12 @@ static void SetupHardware(void)
 ISR(TIMER1_OVF_vect, ISR_BLOCK)
 {
 	LEDs_ToggleLEDs(LEDS_LED1 | LEDS_LED2);
+
+	if(timeout >= TIMEOUT_VALUE)
+	{
+		RunBootloader = false;
+	}
+	timeout++;
 }
 
 /** Event handler for the USB_ConfigurationChanged event. This configures the device's endpoints ready
@@ -413,6 +422,8 @@ static void CDC_Task(void)
 	/* Check if endpoint has a command in it sent from the host */
 	if (!(Endpoint_IsOUTReceived()))
 	  return;
+
+	timeout = 0;
 
 	/* Read in the bootloader command (first byte sent from host) */
 	uint8_t Command = FetchNextCommandByte();
