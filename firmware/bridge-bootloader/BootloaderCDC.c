@@ -109,6 +109,11 @@ void Application_Jump_Check(void)
 	}
 }
 
+static void toggleGreenLED()
+{
+	PORTD ^= (1 << PD5);
+}
+
 /** Main program entry point. This routine configures the hardware required by the bootloader, then continuously
  *  runs the bootloader processing routine until instructed to soft-exit, or hard-reset via the watchdog to start
  *  the loaded application code.
@@ -119,7 +124,7 @@ int main(void)
 	SetupHardware();
 
 	/* Turn on first LED on the board to indicate that the bootloader has started */
-	LEDs_SetAllLEDs(LEDS_LED1);
+	PORTD &= ~(1 << PD5);
 
 	/* Enable global interrupts so that the USB stack can function */
 	GlobalInterruptEnable();
@@ -158,7 +163,8 @@ static void SetupHardware(void)
 
 	/* Initialize the USB and other board hardware drivers */
 	USB_Init();
-	LEDs_Init();
+	// init green LED and force emergency stop line to be active 
+	DDRD |= (1 << PD5) | (1 << PD4);
 
 	/* Bootloader active LED toggle timer initialization */
 	TIMSK1 = (1 << TOIE1);
@@ -168,7 +174,7 @@ static void SetupHardware(void)
 /** ISR to periodically toggle the LEDs on the board to indicate that the bootloader is active. */
 ISR(TIMER1_OVF_vect, ISR_BLOCK)
 {
-	LEDs_ToggleLEDs(LEDS_LED1 | LEDS_LED2);
+	toggleGreenLED();
 
 	if(timeout >= TIMEOUT_VALUE)
 	{
@@ -205,7 +211,7 @@ void EVENT_USB_Device_ControlRequest(void)
 	}
 
 	/* Activity - toggle indicator LEDs */
-	LEDs_ToggleLEDs(LEDS_LED1 | LEDS_LED2);
+	toggleGreenLED();
 
 	/* Process CDC specific control requests */
 	switch (USB_ControlRequest.bRequest)
