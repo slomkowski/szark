@@ -3,71 +3,41 @@
 # 2014 Michał Słomkowski
 # This code is distributed under the terms of GNU General Public License version 3.0.
 #
- 
-AVR-CC=avr-gcc
-AVR-CPP=avr-g++
-AVR-OBJCOPY=avr-objcopy
-AVR-SIZE=avr-size
-AVRDUDE=avrdude
+# Makefile based on LUFA library Makefile
+# LUFA Library
+# Copyright (C) Dean Camera, 2014.
+# dean [at] fourwalledcubicle [dot] com www.lufa-lib.org
+#
 
-OUTPUT=bridge
+MCU          = atmega32u4
+ARCH         = AVR8
+BOARD        = NONE
+F_CPU        = 16000000
+F_USB        = $(F_CPU)
+OPTIMIZATION = s
+TARGET       = bridge
+SRC          = $(shell ls *.cpp)
+SRC          += $(LUFA_SRC_USB)
+LUFA_PATH    = ../LUFA
+CC_FLAGS     = -I../common -Wall -Wextra -DUSE_LUFA_CONFIG_HEADER 
+LD_FLAGS     =
+CPP_STANDARD=c++11
+OBJDIR=obj
 
-MPU=atmega32u4
-
-COMMONFLAGS=-mmcu=$(MPU) -Os
-COMMONFLAGS+=-Wall
-COMMONFLAGS+=-I../common -I.
-CPPFLAGS=$(COMMONFLAGS) --std=c++11 -Wextra
-
-# config for USB programmer
-PROGRAMMER=avr109
-PORT=/dev/ttyACM0
+AVRDUDE_PROGRAMMER=avr109
+AVRDUDE_PORT=/dev/ttyACM0
 
 FUSE_LOW=0xde
 FUSE_HIGH=0xd8
 FUSE_EXTENDED=0xf9
 
-EXTRA_DEPS = global.hpp
+# Default target
+all: hex
 
-BIN_DIR=obj
+include $(LUFA_PATH)/Build/lufa_core.mk
+include $(LUFA_PATH)/Build/lufa_sources.mk
+include $(LUFA_PATH)/Build/lufa_build.mk
+include $(LUFA_PATH)/Build/lufa_avrdude.mk
 
-SRC_CPP = $(shell ls *.cpp)
-
-.SUFFIXES:
-.SUFFIXES: .hpp .h .cpp .c .o .inc .S .asm
-
-HEADERS = $(SRC_CPP:%.cpp=%.hpp) 
-OBJ += $(SRC_CPP:%.cpp=$(BIN_DIR)/%.o)
-
-all : $(OUTPUT).hex
-
-directories:
-	mkdir -p $(BIN_DIR)
-
-$(OUTPUT).hex : directories $(BIN_DIR)/$(OUTPUT).elf
-	$(AVR-OBJCOPY) -O ihex $(BIN_DIR)/$(OUTPUT).elf $(OUTPUT).hex
-	$(AVR-SIZE) --mcu=$(MPU) -C $(BIN_DIR)/$(OUTPUT).elf
-
-$(BIN_DIR)/$(OUTPUT).elf : $(OBJ) 
-	$(AVR-CPP) $(CPPFLAGS) -o $(BIN_DIR)/$(OUTPUT).elf $(OBJ)
-
-$(BIN_DIR)/main.o : main.cpp $(EXTRA_DEPS) directories
-	$(AVR-CPP) $(CPPFLAGS) -c $< -o $@
-
-$(BIN_DIR)/%.o : %.cpp %.hpp $(EXTRA_DEPS) directories
-	$(AVR-CPP) $(CPPFLAGS) -c $< -o $@
-	
-burn: $(OUTPUT).hex
-	$(AVRDUDE) -c $(PROGRAMMER) -p $(MPU) -P $(PORT) -U flash:w:"$(OUTPUT).hex"
-
-reset:
-	$(AVRDUDE) -c $(PROGRAMMER) -p $(MPU) -P $(PORT)
-	
 burn_fuses:
-	$(AVRDUDE) -c stk500v2 -p $(MPU) -P avrdoper -U lfuse:w:$(FUSE_LOW):m -U hfuse:w:$(FUSE_HIGH):m -U efuse:w:$(FUSE_EXTENDED):m
-	
-clean:
-	rm -rf $(OUTPUT).* $(BIN_DIR)
-
-.PHONY: all clean burn burn_fuses run reset directories avrdoper
-
+	avrdude -c stk500v2 -p $(MCU) -P avrdoper -U lfuse:w:$(FUSE_LOW):m -U hfuse:w:$(FUSE_HIGH):m -U efuse:w:$(FUSE_EXTENDED):m

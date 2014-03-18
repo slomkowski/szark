@@ -21,6 +21,8 @@
 
 #include "usb-commands.hpp"
 
+#define GENERIC_REPORT_SIZE       8
+
 struct Buffer {
 	uint8_t data[90] = { 0xff };
 	uint8_t currentPosition;

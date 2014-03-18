@@ -9,11 +9,6 @@
 #define GLOBAL_H_
 
 /*
- * CPU clock frequency. Set to 16 MHz.
- */
-#define F_CPU 16000000UL
-
-/*
  * Useful macros for port name resolving.
  */
 #define PORT(x) XPORT(x)
