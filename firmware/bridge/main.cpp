@@ -13,6 +13,7 @@
 #include "delay.hpp"
 #include "killswitch.hpp"
 #include "usb_request.hpp"
+#include "led.hpp"
 
 //
 static const bool WATCHDOG_ENABLE = false;
@@ -23,12 +24,13 @@ int main(void) {
 	}
 
 	killswitch::init();
-
+	led::init();
 	i2c::init();
 	lcd::init();
 	buttons::init();
 	menu::init();
 
+	led::setState(led::YELLOW, true);
 	lcd_putsP("SZARK - Loading\n2014 Slomkowski");
 
 	_delay_ms(250);
