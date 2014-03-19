@@ -30,6 +30,9 @@ namespace lcd {
 
 	void putsp(const char *progmem_s);
 	void putsp(uint8_t x, uint8_t y, const char *progmemString);
+
+	void putNumber(int16_t number);
+	void putNumber(uint8_t x, uint8_t y, int16_t number);
 }
 
 #include <avr/pgmspace.h>

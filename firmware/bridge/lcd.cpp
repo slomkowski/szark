@@ -285,3 +285,34 @@ void lcd::putsp(uint8_t x, uint8_t y, const char *progmem_s) {
 	putsp(progmem_s);
 }
 
+void lcd::putNumber(int16_t number) {
+	const uint8_t MAX_DIGITS = 5;
+
+	uint8_t buff[MAX_DIGITS + 1] = { 0 };
+	uint8_t counter = MAX_DIGITS;
+
+	if (number < 0) {
+		putc('-');
+		number = -1 * number;
+	}
+
+	do {
+		uint8_t digit = number % 10;
+		buff[counter] = '0' + digit;
+		counter--;
+		number /= 10;
+	} while (number > 0);
+
+	counter++;
+
+	while (counter <= MAX_DIGITS) {
+		putc(buff[counter]);
+		counter++;
+	}
+}
+
+void lcd::putNumber(uint8_t x, uint8_t y, int16_t number) {
+	gotoxy(x, y);
+	putNumber(number);
+}
+
