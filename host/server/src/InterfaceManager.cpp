@@ -40,8 +40,8 @@ namespace bridge {
 		// if the kill switch is active, devices are in reset state and won't repond anyway
 		// TODO reenable
 		/*if (killSwitchActive) {
-		 return requests;
-		 }*/
+			return requests;
+		}*/
 
 		requests.push_back(USBCommands::Request::MOTOR_DRIVER_GET);
 		getterRequests.push_back(USBCommands::Request::MOTOR_DRIVER_GET);
@@ -112,6 +112,8 @@ namespace bridge {
 			killSwitchRequest->second->appendTo(concatenated);
 		}
 
+		concatenated.push_back(USBCommands::MESSAGE_END);
+
 		/*cout << concatenated.size() << " " << concatenated.capacity() << endl;
 		 for (unsigned int i = 0; i < concatenated.size(); i++) {
 		 cout << i << "i: " << (int) concatenated[i] << endl;
@@ -120,12 +122,12 @@ namespace bridge {
 		usbComm.sendData(concatenated);
 
 		/*std::chrono::milliseconds dura(200);
-		std::this_thread::sleep_for(dura);*/
-		do {
-			std::chrono::milliseconds dura(10);
-			std::this_thread::sleep_for(dura);
-			//cout << "nie" << endl;
-		} while (not usbComm.isResponseReady());
+		 std::this_thread::sleep_for(dura);*/
+		/*do {
+		 std::chrono::milliseconds dura(10);
+		 std::this_thread::sleep_for(dura);
+		 //cout << "nie" << endl;
+		 } while (not usbComm.isResponseReady());*/
 
 		auto response = usbComm.receiveData();
 

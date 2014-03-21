@@ -9,6 +9,7 @@
 #include <cmath>
 #include <vector>
 #include <map>
+#include <algorithm>
 
 #include "Interface.hpp"
 #include "DataHolder.hpp"
@@ -284,17 +285,13 @@ namespace bridge {
 			}
 		}
 
-		if (actualPosition != deviceResponse.size()) {
-			for(auto r : getterRequests) {
-				cout << "req: " << int(r) << endl;
-			}
+		if (deviceResponse[actualPosition] != USBCommands::MESSAGE_END) {
+			auto foundPos = std::distance(deviceResponse.begin(),
+				std::find(deviceResponse.begin() + actualPosition, deviceResponse.end(), USBCommands::MESSAGE_END));
 
-			for(auto r : deviceResponse) {
-							cout << "resp: " << int(r) << endl;
-						}
 			throw runtime_error(
-				string("Calculated device response and real response sizes don't match: cal: ")
-					+ to_string(actualPosition) + ", real: " + to_string(deviceResponse.size()));
+				string("Message finish not found in the response at position: ") + to_string(actualPosition) + ", but: "
+					+ to_string(foundPos));
 		}
 	}
 

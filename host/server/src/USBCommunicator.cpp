@@ -120,9 +120,10 @@ namespace USB {
 	}
 
 	void RawCommunicator::sendMessage(USBCommands::USBRequest request, uint8_t *data, unsigned int length) {
-		int status = libusb_control_transfer(devHandle,
-			LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE | LIBUSB_ENDPOINT_OUT, request, 0, 0,
-			reinterpret_cast<unsigned char*>(data), length, MESSAGE_TIMEOUT);
+
+		int transferred;
+		int status = libusb_bulk_transfer(devHandle, (4 | LIBUSB_ENDPOINT_OUT), data, length, &transferred,
+			MESSAGE_TIMEOUT);
 
 		if (status < 0) {
 			std::string mesg = "error at sending data to the device (";
@@ -134,12 +135,10 @@ namespace USB {
 
 	unsigned int RawCommunicator::recvMessage(USBCommands::USBRequest request, uint8_t *data, unsigned int maxLength) {
 
-		int status = libusb_control_transfer(devHandle,
-			LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE | LIBUSB_ENDPOINT_IN, request, 0, 0, data, maxLength,
-			MESSAGE_TIMEOUT);
+		int length;
 
-		/*int status = libusb_interrupt_transfer(devHandle, (1 | LIBUSB_ENDPOINT_IN), data, maxLength, &length,
-		 MESSAGE_TIMEOUT);*/
+		int status = libusb_bulk_transfer(devHandle, (3 | LIBUSB_ENDPOINT_IN), data, maxLength, &length,
+			MESSAGE_TIMEOUT);
 
 		if (status < 0) {
 			std::string mesg = "error at receiving data from the device (";
@@ -149,7 +148,7 @@ namespace USB {
 		}
 		//std::cout << "l: " << status << std::endl;
 
-		return status;
+		return length;
 	}
 
 	void Communicator::sendData(const std::vector<uint8_t>& data) {
@@ -157,17 +156,15 @@ namespace USB {
 	}
 
 	std::vector<uint8_t> Communicator::receiveData() {
-		std::vector<uint8_t> out(BUFFER_SIZE);
+		uint8_t data[BUFFER_SIZE];
 
-		unsigned int length = recvMessage(USBCommands::USB_READ, &out[0], BUFFER_SIZE);
+		unsigned int length = recvMessage(USBCommands::USB_READ, data, BUFFER_SIZE);
 
-		out.resize(length);
+		std::vector<uint8_t> vec(BUFFER_SIZE);
 
-		/*if (out[length - 1] == 66) {
-		 std::cout << "8\n";
-		 }*/
+		vec.assign(data, data + length);
 
-		return out;
+		return vec;
 	}
 
 	bool Communicator::isResponseReady() {

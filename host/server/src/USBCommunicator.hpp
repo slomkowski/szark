@@ -21,11 +21,11 @@ extern "C" {
 
 namespace USB {
 
-	const int VENDOR_ID = 0x16c0;
-	const int DEVICE_ID = 0x05df;
+	const int VENDOR_ID = 0x03eb;
+	const int DEVICE_ID = 0x206c;
 
 	const std::string VENDOR_NAME = "slomkowski.eu";
-	const std::string DEVICE_NAME = "SZARK Bridge";
+	const std::string DEVICE_NAME = "SZARK Robot Bridge";
 
 	const int BUFFER_SIZE = 128;
 	const int MESSAGE_TIMEOUT = 2000; // ms

@@ -66,7 +66,7 @@ int main(int argc, char *argv[]) {
 
 		std::cout << t << ": timer single: " << duration_cast<microseconds>(tstop - tstart).count() << " us\n";
 
-		//std::cout << "voltage: " << i.getVoltage() << std::endl;
+		std::cout << "voltage: " << i.getVoltage() << std::endl;
 	}
 
 	i.arm.brake();
