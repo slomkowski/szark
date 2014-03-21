@@ -21,17 +21,9 @@
 
 #include "usb-commands.hpp"
 
-struct Buffer {
-	uint8_t data[90] = { 0xff };
-	uint8_t currentPosition;
-	uint8_t length;
+using namespace usb;
 
-	void push(void *data, uint8_t length);
-
-	void init();
-};
-
-void Buffer::push(void *data, uint8_t length) {
+void usb::Buffer::push(void *data, uint8_t length) {
 	for (uint8_t i = 0; i < length; i++) {
 		this->data[currentPosition] = *((uint8_t*) data + i);
 		currentPosition++;
@@ -39,63 +31,17 @@ void Buffer::push(void *data, uint8_t length) {
 	this->length += length;
 }
 
-void Buffer::init() {
+void usb::Buffer::init() {
 	currentPosition = 0;
 	length = 0;
 }
 
-static Buffer inBuff, outBuff;
+Buffer usb::inBuff, usb::outBuff;
 
 static bool killSwitchDisabled = false;
 
 static volatile bool newCommandAvailable = false;
 static volatile bool responseReady = false;
-
-using namespace usb;
-
-/*usbMsgLen_t usbFunctionSetup(uchar data[8]) {
- usbRequest_t *rq = (usbRequest_t *) data;
-
- if ((rq->bmRequestType & USBRQ_TYPE_MASK) != USBRQ_TYPE_VENDOR) {
- return 0;
- }
-
- usbMsgLen_t len;
-
- switch (static_cast<USBCommands::USBRequest>(rq->bRequest)) {
- case USBCommands::USB_READ:
- usbMsgPtr = uint16_t(&outBuff.data);
- len = outBuff.length;
- if (len > rq->wLength.word) {
- len = rq->wLength.word;
- }
- return len;
- case USBCommands::USB_WRITE:
- inBuff.currentPosition = 0;
- inBuff.length = rq->wLength.word;
- responseReady = false;
- return USB_NO_MSG ;
- case USBCommands::IS_RESPONSE_READY:
- usbMsgPtr = uint16_t(&responseReady);
- return 1;
- };
-
- return 0;
- }*/
-
-uint8_t usbFunctionWrite(uint8_t *data, uint8_t len) {
-	for (uint8_t i = 0; i < len; i++) {
-		inBuff.data[inBuff.currentPosition] = data[i];
-		inBuff.currentPosition++;
-	}
-
-	if (inBuff.currentPosition >= inBuff.length) {
-		newCommandAvailable = true;
-		return 1;
-	} else {
-		return 0;
-	}
-}
 
 void usb::executeCommandsFromUSB() {
 	if (not newCommandAvailable) {

@@ -19,6 +19,9 @@
 #include "led.hpp"
 #include "usb_support.hpp"
 #include "usb_descriptors.h"
+#include "usb_processcommands.hpp"
+
+static_assert(usb::BUFFER_SIZE == 2 * VENDOR_IO_EPSIZE, "USB request buffer size must match 2 * endpoint size.");
 
 void usb::init() {
 	led::setState(led::YELLOW, false);
@@ -26,26 +29,26 @@ void usb::init() {
 	USB_Init();
 }
 
-void usb::poll() {
-	uint8_t ReceivedData[2 * VENDOR_IO_EPSIZE] = { 0 };
+static uint8_t buffer[2 * VENDOR_IO_EPSIZE];
 
+void usb::poll() {
 	USB_USBTask();
 
 	Endpoint_SelectEndpoint(VENDOR_OUT_EPADDR);
 	if (Endpoint_IsOUTReceived()) {
 		led::setState(led::YELLOW, false);
 
-		Endpoint_Read_Stream_LE(ReceivedData, VENDOR_IO_EPSIZE, NULL);
-		Endpoint_Read_Stream_LE(ReceivedData + VENDOR_IO_EPSIZE, VENDOR_IO_EPSIZE, NULL);
+		Endpoint_Read_Stream_LE(buffer, VENDOR_IO_EPSIZE, NULL);
+		Endpoint_Read_Stream_LE(buffer + VENDOR_IO_EPSIZE, VENDOR_IO_EPSIZE, NULL);
 		Endpoint_ClearOUT();
 
-		for (uint8_t i = 0; i < 2 * VENDOR_IO_EPSIZE; i++) {
-			ReceivedData[i]++;
-		}
+		usb::inBuff.push(buffer, BUFFER_SIZE);
+
+		usb::executeCommandsFromUSB();
 
 		Endpoint_SelectEndpoint(VENDOR_IN_EPADDR);
-		Endpoint_Write_Stream_LE(ReceivedData, VENDOR_IO_EPSIZE, NULL);
-		Endpoint_Write_Stream_LE(ReceivedData + VENDOR_IO_EPSIZE, VENDOR_IO_EPSIZE, NULL);
+		Endpoint_Write_Stream_LE(usb::outBuff.data, VENDOR_IO_EPSIZE, NULL);
+		Endpoint_Write_Stream_LE(usb::outBuff.data + VENDOR_IO_EPSIZE, VENDOR_IO_EPSIZE, NULL);
 		Endpoint_ClearIN();
 
 		led::setState(led::YELLOW, true);

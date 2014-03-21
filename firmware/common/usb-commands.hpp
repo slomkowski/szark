@@ -7,6 +7,8 @@
 
 namespace USBCommands {
 
+	const uint8_t MESSAGE_END_MAGIC[] = { 0x55, 0xAA, 0x55, 0xAA };
+
 	enum USBRequest
 		:uint8_t {
 			USB_READ = 1, USB_WRITE, IS_RESPONSE_READY
