@@ -13,7 +13,7 @@ namespace usb {
 
 	class Buffer {
 	public:
-		uint8_t data[BUFFER_SIZE] = { 0xff };
+		uint8_t data[BUFFER_SIZE + 1] = { 0xff };
 		uint8_t length;
 		uint8_t currentPosition;
 

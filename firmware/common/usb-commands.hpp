@@ -7,8 +7,6 @@
 
 namespace USBCommands {
 
-	const uint8_t MESSAGE_END_MAGIC[] = { 0x55, 0xAA, 0x55, 0xAA };
-
 	enum USBRequest
 		:uint8_t {
 			USB_READ = 1, USB_WRITE, IS_RESPONSE_READY
@@ -25,7 +23,8 @@ namespace USBCommands {
 		ARM_DRIVER_GET,
 		ARM_DRIVER_GET_GENERAL_STATE,
 		EXPANDER_SET,
-		EXPANDER_GET
+		EXPANDER_GET,
+		MESSAGE_END = 222
 	};
 
 	namespace bridge {

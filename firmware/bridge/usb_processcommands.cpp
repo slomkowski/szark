@@ -40,16 +40,10 @@ Buffer usb::inBuff, usb::outBuff;
 
 static bool killSwitchDisabled = false;
 
-static volatile bool newCommandAvailable = false;
 static volatile bool responseReady = false;
 
 void usb::executeCommandsFromUSB() {
-	if (not newCommandAvailable) {
-		return;
-	}
-
 	inBuff.currentPosition = 0;
-
 	outBuff.init();
 
 	for (inBuff.currentPosition = 1; inBuff.currentPosition <= inBuff.length; inBuff.currentPosition++) {
@@ -151,11 +145,16 @@ void usb::executeCommandsFromUSB() {
 			inBuff.currentPosition += length + 1;
 		}
 			break;
+		case USBCommands::MESSAGE_END:
+			inBuff.currentPosition = inBuff.length + 1; // finish processing
+			break;
 		};
 	}
 
+	auto MESSAGE_END = USBCommands::MESSAGE_END;
+	outBuff.push(&MESSAGE_END, 1);
+
 	responseReady = true;
-	newCommandAvailable = false;
 }
 
 bool usb::wasKillSwitchDisabled() {

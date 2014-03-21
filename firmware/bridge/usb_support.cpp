@@ -40,8 +40,10 @@ void usb::poll() {
 
 		Endpoint_Read_Stream_LE(buffer, VENDOR_IO_EPSIZE, NULL);
 		Endpoint_Read_Stream_LE(buffer + VENDOR_IO_EPSIZE, VENDOR_IO_EPSIZE, NULL);
+
 		Endpoint_ClearOUT();
 
+		inBuff.init();
 		usb::inBuff.push(buffer, BUFFER_SIZE);
 
 		usb::executeCommandsFromUSB();
