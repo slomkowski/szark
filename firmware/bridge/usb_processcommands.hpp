@@ -1,12 +1,12 @@
 /*
- * usb_request.h
+ * usb_processcommands.hpp
  *
  *  Created on: 12-08-2013
  *      Author: michal
  */
 
-#ifndef USB_REQUEST_H_
-#define USB_REQUEST_H_
+#ifndef USB_PROCESSCOMMANDS_H_
+#define USB_PROCESSCOMMANDS_H_
 
 namespace usb {
 	void executeCommandsFromUSB();
@@ -14,4 +14,4 @@ namespace usb {
 	bool wasKillSwitchDisabled();
 }
 
-#endif /* USB_REQUEST_H_ */
+#endif /* USB_PROCESSCOMMANDS_HPP_ */

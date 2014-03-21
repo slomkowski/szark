@@ -5,10 +5,10 @@
  *      Author: michal
  */
 
-#include "global.hpp"
 #include <inttypes.h>
 
-#include "usb_request.hpp"
+#include "global.hpp"
+#include "usb_processcommands.hpp"
 #include "lcd.hpp"
 #include "analog.hpp"
 #include "buttons.hpp"
@@ -20,8 +20,6 @@
 #include "arm_driver.hpp"
 
 #include "usb-commands.hpp"
-
-#define GENERIC_REPORT_SIZE       8
 
 struct Buffer {
 	uint8_t data[90] = { 0xff };
