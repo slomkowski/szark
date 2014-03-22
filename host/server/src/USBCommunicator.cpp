@@ -1,16 +1,27 @@
 /*
- * RawCommunicator.cpp
+ * USBCommunicator.cpp
  *
- *  Created on: 12-08-2013
- *      Author: michal
+ *  Project: server
+ *  Created on: 24-08-2013
+ *
+ *  Copyright 2014 Michał Słomkowski m.slomkowski@gmail.com
+ *
+ *	This program is free software; you can redistribute it and/or modify it
+ *	under the terms of the GNU General Public License version 3 as
+ *	published by the Free Software Foundation.
  */
 
-#include "USBCommunicator.hpp"
 #include <iostream>
+
+#include "USBCommunicator.hpp"
+#include "usb-settings.hpp"
 
 namespace USB {
 
-	RawCommunicator::RawCommunicator() {
+	const int BUFFER_SIZE = USB_SETTINGS_HOST_TO_DEVICE_DATAPACKET_SIZE;
+	const int MESSAGE_TIMEOUT = 2000; // ms
+
+	Communicator::Communicator() {
 		devHandle = nullptr;
 
 		bool deviceFound = false;
@@ -30,7 +41,7 @@ namespace USB {
 				continue;
 			}
 
-			if ((desc.idVendor == VENDOR_ID) && (desc.idProduct == DEVICE_ID)) {
+			if ((desc.idVendor == USB_SETTINGS_VENDOR_ID) and (desc.idProduct == USB_SETTINGS_DEVICE_ID)) {
 				status = libusb_open(listOfDevices[i], &devHandle);
 				if (status != 0) {
 					continue;
@@ -46,7 +57,8 @@ namespace USB {
 						sizeof(productString));
 				}
 
-				if ((VENDOR_NAME.compare(vendorString) == 0) && (DEVICE_NAME.compare(productString) == 0)) {
+				if ((std::string(USB_SETTINGS_VENDOR_NAME).compare(vendorString) == 0)
+					and (std::string(USB_SETTINGS_DEVICE_NAME).compare(productString) == 0)) {
 					deviceFound = true;
 					break;
 				} else {
@@ -94,36 +106,25 @@ namespace USB {
 		}
 	}
 
-	RawCommunicator::~RawCommunicator() {
+	Communicator::~Communicator() {
 		libusb_release_interface(devHandle, 0);
 		libusb_close(devHandle);
 		libusb_exit(nullptr);
 	}
 
-	void RawCommunicator::sendMessage(USBCommands::USBRequest request, unsigned int value) {
-		unsigned char buffer[BUFFER_SIZE];
-
-		if (value > 0xffff) {
-			throw CommException("device doesn't support values longer than two bytes");
-		}
-
-		int status = libusb_control_transfer(devHandle,
-			LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE | LIBUSB_ENDPOINT_OUT, request, value, 0, buffer, 0,
-			MESSAGE_TIMEOUT);
-
-		if (status < 0) {
-			std::string mesg = "error at sending data to the device (";
-			mesg += libusb_error_name(status);
-			mesg += ")";
-			throw CommException(mesg);
-		}
-	}
-
-	void RawCommunicator::sendMessage(USBCommands::USBRequest request, uint8_t *data, unsigned int length) {
+	void Communicator::sendData(std::vector<uint8_t>& data) {
+		data.resize(BUFFER_SIZE, 0);
 
 		int transferred;
-		int status = libusb_bulk_transfer(devHandle, (1 | LIBUSB_ENDPOINT_OUT), data, length, &transferred,
-			MESSAGE_TIMEOUT);
+
+		int status = libusb_bulk_transfer(devHandle, (USB_SETTINGS_HOST_TO_DEVICE_ENDPOINT_NO | LIBUSB_ENDPOINT_OUT),
+			&data[0], USB_SETTINGS_HOST_TO_DEVICE_DATAPACKET_SIZE, &transferred, MESSAGE_TIMEOUT);
+
+		if (transferred != USB_SETTINGS_HOST_TO_DEVICE_DATAPACKET_SIZE) {
+			std::string mesg = std::string("sent ") + std::to_string(transferred);
+			mesg += " bytes to the device instead of " + std::to_string(USB_SETTINGS_HOST_TO_DEVICE_DATAPACKET_SIZE);
+			throw CommException(mesg);
+		}
 
 		if (status < 0) {
 			std::string mesg = "error at sending data to the device (";
@@ -133,11 +134,19 @@ namespace USB {
 		}
 	}
 
-	unsigned int RawCommunicator::recvMessage(USBCommands::USBRequest request, uint8_t *data, unsigned int maxLength) {
+	std::vector<uint8_t> Communicator::receiveData() {
+		uint8_t data[BUFFER_SIZE];
 
-		int length;
-		// TODO te 64 bajty wywalić i zrobić z definicjami
-		int status = libusb_bulk_transfer(devHandle, (2 | LIBUSB_ENDPOINT_IN), data, 64, &length, MESSAGE_TIMEOUT);
+		int transferred;
+
+		int status = libusb_bulk_transfer(devHandle, (USB_SETTINGS_DEVICE_TO_HOST_ENDPOINT_NO | LIBUSB_ENDPOINT_IN),
+			data, USB_SETTINGS_DEVICE_TO_HOST_DATAPACKET_SIZE, &transferred, MESSAGE_TIMEOUT);
+
+		if (transferred != USB_SETTINGS_DEVICE_TO_HOST_DATAPACKET_SIZE) {
+			std::string mesg = std::string("received ") + std::to_string(transferred);
+			mesg += " bytes from the device instead of " + std::to_string( USB_SETTINGS_DEVICE_TO_HOST_DATAPACKET_SIZE);
+			throw CommException(mesg);
+		}
 
 		if (status < 0) {
 			std::string mesg = "error at receiving data from the device (";
@@ -145,34 +154,11 @@ namespace USB {
 			mesg += ")";
 			throw CommException(mesg);
 		}
-		//std::cout << "l: " << status << std::endl;
-
-		return length;
-	}
-
-	void Communicator::sendData(std::vector<uint8_t>& data) {
-		data.resize(BUFFER_SIZE, 0);
-		sendMessage(USBCommands::USB_WRITE, (uint8_t*) &data[0], data.size());
-	}
-
-	std::vector<uint8_t> Communicator::receiveData() {
-		uint8_t data[BUFFER_SIZE];
-
-		unsigned int length = recvMessage(USBCommands::USB_READ, data, BUFFER_SIZE);
 
 		std::vector<uint8_t> vec(BUFFER_SIZE);
 
-		vec.assign(data, data + length);
+		vec.assign(data, data + transferred);
 
 		return vec;
 	}
-
-	bool Communicator::isResponseReady() {
-		unsigned char ready = 0;
-
-		recvMessage(USBCommands::IS_RESPONSE_READY, &ready, 1);
-
-		return ready != 0;
-	}
-
 } /* namespace USB */

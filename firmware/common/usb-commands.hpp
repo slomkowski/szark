@@ -2,15 +2,11 @@
 #define _USB_COMMANDS_
 
 #include <stdint.h>
+
 #include "arm_driver-commands.hpp"
 #include "motor_driver-commands.hpp"
 
 namespace USBCommands {
-
-	enum USBRequest
-		:uint8_t {
-			USB_READ = 1, USB_WRITE, IS_RESPONSE_READY
-	};
 
 	enum Request
 		: uint8_t {

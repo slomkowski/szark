@@ -23,7 +23,7 @@ namespace delay {
 	 * to some tasks performed.
 	 * @param milliseconds
 	 */
-	void waitMs(uint8_t milliseconds);
+	void waitMs(uint16_t milliseconds);
 }
 
 #endif /* DELAY_HPP_ */

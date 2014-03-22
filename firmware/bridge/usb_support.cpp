@@ -21,8 +21,13 @@
 #include "usb_descriptors.h"
 #include "usb_processcommands.hpp"
 
+#include "usb-settings.hpp"
+
 static_assert(VENDOR_OUT_EPSIZE >= VENDOR_IN_EPSIZE, "Host-to-device endpoint size has to be bigger than device-to-host endpoint");
 static_assert(usb::BUFFER_SIZE >= VENDOR_OUT_EPSIZE, "USB request buffer must be bigger than Host-to-device endpoint size.");
+
+static_assert(USB_SETTINGS_HOST_TO_DEVICE_DATAPACKET_SIZE == 2 * VENDOR_OUT_EPSIZE, "OUT data packet has to contain 2 OUT endpoints");
+static_assert(USB_SETTINGS_DEVICE_TO_HOST_DATAPACKET_SIZE == VENDOR_IN_EPSIZE, "IN data packet has to match IN endpoint size");
 
 void usb::init() {
 	led::setState(led::YELLOW, false);
@@ -37,7 +42,7 @@ void usb::poll() {
 	if (Endpoint_IsOUTReceived()) {
 		led::setState(led::YELLOW, false);
 
-		usb::InputBuff.length = 2 * VENDOR_OUT_EPSIZE;
+		usb::InputBuff.length = USB_SETTINGS_HOST_TO_DEVICE_DATAPACKET_SIZE;
 
 		Endpoint_Read_Stream_LE(usb::InputBuff.data, VENDOR_OUT_EPSIZE, NULL);
 		Endpoint_Read_Stream_LE(usb::InputBuff.data + VENDOR_OUT_EPSIZE, VENDOR_OUT_EPSIZE, NULL);

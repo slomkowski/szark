@@ -16,6 +16,11 @@ namespace killswitch {
 	bool isActive();
 
 	bool isCausedByHardware();
+
+	/**
+	 * This function should be called in the main loop to monitor hardware kill switch sources.
+	 */
+	void checkHardware();
 }
 
 #endif /* KILLSWITCH_H_ */

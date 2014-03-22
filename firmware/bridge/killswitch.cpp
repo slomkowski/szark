@@ -45,10 +45,17 @@ bool killswitch::isCausedByHardware() {
 	return causedByHardware;
 }
 
-/* TODO zastąpić przerwanie jakimś innym rozwiązaniem
-ISR(PCINT1_vect, ISR_NOBLOCK) {
-	causedByHardware = true;
+void killswitch::checkHardware() {
+	static bool prevHardwareKillSwitchEnabled = true;
+
 	if (killswitch::isActive()) {
+		if (not prevHardwareKillSwitchEnabled) {
+			prevHardwareKillSwitchEnabled = true;
+			causedByHardware = true;
+		}
+
 		killswitch::setActive(true);
+	} else {
+		prevHardwareKillSwitchEnabled = false;
 	}
-}*/
+}

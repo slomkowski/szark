@@ -9,6 +9,7 @@
 #include <boost/timer.hpp>
 #include <chrono>
 #include <vector>
+#include <algorithm>
 #include "InterfaceManager.hpp"
 
 using namespace std;
@@ -35,10 +36,12 @@ int main(int argc, char *argv[]) {
 	i.setLCDText("hello world ala ma kota");
 	i.arm.calibrate();
 
-	for (int t = 0; t < 150; t++) {
+	std::vector<double> timings;
+
+	for (int t = 0; t < 1500; t++) {
 		auto tstart = Clock::now();
 
-		if(t == 101) {
+		if (t == 101) {
 			goto odrazu;
 		}
 
@@ -49,7 +52,7 @@ int main(int argc, char *argv[]) {
 
 		if (t % 7 == 4) i.setLCDText("hi" + std::to_string(t));
 
-		if (t == 30) {
+		if (t % 60 == 30) {
 			i.setLCDText("testowy dlugi string do testowania blabla");
 			//i.arm[bridge::Joint::ELBOW].setDirection(bridge::Direction::STOP);
 			//i.arm[bridge::Joint::ELBOW].setSpeed(3);
@@ -66,14 +69,18 @@ int main(int argc, char *argv[]) {
 		i.arm[bridge::Joint::ELBOW].setDirection(bridge::Direction::BACKWARD);
 		i.arm[bridge::Joint::ELBOW].setSpeed(t % 5);
 
+		if (t % 2) i.motor[bridge::Motor::LEFT].setDirection(bridge::Direction::FORWARD);
+		else i.motor[bridge::Motor::LEFT].setDirection(bridge::Direction::BACKWARD);
+
 		odrazu:
 
 		i.stageChanges();
 		auto tstop = Clock::now();
+		timings.push_back(duration_cast<microseconds>(tstop - tstart).count());
 
-		std::cout << t << ": timer single: " << duration_cast<microseconds>(tstop - tstart).count() << " us\n";
+		//std::cout << t << ": timer single: " << duration_cast<microseconds>(tstop - tstart).count() << " us\n";
 
-		std::cout << "voltage: " << i.getVoltage() << std::endl;
+		//std::cout << "voltage: " << i.getVoltage() << std::endl;
 	}
 
 	i.arm.brake();
@@ -81,7 +88,8 @@ int main(int argc, char *argv[]) {
 	i.stageChanges();
 
 	auto t2 = Clock::now();
-	std::cout << "timer: " << duration_cast<microseconds>(t2 - t1).count() << " us\n";
+	std::cout << "avg time: " << std::accumulate(timings.begin(), timings.end(), 0.0) / timings.size() << " us\n";
+	std::cout << "whole time: " << duration_cast<microseconds>(t2 - t1).count() << " us\n";
 }
 
 /*

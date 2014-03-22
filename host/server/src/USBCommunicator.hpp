@@ -1,12 +1,18 @@
 /*
- * RawCommunicator.h
+ * USBCommunicator.hpp
  *
- *  Created on: 12-08-2013
- *      Author: michal
+ *  Project: server
+ *  Created on: 24-08-2013
+ *
+ *  Copyright 2014 Michał Słomkowski m.slomkowski@gmail.com
+ *
+ *	This program is free software; you can redistribute it and/or modify it
+ *	under the terms of the GNU General Public License version 3 as
+ *	published by the Free Software Foundation.
  */
 
-#ifndef RAWCOMMUNICATOR_H_
-#define RAWCOMMUNICATOR_H_
+#ifndef USBCOMMUNICATOR_H_
+#define USBCOMMUNICATOR_H_
 
 extern "C" {
 #include <libusb.h>
@@ -20,16 +26,6 @@ extern "C" {
 #include "usb-commands.hpp"
 
 namespace USB {
-
-	const int VENDOR_ID = 0x03eb;
-	const int DEVICE_ID = 0x206c;
-
-	const std::string VENDOR_NAME = "slomkowski.eu";
-	const std::string DEVICE_NAME = "SZARK Robot Bridge";
-
-	const int BUFFER_SIZE = 128;
-	const int MESSAGE_TIMEOUT = 2000; // ms
-
 	/**
 	 * This exception is thrown if an USB communication error occurs. You can view the error description
 	 * by calling exception.what()
@@ -41,29 +37,17 @@ namespace USB {
 		}
 	};
 
-	class RawCommunicator: boost::noncopyable {
+	class Communicator: boost::noncopyable {
 	public:
-		RawCommunicator();
-		virtual ~RawCommunicator();
+		Communicator();
+		virtual ~Communicator();
 
-		void sendMessage(USBCommands::USBRequest request, unsigned int value);
-
-		void sendMessage(USBCommands::USBRequest request, uint8_t *data, unsigned int length);
-
-		unsigned int recvMessage(USBCommands::USBRequest request, uint8_t *data, unsigned int maxLength);
-
-	private:
-		libusb_device_handle *devHandle;
-	};
-
-	class Communicator: RawCommunicator {
-	public:
 		void sendData(std::vector<uint8_t>& data);
 
 		std::vector<uint8_t> receiveData();
 
-		bool isResponseReady();
+	private:
+		libusb_device_handle *devHandle;
 	};
-
 } /* namespace USB */
-#endif /* RAWCOMMUNICATOR_H_ */
+#endif /* USBCOMMUNICATOR_H_ */

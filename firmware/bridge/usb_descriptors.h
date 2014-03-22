@@ -31,12 +31,14 @@
 #ifndef _USB_DESCRIPTORS_H_
 #define _USB_DESCRIPTORS_H_
 
+#include "usb-settings.hpp"
+
 /* Macros: */
 /** Endpoint address of the Bulk Vendor device-to-host data IN endpoint. */
-#define VENDOR_IN_EPADDR               (ENDPOINT_DIR_IN  | 2)
+#define VENDOR_IN_EPADDR               (ENDPOINT_DIR_IN  | USB_SETTINGS_DEVICE_TO_HOST_ENDPOINT_NO)
 
 /** Endpoint address of the Bulk Vendor host-to-device data OUT endpoint. */
-#define VENDOR_OUT_EPADDR              (ENDPOINT_DIR_OUT | 1)
+#define VENDOR_OUT_EPADDR              (ENDPOINT_DIR_OUT | USB_SETTINGS_HOST_TO_DEVICE_ENDPOINT_NO)
 
 /** Size in bytes of the Bulk Vendor data endpoints. */
 #define VENDOR_OUT_EPSIZE              64

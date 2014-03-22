@@ -59,13 +59,15 @@ int main(void) {
 			wdt_reset();
 		}
 
-		/*if (not usb::wasKillSwitchDisabled()) {
+		if (not usb::wasKillSwitchDisabled()) {
 			menu::poll();
 			delay::waitMs(150);
-		}*/
+		}
 
 		usb::poll();
 
 		checkButtonsResetCombination();
+
+		killswitch::checkHardware();
 	}
 }
