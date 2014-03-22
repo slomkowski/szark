@@ -6,6 +6,7 @@
  */
 
 #include <inttypes.h>
+#include <avr/wdt.h>
 
 #include "global.hpp"
 #include "usb_processcommands.hpp"
@@ -130,7 +131,8 @@ void usb::executeCommandsFromUSB() {
 			}
 			break;
 		case USBCommands::MOTOR_DRIVER_SET: {
-			auto m = reinterpret_cast<USBCommands::motor::SpecificMotorState*>(&InputBuff.data[InputBuff.currentPosition]);
+			auto m =
+				reinterpret_cast<USBCommands::motor::SpecificMotorState*>(&InputBuff.data[InputBuff.currentPosition]);
 			motor::setSpeed(static_cast<motor::Motor>(m->motor), m->speed);
 			motor::setDirection(static_cast<motor::Motor>(m->motor), static_cast<motor::Direction>(m->direction));
 			InputBuff.currentPosition += sizeof(USBCommands::motor::SpecificMotorState);
@@ -147,6 +149,11 @@ void usb::executeCommandsFromUSB() {
 			break;
 		case USBCommands::MESSAGE_END:
 			InputBuff.currentPosition = InputBuff.length + 1; // finish processing
+			break;
+		case USBCommands::BRIDGE_RESET_DEVICE:
+			wdt_enable(WDTO_15MS);
+			while (true) {
+			}
 			break;
 		};
 	}
