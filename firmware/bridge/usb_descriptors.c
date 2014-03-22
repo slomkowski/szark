@@ -113,7 +113,7 @@ const USB_Descriptor_Configuration_t PROGMEM ConfigurationDescriptor =
 
 			.EndpointAddress        = VENDOR_IN_EPADDR,
 			.Attributes             = (EP_TYPE_BULK | ENDPOINT_ATTR_NO_SYNC | ENDPOINT_USAGE_DATA),
-			.EndpointSize           = VENDOR_IO_EPSIZE,
+			.EndpointSize           = VENDOR_IN_EPSIZE,
 			.PollingIntervalMS      = 0x01
 		},
 
@@ -123,7 +123,7 @@ const USB_Descriptor_Configuration_t PROGMEM ConfigurationDescriptor =
 
 			.EndpointAddress        = VENDOR_OUT_EPADDR,
 			.Attributes             = (EP_TYPE_BULK | ENDPOINT_ATTR_NO_SYNC | ENDPOINT_USAGE_DATA),
-			.EndpointSize           = VENDOR_IO_EPSIZE,
+			.EndpointSize           = VENDOR_OUT_EPSIZE,
 			.PollingIntervalMS      = 0x01
 		}
 };

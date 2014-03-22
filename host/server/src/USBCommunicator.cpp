@@ -122,7 +122,7 @@ namespace USB {
 	void RawCommunicator::sendMessage(USBCommands::USBRequest request, uint8_t *data, unsigned int length) {
 
 		int transferred;
-		int status = libusb_bulk_transfer(devHandle, (4 | LIBUSB_ENDPOINT_OUT), data, length, &transferred,
+		int status = libusb_bulk_transfer(devHandle, (1 | LIBUSB_ENDPOINT_OUT), data, length, &transferred,
 			MESSAGE_TIMEOUT);
 
 		if (status < 0) {
@@ -137,7 +137,7 @@ namespace USB {
 
 		int length;
 		// TODO te 64 bajty wywalić i zrobić z definicjami
-		int status = libusb_bulk_transfer(devHandle, (3 | LIBUSB_ENDPOINT_IN), data, 64, &length, MESSAGE_TIMEOUT);
+		int status = libusb_bulk_transfer(devHandle, (2 | LIBUSB_ENDPOINT_IN), data, 64, &length, MESSAGE_TIMEOUT);
 
 		if (status < 0) {
 			std::string mesg = "error at receiving data from the device (";

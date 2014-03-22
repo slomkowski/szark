@@ -33,13 +33,14 @@
 
 /* Macros: */
 /** Endpoint address of the Bulk Vendor device-to-host data IN endpoint. */
-#define VENDOR_IN_EPADDR               (ENDPOINT_DIR_IN  | 3)
+#define VENDOR_IN_EPADDR               (ENDPOINT_DIR_IN  | 2)
 
 /** Endpoint address of the Bulk Vendor host-to-device data OUT endpoint. */
-#define VENDOR_OUT_EPADDR              (ENDPOINT_DIR_OUT | 4)
+#define VENDOR_OUT_EPADDR              (ENDPOINT_DIR_OUT | 1)
 
 /** Size in bytes of the Bulk Vendor data endpoints. */
-#define VENDOR_IO_EPSIZE               64
+#define VENDOR_OUT_EPSIZE              64
+#define VENDOR_IN_EPSIZE               64
 
 /* Type Defines: */
 /** Type define for the device configuration descriptor structure. This must be defined in the

@@ -22,7 +22,7 @@ namespace usb {
 		void init();
 	};
 
-	extern Buffer inBuff, outBuff;
+	extern Buffer InputBuff, OutputBuff;
 
 	void executeCommandsFromUSB();
 
