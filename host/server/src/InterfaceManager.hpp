@@ -17,6 +17,8 @@
 #include "Interface.hpp"
 #include "USBCommunicator.hpp"
 
+#include <log4cpp/Category.hh>
+
 namespace bridge {
 
 	class InterfaceManager: public bridge::Interface {
@@ -26,6 +28,8 @@ namespace bridge {
 
 		void stageChanges();
 	private:
+		log4cpp::Category& logger;
+
 		std::vector<uint8_t> generateGetRequests(bool killSwitchActive);
 		std::vector<USBCommands::Request> getterRequests;
 		long counter;

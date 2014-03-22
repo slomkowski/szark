@@ -21,7 +21,9 @@ extern "C" {
 #include <string>
 #include <cstdint>
 #include <vector>
+#include <functional>
 #include <boost/noncopyable.hpp>
+#include <log4cpp/Category.hh>
 
 #include "usb-commands.hpp"
 
@@ -47,6 +49,7 @@ namespace USB {
 		std::vector<uint8_t> receiveData();
 
 	private:
+		log4cpp::Category& logger;
 		libusb_device_handle *devHandle;
 	};
 } /* namespace USB */

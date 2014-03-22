@@ -123,6 +123,7 @@ namespace bridge {
 				mState.motor = motor::MOTOR1;
 				break;
 			case Motor::RIGHT:
+			default:
 				mState.motor = motor::MOTOR2;
 				break;
 			};
@@ -145,7 +146,7 @@ namespace bridge {
 	void Interface::MotorClass::SingleMotor::setDirection(Direction direction) {
 		string key = initStructure();
 
-		motor::Direction dir;
+		motor::Direction dir = motor::STOP;
 
 		switch (direction) {
 		case Direction::STOP:
@@ -181,14 +182,15 @@ namespace bridge {
 			case Joint::ELBOW:
 				jState.motor = arm::ELBOW;
 				break;
-			case Joint::SHOULDER:
-				jState.motor = arm::SHOULDER;
-				break;
 			case Joint::WRIST:
 				jState.motor = arm::WRIST;
 				break;
 			case Joint::GRIPPER:
 				jState.motor = arm::GRIPPER;
+				break;
+			case Joint::SHOULDER:
+			default:
+				jState.motor = arm::SHOULDER;
 				break;
 			};
 
@@ -213,7 +215,7 @@ namespace bridge {
 	void Interface::ArmClass::SingleJoint::setDirection(Direction direction) {
 		string key = initStructure();
 
-		arm::Direction dir;
+		arm::Direction dir = arm::STOP;
 
 		switch (direction) {
 		case Direction::STOP:
@@ -376,7 +378,7 @@ namespace bridge {
 
 		auto state = reinterpret_cast<USBCommands::arm::JointState*>(data);
 
-		Joint jointNo;
+		Joint jointNo = Joint::SHOULDER;
 
 		switch (state->motor) {
 		case arm::ELBOW:

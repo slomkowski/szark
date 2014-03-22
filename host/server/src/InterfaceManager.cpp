@@ -22,8 +22,8 @@ using namespace std;
 
 namespace bridge {
 
-	InterfaceManager::InterfaceManager() {
-		counter = 0;
+	InterfaceManager::InterfaceManager() :
+		logger(log4cpp::Category::getInstance("InterfaceManager")), counter(0) {
 	}
 
 	InterfaceManager::~InterfaceManager() {
@@ -38,10 +38,9 @@ namespace bridge {
 		getterRequests.push_back(USBCommands::Request::BRIDGE_GET_STATE);
 
 		// if the kill switch is active, devices are in reset state and won't repond anyway
-		// TODO reenable
-		/*if (killSwitchActive) {
+		if (killSwitchActive) {
 			return requests;
-		}*/
+		}
 
 		requests.push_back(USBCommands::Request::MOTOR_DRIVER_GET);
 		getterRequests.push_back(USBCommands::Request::MOTOR_DRIVER_GET);
@@ -90,6 +89,7 @@ namespace bridge {
 		auto killSwitchRequest = diff.find(KILLSWITCH_STRING);
 		if (killSwitchRequest != diff.end()
 			and killSwitchRequest->second->getPlainData()[1] == USBCommands::bridge::INACTIVE) {
+			logger.notice("disabling kill switch");
 			killSwitchRequest->second->appendTo(concatenated);
 		}
 
@@ -98,7 +98,6 @@ namespace bridge {
 				continue;
 			}
 
-			//cout << request.first << ": " << request.second->getSize() << endl;
 			request.second->appendTo(concatenated);
 		}
 
@@ -109,38 +108,29 @@ namespace bridge {
 
 		if (killSwitchRequest != diff.end()
 			and killSwitchRequest->second->getPlainData()[1] == USBCommands::bridge::ACTIVE) {
+			logger.notice("enabling kill switch");
 			killSwitchRequest->second->appendTo(concatenated);
 		}
 
 		concatenated.push_back(USBCommands::MESSAGE_END);
 
-		/*cout << concatenated.size() << " " << concatenated.capacity() << endl;
-		 for (unsigned int i = 0; i < concatenated.size(); i++) {
-		 cout << i << "i: " << (int) concatenated[i] << endl;
-		 }*/
+		std::ostringstream oss;
+		std::copy(concatenated.begin(), concatenated.end() - 1, std::ostream_iterator<int>(oss, ","));
+		oss << concatenated.back();
+
+		logger.debug("sending request to the device (" + to_string(concatenated.size()) + " bytes):" + oss.str());
 
 		usbComm.sendData(concatenated);
 
-		/*std::chrono::milliseconds dura(200);
-		 std::this_thread::sleep_for(dura);*/
-		/*do {
-		 std::chrono::milliseconds dura(10);
-		 std::this_thread::sleep_for(dura);
-		 //cout << "nie" << endl;
-		 } while (not usbComm.isResponseReady());*/
-
 		auto response = usbComm.receiveData();
 
-		/*std::cout << "response size: " << response.size() << std::endl;
-		 for (auto req : getterRequests) {
-		 std::cout << "re: " << int(req) << std::endl;
-		 }
-		 for (uint8_t r : response) {
-		 std::cout << "r: " << int(r) << std::endl;
-		 }*/
+		oss.clear();
+		std::copy(response.begin(), response.end() - 1, std::ostream_iterator<int>(oss, ","));
+		oss << response.back();
+
+		logger.debug("got response from device (" + to_string(response.size()) + " bytes): " + oss.str());
 
 		updateDataStructures(getterRequests, response);
-
 	}
 
 	RequestMap InterfaceManager::generateDifferentialRequests() {

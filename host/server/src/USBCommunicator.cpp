@@ -12,16 +12,21 @@
  */
 
 #include <iostream>
+#include <functional>
+#include <chrono>
+#include <boost/format.hpp>
 
 #include "USBCommunicator.hpp"
 #include "usb-settings.hpp"
+#include "utils.hpp"
 
 namespace USB {
 
 	const int BUFFER_SIZE = USB_SETTINGS_HOST_TO_DEVICE_DATAPACKET_SIZE;
 	const int MESSAGE_TIMEOUT = 2000; // ms
 
-	Communicator::Communicator() {
+	Communicator::Communicator() :
+		logger(log4cpp::Category::getInstance("USBCommunicator")) {
 		devHandle = nullptr;
 
 		bool deviceFound = false;
@@ -71,6 +76,10 @@ namespace USB {
 
 		if (deviceFound == false) {
 			throw CommException("SZARK bridge device not found");
+		} else {
+			logger.notice(
+				(boost::format("found SZARK device: 0x%04X/0x%04X - %s [%s]") % USB_SETTINGS_VENDOR_ID
+					% USB_SETTINGS_DEVICE_ID % USB_SETTINGS_DEVICE_NAME % USB_SETTINGS_VENDOR_NAME).str());
 		}
 
 		int status = 0;
@@ -83,6 +92,8 @@ namespace USB {
 			mesg += libusb_error_name(status);
 			mesg += ")";
 			throw CommException(mesg);
+		} else {
+			logger.notice("device successfully detached from kernel driver");
 		}
 
 		status = libusb_set_configuration(devHandle, 1);
@@ -93,6 +104,8 @@ namespace USB {
 			mesg += libusb_error_name(status);
 			mesg += ")";
 			throw CommException(mesg);
+		} else {
+			logger.notice("configuration selected");
 		}
 
 		status = libusb_claim_interface(devHandle, 0);
@@ -103,6 +116,8 @@ namespace USB {
 			mesg += libusb_error_name(status);
 			mesg += ")";
 			throw CommException(mesg);
+		} else {
+			logger.notice("interface claimed. Device ready to go");
 		}
 	}
 
@@ -110,15 +125,21 @@ namespace USB {
 		libusb_release_interface(devHandle, 0);
 		libusb_close(devHandle);
 		libusb_exit(nullptr);
+
+		logger.notice("device released");
 	}
 
 	void Communicator::sendData(std::vector<uint8_t>& data) {
 		data.resize(BUFFER_SIZE, 0);
 
-		int transferred;
+		int transferred, status;
 
-		int status = libusb_bulk_transfer(devHandle, (USB_SETTINGS_HOST_TO_DEVICE_ENDPOINT_NO | LIBUSB_ENDPOINT_OUT),
-			&data[0], USB_SETTINGS_HOST_TO_DEVICE_DATAPACKET_SIZE, &transferred, MESSAGE_TIMEOUT);
+		auto microseconds = utils::measureTime([&] () {
+			status = libusb_bulk_transfer(devHandle, (USB_SETTINGS_HOST_TO_DEVICE_ENDPOINT_NO | LIBUSB_ENDPOINT_OUT),
+				&data[0], USB_SETTINGS_HOST_TO_DEVICE_DATAPACKET_SIZE, &transferred, MESSAGE_TIMEOUT);
+		}).count();
+
+		logger.info(std::string("sending data in ") + std::to_string(microseconds) + " us");
 
 		if (transferred != USB_SETTINGS_HOST_TO_DEVICE_DATAPACKET_SIZE) {
 			std::string mesg = std::string("sent ") + std::to_string(transferred);
@@ -137,10 +158,15 @@ namespace USB {
 	std::vector<uint8_t> Communicator::receiveData() {
 		uint8_t data[BUFFER_SIZE];
 
-		int transferred;
+		int transferred, status;
 
-		int status = libusb_bulk_transfer(devHandle, (USB_SETTINGS_DEVICE_TO_HOST_ENDPOINT_NO | LIBUSB_ENDPOINT_IN),
-			data, USB_SETTINGS_DEVICE_TO_HOST_DATAPACKET_SIZE, &transferred, MESSAGE_TIMEOUT);
+		auto microseconds = utils::measureTime([&] () {
+			status = libusb_bulk_transfer(devHandle, (USB_SETTINGS_DEVICE_TO_HOST_ENDPOINT_NO | LIBUSB_ENDPOINT_IN),
+				data,
+				USB_SETTINGS_DEVICE_TO_HOST_DATAPACKET_SIZE, &transferred, MESSAGE_TIMEOUT);
+		}).count();
+
+		logger.info(std::string("receiving data in ") + std::to_string(microseconds) + " us");
 
 		if (transferred != USB_SETTINGS_DEVICE_TO_HOST_DATAPACKET_SIZE) {
 			std::string mesg = std::string("received ") + std::to_string(transferred);
