@@ -49,11 +49,12 @@ static MenuItem motorMenuItems[] = { { "LEFT WHEEL", nullptr }, { "RIGHT WHEEL",
 static MenuClass armMenu("Arm driver:", 5, armMenuItems);
 static MenuClass motorMenu("Motor driver:", 3, motorMenuItems);
 static MenuClass expanderMenu("I2C expander:", 0);
+static MenuClass versionMenu("Version:", 0);
 
 static MenuItem mainMenuItems[] = { { "ARM DRIVER", &armMenu }, { "MOTOR DRIVER", &motorMenu }, { "I2C EXPANDER",
-	&expanderMenu } };
+	&expanderMenu }, { "VERSION", &versionMenu } };
 
-static MenuClass mainMenu(nullptr, 3, mainMenuItems);
+static MenuClass mainMenu(nullptr, 4, mainMenuItems);
 
 static volatile bool isInMenu = false;
 
@@ -77,6 +78,10 @@ static void batteryDisplayHeaderFunction() {
 	}
 
 	lcd::puts(text);
+}
+
+static void versionSubMenuFunction(bool, uint8_t, buttons::Buttons*) {
+	lcd::putsp(PSTR("(C) M.Slomkowski\nVer: " __DATE__));
 }
 
 static void expanderSubMenuFunction(bool isFirstCall, uint8_t, buttons::Buttons *buttonsState) {
@@ -246,9 +251,11 @@ void menu::init() {
 	armMenu.setParent(&mainMenu);
 	motorMenu.setParent(&mainMenu);
 	expanderMenu.setParent(&mainMenu);
+	versionMenu.setParent(&mainMenu);
 
 	mainMenu.setHeaderFunction(batteryDisplayHeaderFunction);
 
+	versionMenu.setSubMenuFunction(versionSubMenuFunction);
 	expanderMenu.setSubMenuFunction(expanderSubMenuFunction);
 	motorMenu.setSubMenuFunction(motorSubMenuFunction);
 	armMenu.setSubMenuFunction(armSubMenuFunction);
