@@ -55,9 +55,7 @@ static MenuItem mainMenuItems[] = { { "ARM DRIVER", &armMenu }, { "MOTOR DRIVER"
 
 static MenuClass mainMenu(nullptr, 3, mainMenuItems);
 
-static MenuClass *actualMenu;
-
-static bool isInMenu = false;
+static volatile bool isInMenu = false;
 
 static void batteryDisplayHeaderFunction() {
 	static char text[] = "Batt: xx.xV\n";
@@ -255,17 +253,19 @@ void menu::init() {
 	motorMenu.setSubMenuFunction(motorSubMenuFunction);
 	armMenu.setSubMenuFunction(armSubMenuFunction);
 
-	actualMenu = &mainMenu;
+	reinitMenu();
 }
 
 void menu::poll() {
-	// this was done to limit stack size
+	static MenuClass* actualMenu = &mainMenu;
+
+	// this was done to limit stack usage
 	actualMenu = actualMenu->getActualMenu();
 
 	if (isInMenu) {
 		actualMenu->process();
 	} else {
-		auto btn = buttons::getButtonsState();
+		auto btn = buttons::getButtonsState(false);
 
 		if (btn->down or btn->up or btn->enter) {
 			isInMenu = true;
@@ -273,7 +273,8 @@ void menu::poll() {
 	}
 }
 
-void menu::goOutOfMenu() {
+void menu::reinitMenu() {
+	mainMenu.setActualMenu(&mainMenu);
 	isInMenu = false;
 }
 

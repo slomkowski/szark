@@ -44,6 +44,10 @@ namespace menu {
 			return actualMenu;
 		}
 
+		void setActualMenu(MenuClass *newActualMenu) {
+			actualMenu = newActualMenu;
+		}
+
 	private:
 		const char *title;
 		const MenuItem *menuItems;
@@ -51,7 +55,7 @@ namespace menu {
 		uint8_t currentPosition;
 		uint8_t itemsLength;
 		bool inSubMenuFunction;
-		static MenuClass *actualMenu;
+		static MenuClass * volatile actualMenu;
 
 		void (*headerFunction)();
 		void (*subMenuFunction)(bool isFirstCall, uint8_t currentPosition, buttons::Buttons *buttonsState);

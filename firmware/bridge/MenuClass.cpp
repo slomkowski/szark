@@ -17,7 +17,7 @@
 
 using namespace menu;
 
-MenuClass *MenuClass::actualMenu;
+MenuClass * volatile MenuClass::actualMenu;
 
 MenuClass::MenuClass(const char* title, uint8_t itemsLength, MenuItem menuItems[], MenuClass *parent) {
 	this->title = title;

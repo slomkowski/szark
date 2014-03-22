@@ -17,7 +17,7 @@
 #include "led.hpp"
 
 //
-static const bool WATCHDOG_ENABLE = false;
+static const bool WATCHDOG_ENABLE = true;
 
 static void checkButtonsResetCombination() {
 	auto btn = buttons::getButtonsState(false);
@@ -59,9 +59,9 @@ int main(void) {
 			wdt_reset();
 		}
 
-		if (not usb::wasKillSwitchDisabled()) {
+		if (usb::isMenuEnabled()) {
 			menu::poll();
-			delay::waitMs(150);
+			delay::waitMs(100);
 		}
 
 		usb::poll();

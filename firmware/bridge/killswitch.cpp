@@ -10,11 +10,12 @@
 #include <avr/interrupt.h>
 #include "delay.hpp"
 #include "killswitch.hpp"
+#include "lcd.hpp"
 
 #define KS_PORT D
 #define KS_PIN 4
 
-static bool causedByHardware = false;
+static volatile bool causedByHardware = false;
 
 void killswitch::init() {
 	setActive(true);

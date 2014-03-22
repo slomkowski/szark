@@ -14,7 +14,7 @@ namespace menu {
 
 	void poll();
 
-	void goOutOfMenu();
+	void reinitMenu();
 }
 
 #endif /* MENU_H_ */

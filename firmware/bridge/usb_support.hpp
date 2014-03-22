@@ -17,6 +17,8 @@ namespace usb {
 	void init();
 
 	void poll();
+
+	bool isMenuEnabled();
 }
 
 #endif /* USB_SUPPORT_HPP_ */
