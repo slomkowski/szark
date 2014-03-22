@@ -58,7 +58,7 @@ namespace USB {
 
 	class Communicator: RawCommunicator {
 	public:
-		void sendData(const std::vector<uint8_t>& data);
+		void sendData(std::vector<uint8_t>& data);
 
 		std::vector<uint8_t> receiveData();
 

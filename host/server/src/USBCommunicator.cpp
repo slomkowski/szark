@@ -136,9 +136,8 @@ namespace USB {
 	unsigned int RawCommunicator::recvMessage(USBCommands::USBRequest request, uint8_t *data, unsigned int maxLength) {
 
 		int length;
-
-		int status = libusb_bulk_transfer(devHandle, (3 | LIBUSB_ENDPOINT_IN), data, maxLength, &length,
-			MESSAGE_TIMEOUT);
+		// TODO te 64 bajty wywalić i zrobić z definicjami
+		int status = libusb_bulk_transfer(devHandle, (3 | LIBUSB_ENDPOINT_IN), data, 64, &length, MESSAGE_TIMEOUT);
 
 		if (status < 0) {
 			std::string mesg = "error at receiving data from the device (";
@@ -151,7 +150,8 @@ namespace USB {
 		return length;
 	}
 
-	void Communicator::sendData(const std::vector<uint8_t>& data) {
+	void Communicator::sendData(std::vector<uint8_t>& data) {
+		data.resize(BUFFER_SIZE, 0);
 		sendMessage(USBCommands::USB_WRITE, (uint8_t*) &data[0], data.size());
 	}
 

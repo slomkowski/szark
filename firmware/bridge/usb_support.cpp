@@ -50,7 +50,7 @@ void usb::poll() {
 
 		Endpoint_SelectEndpoint(VENDOR_IN_EPADDR);
 		Endpoint_Write_Stream_LE(usb::outBuff.data, VENDOR_IO_EPSIZE, NULL);
-		Endpoint_Write_Stream_LE(usb::outBuff.data + VENDOR_IO_EPSIZE, VENDOR_IO_EPSIZE, NULL);
+		//Endpoint_Write_Stream_LE(usb::outBuff.data + VENDOR_IO_EPSIZE, VENDOR_IO_EPSIZE, NULL);
 		Endpoint_ClearIN();
 
 		led::setState(led::YELLOW, true);

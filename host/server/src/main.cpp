@@ -38,9 +38,14 @@ int main(int argc, char *argv[]) {
 	for (int t = 0; t < 150; t++) {
 		auto tstart = Clock::now();
 
+		if(t == 101) {
+			goto odrazu;
+		}
+
 		i.expander[bridge::ExpanderDevice::LIGHT_LEFT].setEnabled(true);
 
 		if (t % 3 == 1) i.motor[bridge::Motor::LEFT].setSpeed(9);
+		if (t % 3 == 2) i.motor[bridge::Motor::LEFT].setSpeed(9);
 
 		if (t % 7 == 4) i.setLCDText("hi" + std::to_string(t));
 
@@ -60,6 +65,8 @@ int main(int argc, char *argv[]) {
 
 		i.arm[bridge::Joint::ELBOW].setDirection(bridge::Direction::BACKWARD);
 		i.arm[bridge::Joint::ELBOW].setSpeed(t % 5);
+
+		odrazu:
 
 		i.stageChanges();
 		auto tstop = Clock::now();
