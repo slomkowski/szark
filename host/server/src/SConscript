@@ -1,6 +1,0 @@
-Import('env')
-
-env.Program('szark_server', Glob('*.cpp'))
-
-#vim: set ft=python
-

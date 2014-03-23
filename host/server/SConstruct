@@ -1,28 +1,31 @@
-# Let's define a common build environment first...
-common_env = Environment()
-common_env.Append(CPPDEFINES={'VERSION': 1})
+env = Environment()
 
-common_env.Append(CPPFLAGS = Split('-std=c++11'))
-common_env.Append(CPPPATH = [Dir('../../firmware/common')])
+env.Append(CPPFLAGS = Split('-std=c++11'))
+env.Append(CPPPATH = [Dir('../../firmware/common')])
 
 # libraries
 libraries = Split('libusb-1.0 log4cpp')
 
 for lib in libraries:
-	common_env.ParseConfig('pkg-config %s --cflags --libs' % lib)
+	env.ParseConfig('pkg-config %s --cflags --libs' % lib)
 
-# Our release build is derived from the common build environment...
-release_env = common_env.Clone()
-release_env.VariantDir('build/release', 'src')
+binary_name = 'szark_server'
+build_dir = 'build'
 
-# We define our debug build environment in a similar fashion...
-debug_env = common_env.Clone()
-debug_env.VariantDir('build/debug', 'src')
+env.VariantDir(build_dir + '/src', 'src')
+env.VariantDir(build_dir + '/test', 'test')
 
-# Now that all build environment have been defined, let's iterate over
-# them and invoke the lower level SConscript files.
-for mode, env in dict(release=release_env, debug=debug_env).iteritems():
-    env.SConscript('build/%s/SConscript' % mode, {'env': env})
+commonObjectFiles = env.Object([f for f in Glob(build_dir + '/src/*.cpp') if 'main.cpp' not in f.path])
 
-#vim: set ft=python
+env.Program(build_dir + '/' + binary_name, commonObjectFiles + [build_dir + '/src/main.cpp'])
 
+testEnv = env.Clone()
+testEnv['CPPPATH'].append('./test/')
+testEnv['CPPPATH'].append('./src/')
+testEnv['LIBS'].append('boost_unit_test_framework')
+
+# here I append all needed object files
+testObjectFiles = Glob(build_dir + '/test/*.cpp')
+testEnv.Program(build_dir + '/' + binary_name + '_test', testObjectFiles + commonObjectFiles)
+
+# vim: set ft=python
