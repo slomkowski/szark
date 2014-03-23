@@ -1,0 +1,28 @@
+# Let's define a common build environment first...
+common_env = Environment()
+common_env.Append(CPPDEFINES={'VERSION': 1})
+
+common_env.Append(CPPFLAGS = Split('-std=c++11'))
+common_env.Append(CPPPATH = [Dir('../../firmware/common')])
+
+# libraries
+libraries = Split('libusb-1.0 log4cpp')
+
+for lib in libraries:
+	common_env.ParseConfig('pkg-config %s --cflags --libs' % lib)
+
+# Our release build is derived from the common build environment...
+release_env = common_env.Clone()
+release_env.VariantDir('build/release', 'src')
+
+# We define our debug build environment in a similar fashion...
+debug_env = common_env.Clone()
+debug_env.VariantDir('build/debug', 'src')
+
+# Now that all build environment have been defined, let's iterate over
+# them and invoke the lower level SConscript files.
+for mode, env in dict(release=release_env, debug=debug_env).iteritems():
+    env.SConscript('build/%s/SConscript' % mode, {'env': env})
+
+#vim: set ft=python
+
