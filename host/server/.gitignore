@@ -3,3 +3,6 @@
 /.settings
 /build
 .sconsign.dblite
+.cproject
+.project
+.pydevproject
