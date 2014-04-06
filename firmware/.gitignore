@@ -28,3 +28,6 @@
 
 # Eclipse settings
 .settings
+
+# LUFA library
+LUFA
