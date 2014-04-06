@@ -10,7 +10,10 @@
 #include <chrono>
 #include <vector>
 #include <algorithm>
+#include <stdexcept>
+
 #include <log4cpp/PropertyConfigurator.hh>
+
 #include "InterfaceManager.hpp"
 
 using namespace std;
@@ -18,7 +21,7 @@ using std::chrono::duration_cast;
 using std::chrono::microseconds;
 
 int main(int argc, char *argv[]) {
-	std::string initFileName = "log4cpp.properties";
+	std::string initFileName = "logger.properties";
 	log4cpp::PropertyConfigurator::configure(initFileName);
 
 	bridge::InterfaceManager i;
