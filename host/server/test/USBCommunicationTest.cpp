@@ -1,59 +1,23 @@
-#define BOOST_TEST_MODULE USBCommunicationTest
-#define BOOST_TEST_DYN_LINK
-#define BOOST_TEST_MAIN
-
-#include <vector>
 #include <cstdint>
+#include <vector>
 #include <boost/test/unit_test.hpp>
 
 #include "USBCommunicator.hpp"
 
-int add(int i, int j) {
-	return i + j;
-}
+#include "usb-commands.hpp"
+#include "usb-settings.hpp"
 
-BOOST_AUTO_TEST_CASE(my_test) {
-	// seven ways to detect and report the same error:
-	BOOST_CHECK(add(2, 2) == 4);        // #1 continues on error
-
-	BOOST_REQUIRE(add(2, 2) == 4);      // #2 throws on error
-
-	if (add(2, 2) != 4)
-	BOOST_ERROR("Ouch...");            // #3 continues on error
-
-	if (add(2, 2) != 4)
-	BOOST_FAIL("Ouch...");             // #4 throws on error
-
-	if (add(2, 2) != 4) throw "Ouch..."; // #5 throws on error
-
-	BOOST_CHECK_MESSAGE(add(2, 2) == 4,  // #6 continues on error
-	"add(..) result: " << add( 2,2 ));
-
-	BOOST_CHECK_EQUAL(add(2, 2), 4);	  // #7 continues on error
-}
-
-BOOST_AUTO_TEST_CASE(USBCommunicationTestConnection) {
+BOOST_AUTO_TEST_CASE(USBCommunicationTest_Connection) {
 	USB::Communicator comm;
 
-	std::vector<std::uint8_t> data = {1, 2 , 3, 222};
-	comm.sendData(data);
-	comm.receiveData();
+	std::vector<uint8_t> getStateData = { USBCommands::BRIDGE_GET_STATE, USBCommands::MESSAGE_END };
 
-	// seven ways to detect and report the same error:
-	BOOST_CHECK(add(2, 2) == 4);        // #1 continues on error
+	for (int i = 0; i < 100; i++) {
+		comm.sendData(getStateData);
+		auto returned = comm.receiveData();
 
-	BOOST_REQUIRE(add(2, 2) == 4);      // #2 throws on error
+		BOOST_CHECK(returned.size() == USB_SETTINGS_DEVICE_TO_HOST_DATAPACKET_SIZE);
 
-	if (add(2, 2) != 4)
-	BOOST_ERROR("Ouch...");            // #3 continues on error
-
-	if (add(2, 2) != 4)
-	BOOST_FAIL("Ouch...");             // #4 throws on error
-
-	if (add(2, 2) != 4) throw "Ouch..."; // #5 throws on error
-
-	BOOST_CHECK_MESSAGE(add(2, 2) == 4,  // #6 continues on error
-	"add(..) result: " << add( 2,2 ));
-
-	BOOST_CHECK_EQUAL(add(2, 2), 4);	  // #7 continues on error
+		BOOST_CHECK_MESSAGE(returned.at(8) == USBCommands::MESSAGE_END, "real message length");
+	}
 }
