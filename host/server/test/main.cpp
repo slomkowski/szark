@@ -18,6 +18,8 @@
 #include <log4cpp/PropertyConfigurator.hh>
 #include <boost/test/unit_test.hpp>
 
+#include "Configuration.hpp"
+
 class AllocatorSetup {
 public:
 	AllocatorSetup();
@@ -29,6 +31,7 @@ BOOST_GLOBAL_FIXTURE(AllocatorSetup);
 AllocatorSetup::AllocatorSetup() {
 	std::string initFileName = "loggerTest.properties";
 	log4cpp::PropertyConfigurator::configure(initFileName);
+	config::Configuration::create();
 }
 
 AllocatorSetup::~AllocatorSetup() {
