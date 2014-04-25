@@ -39,6 +39,11 @@ public:
 	 */
 	WifiInfo(std::string iwName);
 
+	/*
+	 * Default constructor reads the device name from config space.
+	 */
+	WifiInfo();
+
 	~WifiInfo();
 
 	/*
@@ -63,10 +68,12 @@ private:
 	std::string iwName;
 
 	int sockfd;
+	bool enabled = true;
 	iw_statistics stats;
 	iwreq req;
 
 	void prepareStructs();
+	void init();
 };
 
 } /* namespace net */

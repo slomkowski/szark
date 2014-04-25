@@ -17,11 +17,24 @@
 #include <cmath>
 
 #include "WifiInfo.hpp"
+#include "Configuration.hpp"
 
 namespace net {
 
 WifiInfo::WifiInfo(std::string iwName)
 		: logger(log4cpp::Category::getInstance("WifiInfo")), iwName(iwName) {
+	init();
+}
+
+WifiInfo::WifiInfo()
+		: logger(log4cpp::Category::getInstance("WifiInfo")) {
+	enabled = config::getBool("szark.WifiInfo.enabled");
+	iwName = config::getString("szark.WifiInfo.device");
+
+	init();
+}
+
+void WifiInfo::init() {
 	sockfd = socket(AF_INET, SOCK_DGRAM, 0);
 
 	logger.notice("opened wireless device: " + iwName);
@@ -94,6 +107,10 @@ double WifiInfo::getBitrate() {
 }
 
 void WifiInfo::prepareStructs() {
+	if (not enabled) {
+		throw WifiException("WifiInfo disabled");
+	}
+
 	std::strncpy(req.ifr_name, iwName.c_str(), IFNAMSIZ);
 	req.u.data.pointer = &stats;
 	req.u.data.length = sizeof(iw_statistics);
