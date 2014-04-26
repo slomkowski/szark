@@ -18,10 +18,11 @@
 #include "USBCommunicator.hpp"
 
 #include <log4cpp/Category.hh>
+#include <wallaroo/registered.h>
 
 namespace bridge {
 
-class InterfaceManager: public bridge::Interface {
+class InterfaceManager: public wallaroo::Device, public bridge::Interface {
 public:
 	InterfaceManager();
 	virtual ~InterfaceManager();
@@ -34,7 +35,7 @@ private:
 	std::vector<USBCommands::Request> getterRequests;
 	long counter;
 
-	bridge::USBCommunicator usbComm;
+	wallaroo::Plug<ICommunicator> usbComm;
 
 	RequestMap previousRequests;
 

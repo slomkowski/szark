@@ -16,8 +16,8 @@
 #include <string>
 #include <stdexcept>
 
-#include <boost/noncopyable.hpp>
 #include <log4cpp/Category.hh>
+#include <wallaroo/registered.h>
 
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -32,7 +32,27 @@ public:
 	}
 };
 
-class WifiInfo: boost::noncopyable {
+class IWifiInfo {
+public:
+	/*
+	 * Returns signal level in dBm.
+	 */
+	virtual double getSignalLevel() = 0;
+
+	/*
+	 * Returns the bitrate of the link if MBits/s.
+	 */
+	virtual double getBitrate() = 0;
+
+	/*
+	 * Returns wireless interface name.
+	 */
+	virtual std::string getInterfaceName() = 0;
+
+	virtual ~IWifiInfo() = default;
+};
+
+class WifiInfo: public IWifiInfo, public wallaroo::Device {
 public:
 	/*
 	 * The constructor checks if the device is valid.
@@ -46,19 +66,10 @@ public:
 
 	~WifiInfo();
 
-	/*
-	 * Returns signal level in dBm.
-	 */
-	double getSignalLevel();
+	virtual double getSignalLevel();
 
-	/*
-	 * Returns the bitrate of the link if MBits/s.
-	 */
-	double getBitrate();
+	virtual double getBitrate();
 
-	/*
-	 * Returns wireless interface name.
-	 */
 	std::string getInterfaceName() {
 		return iwName;
 	}

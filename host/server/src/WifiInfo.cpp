@@ -21,6 +21,8 @@
 
 namespace os {
 
+WALLAROO_REGISTER(WifiInfo);
+
 WifiInfo::WifiInfo(std::string iwName)
 		: logger(log4cpp::Category::getInstance("WifiInfo")), iwName(iwName) {
 	init();
@@ -59,7 +61,7 @@ double WifiInfo::getSignalLevel() {
 		throw WifiException("failed to get signal level");
 	}
 
-	double sigLevel;
+	double sigLevel = -200.0;
 
 	if (stats.qual.level != 0 or (stats.qual.updated & (IW_QUAL_DBM | IW_QUAL_RCPI))) {
 		/*

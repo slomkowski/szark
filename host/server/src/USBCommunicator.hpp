@@ -22,8 +22,10 @@ extern "C" {
 #include <cstdint>
 #include <vector>
 #include <functional>
+
 #include <boost/noncopyable.hpp>
 #include <log4cpp/Category.hh>
+#include <wallaroo/registered.h>
 
 #include "usb-commands.hpp"
 
@@ -32,14 +34,23 @@ namespace bridge {
  * This exception is thrown if an USB communication error occurs. You can view the error description
  * by calling exception.what()
  */
-class USBCommException: public std::runtime_error {
+class CommException: public std::runtime_error {
 public:
-	USBCommException(const std::string& message)
+	CommException(const std::string& message)
 			: std::runtime_error(message) {
 	}
 };
 
-class USBCommunicator: boost::noncopyable {
+class ICommunicator {
+public:
+	virtual ~ICommunicator() = default;
+
+	virtual void sendData(std::vector<uint8_t>& data) = 0;
+
+	virtual std::vector<uint8_t> receiveData() = 0;
+};
+
+class USBCommunicator: public ICommunicator, public wallaroo::Device {
 public:
 	USBCommunicator();
 	virtual ~USBCommunicator();
@@ -52,5 +63,6 @@ private:
 	log4cpp::Category& logger;
 	libusb_device_handle *devHandle;
 };
+
 } /* namespace USB */
 #endif /* USBCOMMUNICATOR_H_ */

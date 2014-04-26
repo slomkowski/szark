@@ -1,10 +1,12 @@
 env = Environment()
 
-env.Append(CPPFLAGS = Split('-std=c++11'))
-env.Append(CPPPATH = [Dir('../../firmware/common')])
+extLibsDir = '../../external-libs/'
+
+env.Append(CPPFLAGS = Split('-std=c++11 -Wall'))
+env.Append(CPPPATH = [Dir('../../firmware/common'), Dir(extLibsDir + '/wallaroo/')])
 
 # libraries
-libraries = Split('libusb-1.0 log4cpp')
+libraries = Split('libusb-1.0 log4cpp jsoncpp')
 
 for lib in libraries:
 	env.ParseConfig('pkg-config %s --cflags --libs' % lib)

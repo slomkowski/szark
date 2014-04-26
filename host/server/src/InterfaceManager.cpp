@@ -22,8 +22,11 @@ using namespace std;
 
 namespace bridge {
 
+WALLAROO_REGISTER(InterfaceManager)
+
 InterfaceManager::InterfaceManager()
-		: logger(log4cpp::Category::getInstance("InterfaceManager")), counter(0) {
+		: logger(log4cpp::Category::getInstance("InterfaceManager")), counter(0), usbComm("ICommunicator",
+				RegistrationToken()) {
 }
 
 InterfaceManager::~InterfaceManager() {
@@ -120,9 +123,9 @@ void InterfaceManager::stageChanges() {
 
 	logger.debug("sending request to the device (" + to_string(concatenated.size()) + " bytes):" + oss.str());
 
-	usbComm.sendData(concatenated);
+	usbComm->sendData(concatenated);
 
-	auto response = usbComm.receiveData();
+	auto response = usbComm->receiveData();
 
 	oss.clear();
 	std::copy(response.begin(), response.end() - 1, std::ostream_iterator<int>(oss, ","));
