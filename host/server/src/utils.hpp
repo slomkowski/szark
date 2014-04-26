@@ -17,12 +17,13 @@
 #include <chrono>
 
 namespace utils {
-	/**
-	 * Measure the execution time of the function.
-	 * @param func function object (pointer or lambda expression) matching the format void function()
-	 * @return number of microseconds
-	 */
-	std::chrono::microseconds measureTime(std::function<void()> func);
+
+/**
+ * Measure the execution time of the function.
+ * @param func function object (pointer or lambda expression) matching the format void function()
+ * @return number of microseconds
+ */
+std::chrono::microseconds measureTime(std::function<void()> func);
 
 } /* namespace utils */
 

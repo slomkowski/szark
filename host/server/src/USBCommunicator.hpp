@@ -27,30 +27,30 @@ extern "C" {
 
 #include "usb-commands.hpp"
 
-namespace USB {
-	/**
-	 * This exception is thrown if an USB communication error occurs. You can view the error description
-	 * by calling exception.what()
-	 */
-	class CommException: public std::runtime_error {
-	public:
-		CommException(const std::string& message) :
-			std::runtime_error(message) {
-		}
-	};
+namespace bridge {
+/**
+ * This exception is thrown if an USB communication error occurs. You can view the error description
+ * by calling exception.what()
+ */
+class USBCommException: public std::runtime_error {
+public:
+	USBCommException(const std::string& message)
+			: std::runtime_error(message) {
+	}
+};
 
-	class Communicator: boost::noncopyable {
-	public:
-		Communicator();
-		virtual ~Communicator();
+class USBCommunicator: boost::noncopyable {
+public:
+	USBCommunicator();
+	virtual ~USBCommunicator();
 
-		void sendData(std::vector<uint8_t>& data);
+	void sendData(std::vector<uint8_t>& data);
 
-		std::vector<uint8_t> receiveData();
+	std::vector<uint8_t> receiveData();
 
-	private:
-		log4cpp::Category& logger;
-		libusb_device_handle *devHandle;
-	};
+private:
+	log4cpp::Category& logger;
+	libusb_device_handle *devHandle;
+};
 } /* namespace USB */
 #endif /* USBCOMMUNICATOR_H_ */

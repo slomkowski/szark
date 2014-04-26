@@ -21,25 +21,25 @@
 
 namespace bridge {
 
-	class InterfaceManager: public bridge::Interface {
-	public:
-		InterfaceManager();
-		virtual ~InterfaceManager();
+class InterfaceManager: public bridge::Interface {
+public:
+	InterfaceManager();
+	virtual ~InterfaceManager();
 
-		void stageChanges();
-	private:
-		log4cpp::Category& logger;
+	void stageChanges();
+private:
+	log4cpp::Category& logger;
 
-		std::vector<uint8_t> generateGetRequests(bool killSwitchActive);
-		std::vector<USBCommands::Request> getterRequests;
-		long counter;
+	std::vector<uint8_t> generateGetRequests(bool killSwitchActive);
+	std::vector<USBCommands::Request> getterRequests;
+	long counter;
 
-		USB::Communicator usbComm;
+	bridge::USBCommunicator usbComm;
 
-		RequestMap previousRequests;
+	RequestMap previousRequests;
 
-		RequestMap generateDifferentialRequests();
-	};
+	RequestMap generateDifferentialRequests();
+};
 
 } /* namespace bridge */
 #endif /* INTERFACEMANAGER_HPP_ */

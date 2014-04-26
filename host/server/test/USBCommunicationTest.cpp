@@ -8,7 +8,7 @@
 #include "usb-settings.hpp"
 
 BOOST_AUTO_TEST_CASE(USBCommunicationTest_Connection) {
-	USB::Communicator comm;
+	bridge::USBCommunicator comm;
 
 	std::vector<uint8_t> getStateData = { USBCommands::BRIDGE_GET_STATE, USBCommands::MESSAGE_END };
 

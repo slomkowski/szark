@@ -21,9 +21,9 @@
 BOOST_AUTO_TEST_CASE(WifiInfoTest_Run) {
 	const std::string INTERFACE_NAME = "wlan0";
 
-	BOOST_CHECK_THROW(net::WifiInfo("invalid_iface"), net::WifiException);
+	BOOST_CHECK_THROW(os::WifiInfo("invalid_iface"), os::WifiException);
 
-	net::WifiInfo wifi(INTERFACE_NAME);
+	os::WifiInfo wifi(INTERFACE_NAME);
 
 	BOOST_CHECK_EQUAL(INTERFACE_NAME, wifi.getInterfaceName());
 

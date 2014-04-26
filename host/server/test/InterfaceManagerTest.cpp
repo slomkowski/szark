@@ -38,10 +38,13 @@ BOOST_AUTO_TEST_CASE(InterfaceManager_Operation) {
 
 		i.expander[bridge::ExpanderDevice::LIGHT_LEFT].setEnabled(true);
 
-		if (t % 3 == 1) i.motor[bridge::Motor::LEFT].setSpeed(9);
-		if (t % 3 == 2) i.motor[bridge::Motor::LEFT].setSpeed(9);
+		if (t % 3 == 1)
+			i.motor[bridge::Motor::LEFT].setSpeed(9);
+		if (t % 3 == 2)
+			i.motor[bridge::Motor::LEFT].setSpeed(9);
 
-		if (t % 7 == 4) i.setLCDText("hi" + std::to_string(t));
+		if (t % 7 == 4)
+			i.setLCDText("hi" + std::to_string(t));
 
 		if (t % 60 == 30) {
 			i.setLCDText("this is a very long text to test maximal transfer time");
@@ -62,14 +65,16 @@ BOOST_AUTO_TEST_CASE(InterfaceManager_Operation) {
 		i.arm[bridge::Joint::ELBOW].setDirection(bridge::Direction::BACKWARD);
 		i.arm[bridge::Joint::ELBOW].setSpeed(t % 5);
 
-		if (t % 2) i.motor[bridge::Motor::LEFT].setDirection(bridge::Direction::FORWARD);
-		else i.motor[bridge::Motor::LEFT].setDirection(bridge::Direction::BACKWARD);
+		if (t % 2)
+			i.motor[bridge::Motor::LEFT].setDirection(bridge::Direction::FORWARD);
+		else
+			i.motor[bridge::Motor::LEFT].setDirection(bridge::Direction::BACKWARD);
 
 		odrazu:
 
 		i.stageChanges();
 		auto tstop = Clock::now();
-		timings.push_back(duration_cast < microseconds > (tstop - tstart).count());
+		timings.push_back(duration_cast<microseconds>(tstop - tstart).count());
 
 		//std::cout << t << ": timer single: " << duration_cast<microseconds>(tstop - tstart).count() << " us\n";
 
@@ -87,6 +92,6 @@ BOOST_AUTO_TEST_CASE(InterfaceManager_Operation) {
 	BOOST_MESSAGE(avgTime.str());
 
 	std::stringstream totalTime;
-	totalTime << "total time: " << duration_cast < microseconds > (t2 - t1).count() << " us\n";
+	totalTime << "total time: " << duration_cast<microseconds>(t2 - t1).count() << " us\n";
 	BOOST_MESSAGE(totalTime.str());
 }

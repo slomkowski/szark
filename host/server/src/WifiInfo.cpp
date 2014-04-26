@@ -19,7 +19,7 @@
 #include "WifiInfo.hpp"
 #include "Configuration.hpp"
 
-namespace net {
+namespace os {
 
 WifiInfo::WifiInfo(std::string iwName)
 		: logger(log4cpp::Category::getInstance("WifiInfo")), iwName(iwName) {

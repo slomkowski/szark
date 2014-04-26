@@ -23,7 +23,7 @@
 #include <sys/socket.h>
 #include <linux/wireless.h>
 
-namespace net {
+namespace os {
 
 class WifiException: public std::runtime_error {
 public:
