@@ -12,9 +12,10 @@
  *	published by the Free Software Foundation.
  */
 
-#include <boost/test/unit_test.hpp>
+#include <chrono>
+#include <thread>
 
-#include <unistd.h>
+#include <boost/test/unit_test.hpp>
 
 #include "WifiInfo.hpp"
 
@@ -42,5 +43,6 @@ BOOST_AUTO_TEST_CASE(WifiInfoTest_Run) {
 		BOOST_TEST_MESSAGE(std::string("wifi signal strength: ") + std::to_string(sigLevel));
 
 		usleep(100000);
+		std::this_thread::sleep_for(std::chrono::milliseconds(50));
 	}
 }

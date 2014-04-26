@@ -21,7 +21,7 @@ BOOST_AUTO_TEST_CASE(InterfaceManager_Operation) {
 	catalog.Create("comm", "USBCommunicator");
 	catalog.Create("InterfaceManager", "InterfaceManager");
 
-	wallaroo::use(catalog["comm"]).as("ICommunicator").of(catalog["InterfaceManager"]);
+	wallaroo::use(catalog["comm"]).as("communicator").of(catalog["InterfaceManager"]);
 
 	catalog.CheckWiring();
 

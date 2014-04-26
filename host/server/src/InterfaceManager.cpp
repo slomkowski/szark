@@ -25,8 +25,9 @@ namespace bridge {
 WALLAROO_REGISTER(InterfaceManager)
 
 InterfaceManager::InterfaceManager()
-		: logger(log4cpp::Category::getInstance("InterfaceManager")), counter(0), usbComm("ICommunicator",
-				RegistrationToken()) {
+		: logger(log4cpp::Category::getInstance("InterfaceManager")),
+				counter(0),
+				usbComm("communicator", RegistrationToken()) {
 }
 
 InterfaceManager::~InterfaceManager() {
