@@ -16,6 +16,7 @@
 #include <boost/format.hpp>
 
 #include "BridgeProcessor.hpp"
+#include "Interface.hpp"
 
 using namespace std;
 using boost::format;
@@ -64,7 +65,7 @@ void BridgeProcessor::process(Json::Value& request, Json::Value& response) {
 		return usbComm->receiveData();
 	});
 
-	//TODO stwórz raport jsonowy
+	createReport(response);
 
 	lastProcessFunctionExecution = high_resolution_clock::now();
 }
@@ -96,4 +97,55 @@ void BridgeProcessor::maintenanceThreadFunction() {
 	}
 }
 
-} /* namespace bridge */
+void BridgeProcessor::createReport(Json::Value& r) {
+	using bridge::ExpanderDevice;
+	using bridge::Motor;
+	using bridge::Joint;
+	using bridge::Button;
+
+	//TODO stwórz raport jsonowy
+
+	auto fillExpander = [&](string name, ExpanderDevice d) {
+		r["lights"][name] = iface.expander[d].isEnabled();
+	};
+
+	auto fillButtons = [&](string name, Button d) {
+		if(iface.isButtonPressed(d)) {
+			r["buttons"].append(name);
+		}
+	};
+
+	auto fillMotor = [&](string name, Motor m) {
+		r["motors"][name]["speed"] = iface.motor[m].getSpeed();
+		r["motors"][name]["dir"] = directionToString(iface.motor[m].getDirection());
+	};
+
+	auto fillArm = [&](string name, Joint j) {
+		r["arms"][name]["speed"] = iface.arm[j].getSpeed();
+		r["arms"][name]["pos"] = iface.arm[j].getPosition();
+		r["arms"][name]["dir"] = directionToString(iface.arm[j].getDirection());
+	};
+
+	fillExpander("right", ExpanderDevice::LIGHT_RIGHT);
+	fillExpander("left", ExpanderDevice::LIGHT_LEFT);
+	fillExpander("camera", ExpanderDevice::LIGHT_CAMERA);
+
+	fillMotor("left", Motor::LEFT);
+	fillMotor("right", Motor::RIGHT);
+
+	fillArm("shoulder", Joint::SHOULDER);
+	fillArm("elbow", Joint::ELBOW);
+	fillArm("wrist", Joint::WRIST);
+	fillArm("gripper", Joint::GRIPPER);
+
+	fillButtons("up", Button::UP);
+	fillButtons("down", Button::DOWN);
+	fillButtons("enter", Button::ENTER);
+
+	r["batt"]["volt"] = iface.getVoltage();
+	r["batt"]["curr"] = iface.getCurrent();
+
+	// TODO killswitch
+}
+
+}

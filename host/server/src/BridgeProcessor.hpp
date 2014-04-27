@@ -50,6 +50,8 @@ private:
 	volatile bool finishCycleThread = false;
 
 	void maintenanceThreadFunction();
+
+	void createReport(Json::Value& r);
 };
 
 } /* namespace bridge */
