@@ -14,28 +14,28 @@
 #ifndef INTERFACEMANAGER_HPP_
 #define INTERFACEMANAGER_HPP_
 
+#include <functional>
+
+#include <log4cpp/Category.hh>
+
 #include "Interface.hpp"
 #include "USBCommunicator.hpp"
 
-#include <log4cpp/Category.hh>
-#include <wallaroo/registered.h>
-
 namespace bridge {
 
-class InterfaceManager: public wallaroo::Device, public bridge::Interface {
+class InterfaceManager: public bridge::Interface {
 public:
 	InterfaceManager();
 	virtual ~InterfaceManager();
 
-	void stageChanges();
+	void syncWithDevice(std::function<std::vector<uint8_t>(std::vector<uint8_t>)> syncFunction);
+
 private:
 	log4cpp::Category& logger;
 
 	std::vector<uint8_t> generateGetRequests(bool killSwitchActive);
 	std::vector<USBCommands::Request> getterRequests;
 	long counter;
-
-	wallaroo::Plug<ICommunicator> usbComm;
 
 	RequestMap previousRequests;
 
