@@ -13,7 +13,11 @@
 
 #include <boost/format.hpp>
 
+#include "utils.hpp"
 #include "RequestQueuer.hpp"
+
+using namespace std;
+using boost::format;
 
 namespace processing {
 
@@ -34,7 +38,7 @@ RequestQueuer::RequestQueuer()
 				requestProcessors("requestProcessors", RegistrationToken()),
 				jsonReader(Json::Reader(Json::Features::strictMode())) {
 
-	requestProcessorExecutorThread.reset(new std::thread(&RequestQueuer::requestProcessorExecutorThreadFunction, this));
+	requestProcessorExecutorThread.reset(new thread(&RequestQueuer::requestProcessorExecutorThreadFunction, this));
 
 	logger.notice("Instance created.");
 }
@@ -51,13 +55,13 @@ RequestQueuer::~RequestQueuer() {
 	logger.notice("Instance destroyed.");
 }
 
-bool RequestQueuer::addRequest(std::string requestString) {
-	std::unique_lock<std::mutex> lk(requestsMutex);
+bool RequestQueuer::addRequest(string requestString) {
+	unique_lock<mutex> lk(requestsMutex);
 
-	logger.debug((boost::format("Received request with the size of %d bytes.") % requestString.length()).str());
+	logger.debug((format("Received request with the size of %d bytes.") % requestString.length()).str());
 
 	if (requests.size() == REQUEST_QUEUE_MAX_SIZE and REQUEST_QUEUE_OVERFLOW_BEHAVIOR) {
-		logger.warn((boost::format("Requests queue is full (%d). Skipping request.") % REQUEST_QUEUE_MAX_SIZE).str());
+		logger.warn((format("Requests queue is full (%d). Skipping request.") % REQUEST_QUEUE_MAX_SIZE).str());
 		return false;
 	}
 
@@ -78,13 +82,13 @@ bool RequestQueuer::addRequest(std::string requestString) {
 	auto serial = req["serial"].asInt();
 
 	if (serial != 0 and serial <= lastSerial) {
-		logger.warn((boost::format("Request has too old serial (%d). Skipping.") % serial).str());
+		logger.warn((format("Request has too old serial (%d). Skipping.") % serial).str());
 		return false;
 	}
 
 	if (requests.size() == REQUEST_QUEUE_MAX_SIZE) {
 		logger.warn(
-				(boost::format("Requests queue is full (%d). removing the oldest one.") % REQUEST_QUEUE_MAX_SIZE).str());
+				(format("Requests queue is full (%d). removing the oldest one.") % REQUEST_QUEUE_MAX_SIZE).str());
 		requests.pop();
 	}
 
@@ -96,7 +100,7 @@ bool RequestQueuer::addRequest(std::string requestString) {
 	requests.push(req);
 
 	logger.info(
-			(boost::format("Pushed request with the serial %d. Queue size - %d.") % serial % requests.size()).str());
+			(format("Pushed request with the serial %d. Queue size - %d.") % serial % requests.size()).str());
 
 	cv.notify_one();
 
@@ -104,7 +108,7 @@ bool RequestQueuer::addRequest(std::string requestString) {
 }
 
 int RequestQueuer::getNumOfMessagess() {
-	std::unique_lock<std::mutex> lk(requestsMutex);
+	unique_lock<mutex> lk(requestsMutex);
 	return requests.size();
 }
 
@@ -114,9 +118,8 @@ int RequestQueuer::getNumOfProcessors() {
 
 void RequestQueuer::requestProcessorExecutorThreadFunction() {
 	while (true) {
-		std::unique_lock<std::mutex> lk(requestsMutex);
+		unique_lock<mutex> lk(requestsMutex);
 
-		//cv.wait(lk, [this]() {return finishCycleThread or (not requests.empty());});
 		if (requests.empty()) {
 			cv.wait(lk);
 		}
@@ -133,19 +136,23 @@ void RequestQueuer::requestProcessorExecutorThreadFunction() {
 		auto serial = req["serial"].asInt();
 
 		if (serial < lastSerial) {
-			logger.warn((boost::format("Request has too old serial (%d). Skipping (from executor).") % serial).str());
+			logger.warn((format("Request has too old serial (%d). Skipping (from executor).") % serial).str());
 			continue;
 		} else {
 			lastSerial = serial;
 		}
 
-		logger.info((boost::format("Executing request with serial %d.") % serial).str());
+		logger.info((format("Executing request with serial %d.") % serial).str());
 
 		Json::Value response;
 
-		for (auto proc : requestProcessors) {
-			response.append(std::shared_ptr<IRequestProcessor>(proc)->process(req));
-		}
+		auto execTimeMicroseconds = utils::measureTime([&]() {
+			for (auto proc : requestProcessors) {
+				response.append(shared_ptr<IRequestProcessor>(proc)->process(req));
+			}
+		}).count();
+
+		logger.info((format("Request %d executed in %d us.") % serial % execTimeMicroseconds).str());
 
 		//TODO trzeba coś zrobić z odpowiedzią
 	}

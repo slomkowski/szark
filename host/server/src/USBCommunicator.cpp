@@ -20,6 +20,9 @@
 #include "usb-settings.hpp"
 #include "utils.hpp"
 
+using namespace std;
+using boost::format;
+
 namespace bridge {
 
 const int BUFFER_SIZE = USB_SETTINGS_HOST_TO_DEVICE_DATAPACKET_SIZE;
@@ -64,8 +67,8 @@ USBCommunicator::USBCommunicator()
 						sizeof(productString));
 			}
 
-			if ((std::string(USB_SETTINGS_VENDOR_NAME).compare(vendorString) == 0)
-					and (std::string(USB_SETTINGS_DEVICE_NAME).compare(productString) == 0)) {
+			if ((string(USB_SETTINGS_VENDOR_NAME).compare(vendorString) == 0)
+					and (string(USB_SETTINGS_DEVICE_NAME).compare(productString) == 0)) {
 				deviceFound = true;
 				break;
 			} else {
@@ -80,7 +83,7 @@ USBCommunicator::USBCommunicator()
 		throw CommException("SZARK bridge device not found");
 	} else {
 		logger.notice(
-				(boost::format("found SZARK device: 0x%04X/0x%04X - %s [%s]") % USB_SETTINGS_VENDOR_ID
+				(format("Found SZARK device: 0x%04X/0x%04X - %s [%s].") % USB_SETTINGS_VENDOR_ID
 						% USB_SETTINGS_DEVICE_ID % USB_SETTINGS_DEVICE_NAME % USB_SETTINGS_VENDOR_NAME).str());
 	}
 
@@ -89,37 +92,25 @@ USBCommunicator::USBCommunicator()
 	status = libusb_detach_kernel_driver(devHandle, 0);
 	if (status < 0 and status != LIBUSB_ERROR_NOT_FOUND) {
 		libusb_close(devHandle);
-
-		std::string mesg = "error at detaching kernel driver (";
-		mesg += libusb_error_name(status);
-		mesg += ")";
-		throw CommException(mesg);
+		throw CommException((format("error at detaching kernel driver (%s)") % libusb_error_name(status)).str());
 	} else {
-		logger.notice("device successfully detached from kernel driver");
+		logger.notice("Device successfully detached from kernel driver.");
 	}
 
 	status = libusb_set_configuration(devHandle, 1);
 	if (status < 0) {
 		libusb_close(devHandle);
-
-		std::string mesg = "error at selecting configuration (";
-		mesg += libusb_error_name(status);
-		mesg += ")";
-		throw CommException(mesg);
+		throw CommException((format("error at selecting configuration (%s)") % libusb_error_name(status)).str());
 	} else {
-		logger.notice("configuration selected");
+		logger.notice("Configuration selected.");
 	}
 
 	status = libusb_claim_interface(devHandle, 0);
 	if (status < 0) {
 		libusb_close(devHandle);
-
-		std::string mesg = "error at claiming interface (";
-		mesg += libusb_error_name(status);
-		mesg += ")";
-		throw CommException(mesg);
+		throw CommException((format("error at claiming interface (%s)") % libusb_error_name(status)).str());
 	} else {
-		logger.notice("interface claimed. Device ready to go");
+		logger.notice("Interface claimed. Device ready to go. Instance created.");
 	}
 }
 
@@ -128,10 +119,10 @@ USBCommunicator::~USBCommunicator() {
 	libusb_close(devHandle);
 	libusb_exit(nullptr);
 
-	logger.notice("device released");
+	logger.notice("Device released. Instance destroyed.");
 }
 
-void USBCommunicator::sendData(std::vector<uint8_t>& data) {
+void USBCommunicator::sendData(vector<uint8_t>& data) {
 	data.resize(BUFFER_SIZE, 0);
 
 	int transferred, status;
@@ -141,23 +132,20 @@ void USBCommunicator::sendData(std::vector<uint8_t>& data) {
 				&data[0], USB_SETTINGS_HOST_TO_DEVICE_DATAPACKET_SIZE, &transferred, MESSAGE_TIMEOUT);
 	}).count();
 
-	logger.info(std::string("sending data in ") + std::to_string(microseconds) + " us");
+	logger.info(string("Sending data in ") + to_string(microseconds) + " us.");
 
 	if (transferred != USB_SETTINGS_HOST_TO_DEVICE_DATAPACKET_SIZE) {
-		std::string mesg = std::string("sent ") + std::to_string(transferred);
-		mesg += " bytes to the device instead of " + std::to_string(USB_SETTINGS_HOST_TO_DEVICE_DATAPACKET_SIZE);
-		throw CommException(mesg);
+		throw CommException(
+				(format("sent %d bytes to the device instead of %d") % transferred
+						% USB_SETTINGS_HOST_TO_DEVICE_DATAPACKET_SIZE).str());
 	}
 
 	if (status < 0) {
-		std::string mesg = "error at sending data to the device (";
-		mesg += libusb_error_name(status);
-		mesg += ")";
-		throw CommException(mesg);
+		throw CommException((format("error at sending data to the device (%s)") % libusb_error_name(status)).str());
 	}
 }
 
-std::vector<uint8_t> USBCommunicator::receiveData() {
+vector<uint8_t> USBCommunicator::receiveData() {
 	uint8_t data[BUFFER_SIZE];
 
 	int transferred, status;
@@ -168,22 +156,19 @@ std::vector<uint8_t> USBCommunicator::receiveData() {
 				USB_SETTINGS_DEVICE_TO_HOST_DATAPACKET_SIZE, &transferred, MESSAGE_TIMEOUT);
 	}).count();
 
-	logger.info(std::string("receiving data in ") + std::to_string(microseconds) + " us");
+	logger.info(string("receiving data in ") + to_string(microseconds) + " us");
 
 	if (transferred != USB_SETTINGS_DEVICE_TO_HOST_DATAPACKET_SIZE) {
-		std::string mesg = std::string("received ") + std::to_string(transferred);
-		mesg += " bytes from the device instead of " + std::to_string( USB_SETTINGS_DEVICE_TO_HOST_DATAPACKET_SIZE);
-		throw CommException(mesg);
+		throw CommException(
+				(format("received %d bytes from the device instead of %d") % transferred
+						% USB_SETTINGS_DEVICE_TO_HOST_DATAPACKET_SIZE).str());
 	}
 
 	if (status < 0) {
-		std::string mesg = "error at receiving data from the device (";
-		mesg += libusb_error_name(status);
-		mesg += ")";
-		throw CommException(mesg);
+		throw CommException((format("error at receiving data from the device (%s)") % libusb_error_name(status)).str());
 	}
 
-	std::vector<uint8_t> vec(BUFFER_SIZE);
+	vector<uint8_t> vec(BUFFER_SIZE);
 
 	vec.assign(data, data + transferred);
 
