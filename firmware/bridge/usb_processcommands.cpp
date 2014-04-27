@@ -60,7 +60,8 @@ void usb::executeCommandsFromUSB() {
 			bState.buttonEnter = buttons->enter;
 
 			bState.killSwitch = killswitch::isActive() ? USBCommands::bridge::ACTIVE : USBCommands::bridge::INACTIVE;
-			OutputBuff.push(&bState, sizeof(bState));
+			bState.killSwitchCausedByHardware = killswitch::isCausedByHardware();
+			OutputBuff.push(&bState, sizeof(USBCommands::bridge::State));
 		}
 			break;
 		case USBCommands::BRIDGE_SET_KILLSWITCH:
@@ -125,14 +126,14 @@ void usb::executeCommandsFromUSB() {
 					arm::setPosition(static_cast<arm::Motor>(joint->motor), joint->position);
 				} else {
 					arm::setDirection(static_cast<arm::Motor>(joint->motor),
-						static_cast<arm::Direction>(joint->direction));
+							static_cast<arm::Direction>(joint->direction));
 				}
 				InputBuff.currentPosition += sizeof(USBCommands::arm::JointState);
 			}
 			break;
 		case USBCommands::MOTOR_DRIVER_SET: {
 			auto m =
-				reinterpret_cast<USBCommands::motor::SpecificMotorState*>(&InputBuff.data[InputBuff.currentPosition]);
+					reinterpret_cast<USBCommands::motor::SpecificMotorState*>(&InputBuff.data[InputBuff.currentPosition]);
 			motor::setSpeed(static_cast<motor::Motor>(m->motor), m->speed);
 			motor::setDirection(static_cast<motor::Motor>(m->motor), static_cast<motor::Direction>(m->direction));
 			InputBuff.currentPosition += sizeof(USBCommands::motor::SpecificMotorState);
