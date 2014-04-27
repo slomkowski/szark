@@ -23,20 +23,15 @@
 
 class RequestProcessorMock: public processing::IRequestProcessor, public wallaroo::Device {
 public:
-	virtual Json::Value process(Json::Value request);
+	virtual void process(Json::Value& request, Json::Value& response);
 };
 
-Json::Value RequestProcessorMock::process(Json::Value request) {
-	Json::Value response;
-
-	response["serial"] = request["serial"];
+void RequestProcessorMock::process(Json::Value& request, Json::Value& response) {
 
 	response["lights"]["led"] = false;
 	response["lights"]["camera"] = true;
 
 	std::this_thread::sleep_for(std::chrono::milliseconds(1));
-
-	return response;
 }
 
 WALLAROO_REGISTER(RequestProcessorMock);

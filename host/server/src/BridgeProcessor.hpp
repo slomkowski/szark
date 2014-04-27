@@ -24,7 +24,7 @@
 
 #include "IRequestProcessor.hpp"
 #include "USBCommunicator.hpp"
-#include "Interface.hpp"
+#include "InterfaceManager.hpp"
 
 namespace bridge {
 
@@ -33,14 +33,14 @@ public:
 	BridgeProcessor();
 	~BridgeProcessor();
 
-	virtual Json::Value process(Json::Value request) override;
+	virtual void process(Json::Value& request, Json::Value& response) override;
 
 private:
 	log4cpp::Category& logger;
 
 	// shared data
 	wallaroo::Plug<ICommunicator> usbComm;
-	Interface iface;
+	InterfaceManager iface;
 
 	std::unique_ptr<std::thread> maintenanceThread;
 	std::mutex maintenanceMutex;

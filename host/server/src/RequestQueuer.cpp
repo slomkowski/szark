@@ -11,13 +11,16 @@
  *	published by the Free Software Foundation.
  */
 
+#include <chrono>
+#include <iomanip>
 #include <boost/format.hpp>
 
 #include "utils.hpp"
+#include "IRequestProcessor.hpp"
 #include "RequestQueuer.hpp"
 
 using namespace std;
-using boost::format;
+using namespace boost;
 
 namespace processing {
 
@@ -100,7 +103,7 @@ bool RequestQueuer::addRequest(string requestString) {
 	requests.push(req);
 
 	logger.info(
-			(format("Pushed request with the serial %d. Queue size - %d.") % serial % requests.size()).str());
+			(format("Pushed request with the serial %d. Queue size: %d.") % serial % requests.size()).str());
 
 	cv.notify_one();
 
@@ -146,13 +149,18 @@ void RequestQueuer::requestProcessorExecutorThreadFunction() {
 
 		Json::Value response;
 
+		response["serial"] = serial;
+
 		auto execTimeMicroseconds = utils::measureTime([&]() {
 			for (auto proc : requestProcessors) {
-				response.append(shared_ptr<IRequestProcessor>(proc)->process(req));
+				std::shared_ptr<IRequestProcessor>(proc)->process(req, response);
 			}
 		}).count();
 
+		response["timestamp"] = utils::getTimestamp();
+
 		logger.info((format("Request %d executed in %d us.") % serial % execTimeMicroseconds).str());
+		logger.debug(string("Response in JSON: ") + jsonWriter.write(response));
 
 		//TODO trzeba coś zrobić z odpowiedzią
 	}

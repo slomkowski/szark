@@ -25,6 +25,7 @@
 #include <wallaroo/registered.h>
 #include <json/value.h>
 #include <json/reader.h>
+#include <json/writer.h>
 
 #include "IRequestProcessor.hpp"
 
@@ -78,6 +79,7 @@ private:
 	void requestProcessorExecutorThreadFunction();
 
 	Json::Reader jsonReader;
+	Json::FastWriter jsonWriter;
 };
 
 } /* namespace processing */

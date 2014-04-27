@@ -25,6 +25,12 @@ namespace utils {
  */
 std::chrono::microseconds measureTime(std::function<void()> func);
 
+/**
+ * Gets the formatted date&time string with milliseconds.
+ * @return timestamp in format: 21:31:42.150
+ */
+std::string getTimestamp();
+
 } /* namespace utils */
 
 #endif /* UTILS_HPP_ */

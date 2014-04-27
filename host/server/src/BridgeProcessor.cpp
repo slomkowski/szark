@@ -54,16 +54,25 @@ BridgeProcessor::~BridgeProcessor() {
 	logger.notice("Instance destroyed.");
 }
 
-Json::Value BridgeProcessor::process(Json::Value request) {
+void BridgeProcessor::process(Json::Value& request, Json::Value& response) {
 	// TODO process in bridgeprocessor
 
-	lastProcessFunctionExecution = high_resolution_clock::now();
+	//TODO wyślij do interfejsu dane z jsona
 
-	return request;
+	iface.syncWithDevice([&](vector<uint8_t> r) {
+		usbComm->sendData(r);
+		return usbComm->receiveData();
+	});
+
+	//TODO stwórz raport jsonowy
+
+	lastProcessFunctionExecution = high_resolution_clock::now();
 }
 
 void BridgeProcessor::maintenanceThreadFunction() {
 	while (true) {
+		this_thread::sleep_for(MAINTAINANCE_TASK_INTERVAL);
+
 		unique_lock<mutex> lk(maintenanceMutex);
 
 		if (finishCycleThread) {
@@ -78,15 +87,12 @@ void BridgeProcessor::maintenanceThreadFunction() {
 
 		logger.info("Performing maintenance task.");
 
-		// TODO tu standardowe zbieranie
-		vector<uint8_t> dd;
-		usbComm->sendData(dd);
-
-		usbComm->receiveData();
+		iface.syncWithDevice([&](vector<uint8_t> r) {
+			usbComm->sendData(r);
+			return usbComm->receiveData();
+		});
 
 		lk.unlock();
-
-		this_thread::sleep_for(MAINTAINANCE_TASK_INTERVAL);
 	}
 }
 

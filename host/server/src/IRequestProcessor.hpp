@@ -23,7 +23,7 @@ public:
 	 * Takes the JSON document tree and parses the request. Returns the response.
 	 * The function is blocking till the values are gathered.
 	 */
-	virtual Json::Value process(Json::Value request) = 0;
+	virtual void process(Json::Value& request, Json::Value& response) = 0;
 
 	virtual ~IRequestProcessor() = default;
 };
