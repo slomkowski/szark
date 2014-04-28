@@ -27,6 +27,20 @@ enum class Direction {
 };
 
 /**
+ * Converts Direction enum to string (lowercase letters).
+ * @param dir
+ * @return
+ */
+std::string directionToString(const Direction dir);
+
+/**
+ * Converts string to direction enum. Throws runtime_error if invalid string.
+ * @param dir
+ * @return
+ */
+Direction stringToDirection(std::string dir);
+
+/**
  * Buttons located on the bridge board.
  */
 enum class Button {
@@ -142,6 +156,13 @@ public:
 	}
 
 	/**
+	 * Returns true if the kill switch was activated by pressing it.
+	 */
+	bool isKillSwitchCausedByHardware() {
+		return killSwitchCausedByHardware;
+	}
+
+	/**
 	 * Returns true if the given button is pressed.
 	 */
 	bool isButtonPressed(Button button);
@@ -174,6 +195,7 @@ private:
 	std::map<Button, bool> buttons;
 
 	bool killSwitchActive;
+	bool killSwitchCausedByHardware;
 
 	std::vector<IExternalDevice*> extDevListeners;
 
@@ -260,7 +282,7 @@ public:
 		 * Stops all the motors.
 		 */
 		void brake();
-	private:
+		private:
 		MotorClass(RequestMap& requests) {
 			motors[Motor::LEFT] = std::shared_ptr<SingleMotor>(new SingleMotor(requests, Motor::LEFT));
 			motors[Motor::RIGHT] = std::shared_ptr<SingleMotor>(new SingleMotor(requests, Motor::RIGHT));
@@ -401,11 +423,12 @@ public:
 
 		friend class Interface;
 	};
-public:
+	public:
 	ExpanderClass& expander;
 	MotorClass& motor;
 	ArmClass& arm;
-};
+}
+;
 
 }
 /* namespace bridge */

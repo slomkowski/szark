@@ -56,7 +56,7 @@ BridgeProcessor::~BridgeProcessor() {
 }
 
 void BridgeProcessor::process(Json::Value& request, Json::Value& response) {
-	// TODO process in bridgeprocessor
+	logger.info("Processing request.");
 
 	//TODO wyślij do interfejsu dane z jsona
 
@@ -87,6 +87,7 @@ void BridgeProcessor::maintenanceThreadFunction() {
 		}
 
 		logger.info("Performing maintenance task.");
+		// TODO dodać - jeżeli przez 2s nie ma sygnału, to zatrzymaj wszystko
 
 		iface.syncWithDevice([&](vector<uint8_t> r) {
 			usbComm->sendData(r);
@@ -145,7 +146,15 @@ void BridgeProcessor::createReport(Json::Value& r) {
 	r["batt"]["volt"] = iface.getVoltage();
 	r["batt"]["curr"] = iface.getCurrent();
 
-	// TODO killswitch
+	if (iface.isKillSwitchActive()) {
+		if (iface.isKillSwitchCausedByHardware()) {
+			r["killswitch"] = "hardware";
+		} else {
+			r["killswitch"] = "software";
+		}
+	} else {
+		r["killswitch"] = "inactive";
+	}
 }
 
 }

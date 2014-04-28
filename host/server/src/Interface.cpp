@@ -11,6 +11,8 @@
 #include <map>
 #include <algorithm>
 
+#include <boost/algorithm/string.hpp>
+
 #include "Interface.hpp"
 #include "DataHolder.hpp"
 
@@ -53,6 +55,7 @@ Interface::Interface()
 	}
 
 	killSwitchActive = true;
+	killSwitchCausedByHardware = false;
 	setKillSwitch(true);
 }
 
@@ -123,7 +126,7 @@ string Interface::MotorClass::SingleMotor::initStructure() {
 			mState.motor = motor::MOTOR1;
 			break;
 		case Motor::RIGHT:
-		default:
+			default:
 			mState.motor = motor::MOTOR2;
 			break;
 		};
@@ -189,7 +192,7 @@ string Interface::ArmClass::SingleJoint::initStructure() {
 			jState.motor = arm::GRIPPER;
 			break;
 		case Joint::SHOULDER:
-		default:
+			default:
 			jState.motor = arm::SHOULDER;
 			break;
 		};
@@ -426,8 +429,10 @@ unsigned int Interface::updateFields(USBCommands::Request request, uint8_t* data
 
 	if (state->killSwitch == USBCommands::bridge::ACTIVE) {
 		killSwitchActive = true;
+		killSwitchCausedByHardware = state->killSwitchCausedByHardware;
 		updateStructsWhenKillSwitchActivated();
 	} else {
+		killSwitchCausedByHardware = false;
 		killSwitchActive = false;
 	}
 
@@ -456,6 +461,35 @@ void Interface::updateStructsWhenKillSwitchActivated() {
 
 void Interface::onKillSwitchActivated() {
 	lcdText = "";
+}
+
+std::string directionToString(const Direction dir) {
+	switch (dir) {
+	case Direction::STOP:
+		return "stop";
+	case Direction::FORWARD:
+		return "forward";
+	case Direction::BACKWARD:
+		return "backward";
+	}
+
+	return "";
+}
+
+Direction stringToDirection(std::string dir) {
+	boost::algorithm::to_lower(dir);
+
+	if (dir == "stop") {
+		return Direction::STOP;
+	} else if (dir == "forward") {
+		return Direction::FORWARD;
+	} else if (dir == "backward") {
+		return Direction::BACKWARD;
+	} else {
+		throw runtime_error("invalid direction: " + dir);
+	}
+
+	return Direction::STOP;
 }
 
 } /* namespace bridge */

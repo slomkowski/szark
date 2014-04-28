@@ -18,6 +18,6 @@ BOOST_AUTO_TEST_CASE(USBCommunicationTest_Connection) {
 
 		BOOST_CHECK(returned.size() == USB_SETTINGS_DEVICE_TO_HOST_DATAPACKET_SIZE);
 
-		BOOST_CHECK_MESSAGE(returned.at(8) == USBCommands::MESSAGE_END, "real message length");
+		BOOST_CHECK_MESSAGE(returned.at(9) == USBCommands::MESSAGE_END, "real message length");
 	}
 }

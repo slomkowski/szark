@@ -16,8 +16,12 @@
 
 #include <boost/test/unit_test.hpp>
 #include <wallaroo/catalog.h>
+#include <json/value.h>
 
 #include "BridgeProcessor.hpp"
+
+using namespace std;
+using namespace std::chrono;
 
 BOOST_AUTO_TEST_CASE(BridgeProcessorTest_Run) {
 	wallaroo::Catalog catalog;
@@ -29,9 +33,22 @@ BOOST_AUTO_TEST_CASE(BridgeProcessorTest_Run) {
 
 	catalog.CheckWiring();
 
-	std::shared_ptr<bridge::BridgeProcessor> proc = catalog["bp"];
+	shared_ptr<bridge::BridgeProcessor> proc = catalog["bp"];
 
-	std::this_thread::sleep_for(std::chrono::seconds(1));
+	this_thread::sleep_for(milliseconds(500));
+
+	Json::Value req;
+	Json::Value resp;
+
+	proc->process(req, resp);
+
+	BOOST_MESSAGE(resp.toStyledString());
+
+	for (int i = 0; i < 30; i++) {
+		proc->process(req, resp);
+
+		this_thread::sleep_for(milliseconds(40));
+	}
 
 	BOOST_CHECK_EQUAL(1, 1);
 }
