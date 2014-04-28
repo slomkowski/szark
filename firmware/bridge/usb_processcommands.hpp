@@ -9,24 +9,22 @@
 #define USB_PROCESSCOMMANDS_H_
 
 namespace usb {
-	static const uint8_t BUFFER_SIZE = 128;
+static const uint8_t BUFFER_SIZE = 128;
 
-	class Buffer {
-	public:
-		uint8_t data[BUFFER_SIZE + 1] = { 0xff };
-		uint8_t length;
-		uint8_t currentPosition;
+class Buffer {
+public:
+	uint8_t data[BUFFER_SIZE + 1] = { 0xff };
+	uint8_t length;
+	uint8_t currentPosition;
 
-		void push(void *data, uint8_t length);
+	void push(void *data, uint8_t length);
 
-		void init();
-	};
+	void init();
+};
 
-	extern Buffer InputBuff, OutputBuff;
+extern Buffer InputBuff, OutputBuff;
 
-	void executeCommandsFromUSB();
-
-	bool wasKillSwitchDisabled();
+void executeCommandsFromUSB();
 }
 
 #endif /* USB_PROCESSCOMMANDS_HPP_ */

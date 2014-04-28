@@ -9,18 +9,22 @@
 #define KILLSWITCH_H_
 
 namespace killswitch {
-	void init();
 
-	void setActive(bool active);
+void init();
 
-	bool isActive();
+void setActive(bool active);
 
-	bool isCausedByHardware();
+bool isActive();
 
-	/**
-	 * This function should be called in the main loop to monitor hardware kill switch sources.
-	 */
-	void checkHardware();
+bool isCausedByHardware();
+
+bool isCausedBySoftware();
+
+/**
+ * This function should be called in the main loop to monitor hardware kill switch sources.
+ */
+void checkHardware();
+
 }
 
 #endif /* KILLSWITCH_H_ */

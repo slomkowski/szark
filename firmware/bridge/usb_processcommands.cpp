@@ -39,8 +39,6 @@ void usb::Buffer::init() {
 
 Buffer usb::InputBuff, usb::OutputBuff;
 
-static bool killSwitchDisabled = false;
-
 static volatile bool responseReady = false;
 
 void usb::executeCommandsFromUSB() {
@@ -66,10 +64,8 @@ void usb::executeCommandsFromUSB() {
 			break;
 		case USBCommands::BRIDGE_SET_KILLSWITCH:
 			if (InputBuff.data[InputBuff.currentPosition] == USBCommands::bridge::INACTIVE) {
-				killSwitchDisabled = true;
 				killswitch::setActive(false);
 			} else {
-				killSwitchDisabled = false;
 				killswitch::setActive(true);
 			}
 			InputBuff.currentPosition++;
@@ -163,8 +159,4 @@ void usb::executeCommandsFromUSB() {
 	OutputBuff.push(&MESSAGE_END, 1);
 
 	responseReady = true;
-}
-
-bool usb::wasKillSwitchDisabled() {
-	return killSwitchDisabled;
 }
