@@ -295,7 +295,7 @@ void Interface::updateDataStructures(std::vector<USBCommands::Request> getterReq
 				std::find(deviceResponse.begin() + actualPosition, deviceResponse.end(), USBCommands::MESSAGE_END));
 
 		throw runtime_error(
-				string("Message finish not found in the response at position: ") + to_string(actualPosition) + ", but: "
+				string("MESSAGE_END not found in the response at position: ") + to_string(actualPosition) + ", but: "
 						+ to_string(foundPos));
 	}
 }

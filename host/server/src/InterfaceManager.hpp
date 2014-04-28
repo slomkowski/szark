@@ -33,9 +33,7 @@ public:
 private:
 	log4cpp::Category& logger;
 
-	std::vector<uint8_t> generateGetRequests(bool killSwitchActive);
-	std::vector<USBCommands::Request> getterRequests;
-	long counter;
+	std::pair<std::vector<uint8_t>, std::vector<USBCommands::Request>> generateGetRequests(bool killSwitchActive);
 
 	RequestMap previousRequests;
 

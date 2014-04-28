@@ -17,67 +17,69 @@
 #include <cstring>
 #include <thread>
 #include <chrono>
+#include <tuple>
 
 using namespace std;
 
 namespace bridge {
 
 InterfaceManager::InterfaceManager()
-		: logger(log4cpp::Category::getInstance("InterfaceManager")),
-				counter(0) {
+		: logger(log4cpp::Category::getInstance("InterfaceManager")) {
 }
 
 InterfaceManager::~InterfaceManager() {
 	// TODO Auto-generated destructor stub
 }
 
-vector<uint8_t> InterfaceManager::generateGetRequests(bool killSwitchActive) {
-	vector<uint8_t> requests;
-	getterRequests.clear();
+pair<vector<uint8_t>, vector<USBCommands::Request>> InterfaceManager::generateGetRequests(bool killSwitchActive) {
+	static long counter = 0;
 
-	requests.push_back(USBCommands::Request::BRIDGE_GET_STATE);
-	getterRequests.push_back(USBCommands::Request::BRIDGE_GET_STATE);
+	vector<uint8_t> commands;
+	std::vector<USBCommands::Request> responseOrder;
+
+	commands.push_back(USBCommands::Request::BRIDGE_GET_STATE);
+	responseOrder.push_back(USBCommands::Request::BRIDGE_GET_STATE);
 
 	// if the kill switch is active, devices are in reset state and won't repond anyway
 	if (killSwitchActive) {
-		return requests;
+		return make_pair(commands, responseOrder);
 	}
 
-	requests.push_back(USBCommands::Request::MOTOR_DRIVER_GET);
-	getterRequests.push_back(USBCommands::Request::MOTOR_DRIVER_GET);
+	commands.push_back(USBCommands::Request::MOTOR_DRIVER_GET);
+	responseOrder.push_back(USBCommands::Request::MOTOR_DRIVER_GET);
 	if (counter % 2) {
-		requests.push_back(motor::MOTOR1);
+		commands.push_back(motor::MOTOR1);
 	} else {
-		requests.push_back(motor::MOTOR2);
+		commands.push_back(motor::MOTOR2);
 	}
 
-	requests.push_back(USBCommands::Request::ARM_DRIVER_GET);
-	getterRequests.push_back(USBCommands::Request::ARM_DRIVER_GET);
+	commands.push_back(USBCommands::Request::ARM_DRIVER_GET);
+	responseOrder.push_back(USBCommands::Request::ARM_DRIVER_GET);
 
 	switch (counter % 5) {
 	case 0:
-		requests.push_back(arm::ELBOW);
+		commands.push_back(arm::ELBOW);
 		break;
 	case 1:
-		requests.push_back(arm::WRIST);
+		commands.push_back(arm::WRIST);
 		break;
 	case 2:
-		requests.push_back(arm::GRIPPER);
+		commands.push_back(arm::GRIPPER);
 		break;
 	case 3:
-		requests.push_back(arm::SHOULDER);
+		commands.push_back(arm::SHOULDER);
 		break;
 	case 4:
-		requests.pop_back();
-		requests.push_back(USBCommands::Request::ARM_DRIVER_GET_GENERAL_STATE);
-		getterRequests.pop_back();
-		getterRequests.push_back(USBCommands::Request::ARM_DRIVER_GET_GENERAL_STATE);
+		commands.pop_back();
+		commands.push_back(USBCommands::Request::ARM_DRIVER_GET_GENERAL_STATE);
+		responseOrder.pop_back();
+		responseOrder.push_back(USBCommands::Request::ARM_DRIVER_GET_GENERAL_STATE);
 		break;
 	};
 
 	counter++;
 
-	return requests;
+	return make_pair(commands, responseOrder);
 }
 
 void InterfaceManager::syncWithDevice(std::function<std::vector<uint8_t>(std::vector<uint8_t>)> syncFunction) {
@@ -102,10 +104,9 @@ void InterfaceManager::syncWithDevice(std::function<std::vector<uint8_t>(std::ve
 		request.second->appendTo(concatenated);
 	}
 
-	// append getter requests
 	auto getterReqs = generateGetRequests(isKillSwitchActive());
 
-	concatenated.insert(concatenated.end(), getterReqs.begin(), getterReqs.end());
+	concatenated.insert(concatenated.end(), getterReqs.first.begin(), getterReqs.first.end());
 
 	if (killSwitchRequest != diff.end()
 			and killSwitchRequest->second->getPlainData()[1] == USBCommands::bridge::ACTIVE) {
@@ -129,7 +130,7 @@ void InterfaceManager::syncWithDevice(std::function<std::vector<uint8_t>(std::ve
 
 	logger.debug("got response from device (" + to_string(response.size()) + " bytes): " + oss.str());
 
-	updateDataStructures(getterRequests, response);
+	updateDataStructures(getterReqs.second, response);
 }
 
 RequestMap InterfaceManager::generateDifferentialRequests() {
