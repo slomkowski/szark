@@ -7,6 +7,7 @@
 
 #include <inttypes.h>
 #include <avr/wdt.h>
+#include <string.h>
 
 #include "global.hpp"
 #include "usb_processcommands.hpp"
@@ -35,6 +36,7 @@ void usb::Buffer::push(void *data, uint8_t length) {
 void usb::Buffer::init() {
 	currentPosition = 0;
 	length = 0;
+	memset(data, USBCommands::MESSAGE_END, BUFFER_SIZE);
 }
 
 Buffer usb::InputBuff, usb::OutputBuff;
@@ -154,9 +156,6 @@ void usb::executeCommandsFromUSB() {
 			break;
 		};
 	}
-
-	auto MESSAGE_END = USBCommands::MESSAGE_END;
-	OutputBuff.push(&MESSAGE_END, 1);
 
 	responseReady = true;
 }
