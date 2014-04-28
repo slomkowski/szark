@@ -36,18 +36,19 @@ void RequestProcessorMock::process(Json::Value& request, Json::Value& response) 
 
 WALLAROO_REGISTER(RequestProcessorMock);
 
-std::string requestWithNoSerial = R"(
+static std::string requestWithNoSerial =
+		R"(
 {
-     "timestamp" : "2014-01-01 12:34:56,123",
+     "timestamp" : "12:34:56,123",
      "control" : "stop"
 }
 )";
 
-std::string validRequest =
+static std::string validRequest =
 		R"(
 {
      "serial" : 55555555,
-     "timestamp" : "2014-01-01 12:34:56,123",
+     "timestamp" : "02:34:56,123",
      "control" : "stop",
      "motors" :
      {
@@ -69,11 +70,11 @@ std::string validRequest =
 }
 )";
 
-std::string validRequestWithLowerSerial =
+static std::string validRequestWithLowerSerial =
 		R"(
 {
      "serial" : 11111111,
-     "timestamp" : "2014-01-01 12:34:56,123",
+     "timestamp" : "12:34:56,123",
      "control" : "stop",
      "motors" :
      {
@@ -82,19 +83,19 @@ std::string validRequestWithLowerSerial =
      }
 })";
 
-std::string validRequestWithZeroSerial =
+static std::string validRequestWithZeroSerial =
 		R"(
 {
      "serial" : 0,
-     "timestamp" : "2014-01-01 12:34:56,123",
+     "timestamp" : "12:34:56,123",
      "control" : "stop"
 })";
 
-std::string validRequestWithHigherSerial =
+static std::string validRequestWithHigherSerial =
 		R"(
 {
      "serial" : 55555556,
-     "timestamp" : "2014-01-01 12:34:56,123",
+     "timestamp" : "12:34:56,123",
      "control" : "stop",
      "motors" :
      {
@@ -103,16 +104,19 @@ std::string validRequestWithHigherSerial =
      }
 })";
 
-BOOST_AUTO_TEST_CASE(RequestQueuerTest_addRequest) {
-	wallaroo::Catalog catalog;
-
+static std::shared_ptr<processing::RequestQueuer> prepareBindings(wallaroo::Catalog& catalog) {
 	catalog.Create("rq", "RequestQueuer");
 	catalog.Create("mock1", "RequestProcessorMock");
 	wallaroo::use(catalog["mock1"]).as("requestProcessors").of(catalog["rq"]);
 
 	catalog.CheckWiring();
 
-	std::shared_ptr<processing::RequestQueuer> rq = catalog["rq"];
+	return catalog["rq"];
+}
+
+BOOST_AUTO_TEST_CASE(RequestQueuerTest_addRequest) {
+	wallaroo::Catalog catalog;
+	auto rq = prepareBindings(catalog);
 
 	BOOST_CHECK_EQUAL(rq->getNumOfProcessors(), 1);
 
@@ -143,8 +147,20 @@ BOOST_AUTO_TEST_CASE(RequestQueuerTest_addRequest) {
 
 	catalog.Create("mock2", "RequestProcessorMock");
 	wallaroo::use(catalog["mock2"]).as("requestProcessors").of(catalog["rq"]);
+
 	catalog.CheckWiring();
 
 	BOOST_CHECK_EQUAL(rq->getNumOfProcessors(), 2);
 }
 
+BOOST_AUTO_TEST_CASE(RequestQueuerTest_requestProcessor) {
+	wallaroo::Catalog catalog;
+	auto rq = prepareBindings(catalog);
+
+	Json::Value req;
+	Json::Value resp;
+
+	req["serial"] = 123;
+
+	BOOST_CHECK_EQUAL(req["serial"].asInt(), resp["serial"].asInt());
+}

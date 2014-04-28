@@ -124,7 +124,9 @@ void RequestQueuer::requestProcessorExecutorThreadFunction() {
 		unique_lock<mutex> lk(requestsMutex);
 
 		if (requests.empty()) {
-			cv.wait(lk);
+			cv.wait(lk, [&]() {
+				return finishCycleThread or (not requests.empty());
+			});
 		}
 
 		if (finishCycleThread) {
