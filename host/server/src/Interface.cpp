@@ -211,6 +211,8 @@ string Interface::ArmClass::SingleJoint::initStructure() {
 void Interface::ArmClass::SingleJoint::setSpeed(unsigned int speed) {
 	string key = initStructure();
 
+	// TODO wyrzucać warningi, gdy podawane są złe wartości
+
 	requests[key]->getPayload<USBCommands::arm::JointState>()->speed =
 			speed <= ARM_DRIVER_MAX_SPEED ? speed : ARM_DRIVER_MAX_SPEED;
 }

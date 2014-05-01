@@ -12,8 +12,10 @@
  */
 
 #include <chrono>
+#include <functional>
 
 #include <boost/format.hpp>
+#include <json/value.h>
 
 #include "BridgeProcessor.hpp"
 #include "Interface.hpp"
@@ -58,7 +60,7 @@ BridgeProcessor::~BridgeProcessor() {
 void BridgeProcessor::process(Json::Value& request, Json::Value& response) {
 	logger.info("Processing request.");
 
-	//TODO wyślij do interfejsu dane z jsona
+	parseRequest(request);
 
 	iface.syncWithDevice([&](vector<uint8_t> r) {
 		usbComm->sendData(r);
@@ -98,13 +100,71 @@ void BridgeProcessor::maintenanceThreadFunction() {
 	}
 }
 
-void BridgeProcessor::createReport(Json::Value& r) {
-	using bridge::ExpanderDevice;
-	using bridge::Motor;
-	using bridge::Joint;
-	using bridge::Button;
+using bridge::ExpanderDevice;
+using bridge::Motor;
+using bridge::Joint;
+using bridge::Button;
 
-	//TODO stwórz raport jsonowy
+template<typename T> struct jsonType {
+	static const Json::ValueType value = Json::stringValue;
+	static void execute(const Json::Value& key, function<void(T)>& setter) {
+		setter(key.asString());
+	}
+};
+
+template<> struct jsonType<bool> {
+	static const Json::ValueType value = Json::booleanValue;
+	static void execute(const Json::Value& key, function<void(bool)>& setter) {
+		setter(key.asBool());
+	}
+};
+
+template<> struct jsonType<int> {
+	static const Json::ValueType value = Json::intValue;
+	static void execute(const Json::Value& key, function<void(int)>& setter) {
+		setter(key.asInt());
+	}
+};
+
+template<typename T> void BridgeProcessor::tryAssign(const Json::Value& key, function<void(T)> setter) {
+	if (key.empty()) {
+		return;
+	}
+
+	if (not key.isConvertibleTo(jsonType<T>::value)) {
+		logger.error("Value for " + key.toStyledString() + " is in invalid format.");
+		return;
+	}
+
+	jsonType<T>::execute(key, setter);
+}
+
+void BridgeProcessor::parseRequest(Json::Value& r) {
+	using namespace std::placeholders;
+	// TODO wkładanie requestów do interfejsu
+
+	tryAssign<bool>(r["killswitch"], std::bind(&InterfaceManager::setKillSwitch, &iface, _1));
+	tryAssign<string>(r["lcd"], std::bind(&InterfaceManager::setLCDText, &iface, _1));
+
+	auto fillArm = [&](string name, Joint j) {
+		tryAssign<int>(r["arm"][name]["speed"],
+				bind(&Interface::ArmClass::SingleJoint::setSpeed, &iface.arm[j], _1));
+		// TODO position, direction
+		};
+
+	auto fillMotor = [&](string name, Motor m) {
+		// TODO direction, speed
+		};
+
+	auto fillExpander = [&](string name, ExpanderDevice d) {
+		tryAssign<bool>(r["lights"][name],
+				bind(&Interface::ExpanderClass::Device::setEnabled, &iface.expander[d], _1));
+	};
+
+	fillAllDevices(fillArm, fillMotor, fillExpander);
+}
+
+void BridgeProcessor::createReport(Json::Value& r) {
 
 	auto fillExpander = [&](string name, ExpanderDevice d) {
 		r["lights"][name] = iface.expander[d].isEnabled();
@@ -127,17 +187,7 @@ void BridgeProcessor::createReport(Json::Value& r) {
 		r["arms"][name]["dir"] = directionToString(iface.arm[j].getDirection());
 	};
 
-	fillExpander("right", ExpanderDevice::LIGHT_RIGHT);
-	fillExpander("left", ExpanderDevice::LIGHT_LEFT);
-	fillExpander("camera", ExpanderDevice::LIGHT_CAMERA);
-
-	fillMotor("left", Motor::LEFT);
-	fillMotor("right", Motor::RIGHT);
-
-	fillArm("shoulder", Joint::SHOULDER);
-	fillArm("elbow", Joint::ELBOW);
-	fillArm("wrist", Joint::WRIST);
-	fillArm("gripper", Joint::GRIPPER);
+	fillAllDevices(fillArm, fillMotor, fillExpander);
 
 	fillButtons("up", Button::UP);
 	fillButtons("down", Button::DOWN);
@@ -155,6 +205,24 @@ void BridgeProcessor::createReport(Json::Value& r) {
 	} else {
 		r["killswitch"] = "inactive";
 	}
+}
+
+void BridgeProcessor::fillAllDevices(
+		std::function<void(string name, Joint j)> fillArm,
+		std::function<void(string name, Motor m)> fillMotor,
+		std::function<void(string name, ExpanderDevice d)> fillExpander) {
+
+	fillExpander("right", ExpanderDevice::LIGHT_RIGHT);
+	fillExpander("left", ExpanderDevice::LIGHT_LEFT);
+	fillExpander("camera", ExpanderDevice::LIGHT_CAMERA);
+
+	fillMotor("left", Motor::LEFT);
+	fillMotor("right", Motor::RIGHT);
+
+	fillArm("shoulder", Joint::SHOULDER);
+	fillArm("elbow", Joint::ELBOW);
+	fillArm("wrist", Joint::WRIST);
+	fillArm("gripper", Joint::GRIPPER);
 }
 
 }

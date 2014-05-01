@@ -17,6 +17,7 @@
 #include <thread>
 #include <mutex>
 #include <chrono>
+#include <functional>
 
 #include <log4cpp/Category.hh>
 #include <wallaroo/device.h>
@@ -52,6 +53,14 @@ private:
 	void maintenanceThreadFunction();
 
 	void createReport(Json::Value& r);
+	void parseRequest(Json::Value& r);
+
+	template<typename T> void tryAssign(const Json::Value& key, std::function<void(T)> setter);
+
+	void fillAllDevices(
+			std::function<void(std::string name, Joint j)> fillArm,
+			std::function<void(std::string name, Motor m)> fillMotor,
+			std::function<void(std::string name, ExpanderDevice d)> fillExpander);
 };
 
 } /* namespace bridge */
