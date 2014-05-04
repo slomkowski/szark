@@ -23,6 +23,19 @@
 using namespace std;
 using namespace std::chrono;
 
+static void execTest(const shared_ptr<bridge::BridgeProcessor>& proc) {
+	this_thread::sleep_for(milliseconds(500));
+	Json::Value req;
+	Json::Value resp;
+	proc->process(req, resp);
+	BOOST_MESSAGE(resp.toStyledString());
+	for (int i = 0; i < 30; i++) {
+		proc->process(req, resp);
+		this_thread::sleep_for(milliseconds(40));
+	}
+	BOOST_CHECK_EQUAL(1, 1);
+}
+
 BOOST_AUTO_TEST_CASE(BridgeProcessorTest_Run) {
 	wallaroo::Catalog catalog;
 
@@ -35,21 +48,6 @@ BOOST_AUTO_TEST_CASE(BridgeProcessorTest_Run) {
 
 	shared_ptr<bridge::BridgeProcessor> proc = catalog["bp"];
 
-	this_thread::sleep_for(milliseconds(500));
-
-	Json::Value req;
-	Json::Value resp;
-
-	proc->process(req, resp);
-
-	BOOST_MESSAGE(resp.toStyledString());
-
-	for (int i = 0; i < 30; i++) {
-		proc->process(req, resp);
-
-		this_thread::sleep_for(milliseconds(40));
-	}
-
-	BOOST_CHECK_EQUAL(1, 1);
+	execTest(proc);
 }
 

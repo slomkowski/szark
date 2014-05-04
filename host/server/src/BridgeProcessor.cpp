@@ -139,6 +139,19 @@ template<typename T> void BridgeProcessor::tryAssign(const Json::Value& key, fun
 	jsonType<T>::execute(key, setter);
 }
 
+void BridgeProcessor::tryAssignDirection(const Json::Value& key, function<void(Direction)> setter) {
+	if (key.empty()) {
+		return;
+	}
+
+	try {
+		auto dir = stringToDirection(key.asString());
+		setter(dir);
+	} catch (runtime_error& e) {
+		logger.error("Value for " + key.toStyledString() + ": " + e.what() + ".");
+	}
+}
+
 void BridgeProcessor::parseRequest(Json::Value& r) {
 	using namespace std::placeholders;
 	// TODO wkładanie requestów do interfejsu
@@ -149,12 +162,25 @@ void BridgeProcessor::parseRequest(Json::Value& r) {
 	auto fillArm = [&](string name, Joint j) {
 		tryAssign<int>(r["arm"][name]["speed"],
 				bind(&Interface::ArmClass::SingleJoint::setSpeed, &iface.arm[j], _1));
-		// TODO position, direction
-		};
+
+		tryAssignDirection(r["arm"][name]["dir"],
+				bind(&Interface::ArmClass::SingleJoint::setDirection, &iface.arm[j], _1));
+
+		if(r["arm"][name]["dir"].empty()) {
+			tryAssign<int>(r["arm"][name]["pos"],
+					bind(&Interface::ArmClass::SingleJoint::setPosition, &iface.arm[j], _1));
+		}
+	};
+
+	// TODO arm ogólne ustawienia
 
 	auto fillMotor = [&](string name, Motor m) {
-		// TODO direction, speed
-		};
+		tryAssign<int>(r["motor"][name]["speed"],
+				bind(&Interface::MotorClass::SingleMotor::setSpeed, &iface.motor[m], _1));
+
+		tryAssignDirection(r["motor"][name]["dir"],
+				bind(&Interface::MotorClass::SingleMotor::setDirection, &iface.motor[m], _1));
+	};
 
 	auto fillExpander = [&](string name, ExpanderDevice d) {
 		tryAssign<bool>(r["lights"][name],

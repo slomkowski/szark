@@ -56,6 +56,7 @@ private:
 	void parseRequest(Json::Value& r);
 
 	template<typename T> void tryAssign(const Json::Value& key, std::function<void(T)> setter);
+	void tryAssignDirection(const Json::Value& key, std::function<void(Direction)> setter);
 
 	void fillAllDevices(
 			std::function<void(std::string name, Joint j)> fillArm,
