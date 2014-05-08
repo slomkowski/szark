@@ -20,7 +20,7 @@ BOOST_AUTO_TEST_CASE(ConfigurationTest_Run) {
 	BOOST_CHECK_THROW(config::getBool("invalid_bool"), config::ConfigException);
 	BOOST_CHECK_THROW(config::getString("invalid_string"), config::ConfigException);
 
-	int port = config::getInt("szark.server.NetworkCommunicator.port");
+	int port = config::getInt("szark.server.NetServer.port");
 
 	BOOST_TEST_MESSAGE(std::string("port: ") + std::to_string(port));
 

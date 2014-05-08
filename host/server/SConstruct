@@ -6,10 +6,12 @@ env.Append(CPPFLAGS = Split('-std=c++11 -Wall'))
 env.Append(CPPPATH = [Dir('../../firmware/common'), Dir(extLibsDir + '/wallaroo/')])
 
 # libraries
-libraries = Split('libusb-1.0 log4cpp jsoncpp')
+libraries = 'libusb-1.0 log4cpp jsoncpp'
+librariesNoPkgConfig = 'boost_system'
 
-for lib in libraries:
+for lib in Split(libraries):
 	env.ParseConfig('pkg-config %s --cflags --libs' % lib)
+env['LIBS'].append(Split(librariesNoPkgConfig))
 
 binary_name = 'szark_server'
 build_dir = 'build'
