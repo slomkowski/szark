@@ -49,13 +49,13 @@ static std::string validRequest =
 {
      "serial" : 55555555,
      "timestamp" : "02:34:56,123",
-     "control" : "stop",
-     "motors" :
+     "killswitch" : false,
+     "motor" :
      {
 	  "left" : { "speed" : 12, "direction" : "forward" },
 	  "right" : { "speed" : 12, "direction" : "forward" }
      },
-     "arms" :
+     "arm" :
      {
 	  "wrist" : { "speed" : 12, "position" : 45 },
 	  "gripper" : { "speed" : 12, "direction" : "backward" },

@@ -183,7 +183,7 @@ void BridgeProcessor::parseRequest(Json::Value& r) {
 	};
 
 	auto fillExpander = [&](string name, ExpanderDevice d) {
-		tryAssign<bool>(r["lights"][name],
+		tryAssign<bool>(r["light"][name],
 				bind(&Interface::ExpanderClass::Device::setEnabled, &iface.expander[d], _1));
 	};
 
@@ -193,24 +193,24 @@ void BridgeProcessor::parseRequest(Json::Value& r) {
 void BridgeProcessor::createReport(Json::Value& r) {
 
 	auto fillExpander = [&](string name, ExpanderDevice d) {
-		r["lights"][name] = iface.expander[d].isEnabled();
+		r["light"][name] = iface.expander[d].isEnabled();
 	};
 
 	auto fillButtons = [&](string name, Button d) {
 		if(iface.isButtonPressed(d)) {
-			r["buttons"].append(name);
+			r["button"].append(name);
 		}
 	};
 
 	auto fillMotor = [&](string name, Motor m) {
-		r["motors"][name]["speed"] = iface.motor[m].getSpeed();
-		r["motors"][name]["dir"] = directionToString(iface.motor[m].getDirection());
+		r["motor"][name]["speed"] = iface.motor[m].getSpeed();
+		r["motor"][name]["dir"] = directionToString(iface.motor[m].getDirection());
 	};
 
 	auto fillArm = [&](string name, Joint j) {
-		r["arms"][name]["speed"] = iface.arm[j].getSpeed();
-		r["arms"][name]["pos"] = iface.arm[j].getPosition();
-		r["arms"][name]["dir"] = directionToString(iface.arm[j].getDirection());
+		r["arm"][name]["speed"] = iface.arm[j].getSpeed();
+		r["arm"][name]["pos"] = iface.arm[j].getPosition();
+		r["arm"][name]["dir"] = directionToString(iface.arm[j].getDirection());
 	};
 
 	fillAllDevices(fillArm, fillMotor, fillExpander);
