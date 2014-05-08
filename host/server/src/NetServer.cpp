@@ -80,21 +80,23 @@ void NetServer::doReceive()
 }
 
 void NetServer::sendResponse(long id, std::string response, bool transmit) {
-	if (sendersMap.find(id) == sendersMap.end()) {
+	const auto senderEndpoint = sendersMap.find(id);
+
+	if (senderEndpoint == sendersMap.end()) {
 		throw NetException((format("senders map doesn't contain key: %ld.") % id).str());
 	}
-	// TODO zrobić thread-safe
-	auto senderEndpoint = sendersMap[id];
 
-	logger.debug((format("Removing key %ld from senders map.") % id).str());
-	sendersMap.erase(id);
-	logger.debug((format("Senders map contains now %d keys.") % sendersMap.size()).str());
+	ioService.post([id,this]() {
+		logger.debug((format("Removing key %ld from senders map.") % id).str());
+		sendersMap.erase(id);
+		logger.debug((format("Senders map contains now %d keys.") % sendersMap.size()).str());
+	});
 
 	if (transmit == true) {
 		logger.info((format("Sending response (length %d) to %s.") %
-				response.length() % senderEndpoint.address().to_string()).str());
+				response.length() % senderEndpoint->second.address().to_string()).str());
 
-		udpSocket.async_send_to(asio::buffer(response), senderEndpoint,
+		udpSocket.async_send_to(asio::buffer(response), senderEndpoint->second,
 				[&](system::error_code ec, size_t bytes_sent)
 				{
 					if(ec) {
