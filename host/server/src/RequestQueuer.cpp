@@ -58,14 +58,14 @@ RequestQueuer::~RequestQueuer() {
 	logger.notice("Instance destroyed.");
 }
 
-bool RequestQueuer::addRequest(string requestString) {
+long RequestQueuer::addRequest(string requestString) {
 	unique_lock<mutex> lk(requestsMutex);
 
 	logger.debug((format("Received request with the size of %d bytes.") % requestString.length()).str());
 
 	if (requests.size() == REQUEST_QUEUE_MAX_SIZE and REQUEST_QUEUE_OVERFLOW_BEHAVIOR) {
 		logger.warn((format("Requests queue is full (%d). Skipping request.") % REQUEST_QUEUE_MAX_SIZE).str());
-		return false;
+		return INVALID_MESSAGE;
 	}
 
 	Json::Value req;
@@ -74,19 +74,19 @@ bool RequestQueuer::addRequest(string requestString) {
 	if (not parseSuccess) {
 		logger.error("Received request is not valid JSON document. See NOTICE for details.");
 		logger.notice("Details of the invalid request: " + jsonReader.getFormatedErrorMessages());
-		return false;
+		return INVALID_MESSAGE;
 	}
 
 	if (not req["serial"].isInt()) {
 		logger.error("Request does not contain valid serial.");
-		return false;
+		return INVALID_MESSAGE;
 	}
 
 	auto serial = req["serial"].asInt();
 
 	if (serial != 0 and serial <= lastSerial) {
 		logger.warn((format("Request has too old serial (%d). Skipping.") % serial).str());
-		return false;
+		return INVALID_MESSAGE;
 	}
 
 	if (requests.size() == REQUEST_QUEUE_MAX_SIZE) {
@@ -100,14 +100,16 @@ bool RequestQueuer::addRequest(string requestString) {
 		lastSerial = 0;
 	}
 
-	requests.push(req);
+	long id = nextId();
+
+	requests.push(make_pair(id, req));
 
 	logger.info(
 			(format("Pushed request with the serial %d. Queue size: %d.") % serial % requests.size()).str());
 
 	cv.notify_one();
 
-	return true;
+	return id;
 }
 
 int RequestQueuer::getNumOfMessagess() {
@@ -117,6 +119,12 @@ int RequestQueuer::getNumOfMessagess() {
 
 int RequestQueuer::getNumOfProcessors() {
 	return requestProcessors.size();
+}
+
+long RequestQueuer::nextId() {
+	static long id = 1;
+	id++;
+	return id;
 }
 
 void RequestQueuer::requestProcessorExecutorThreadFunction() {
@@ -133,7 +141,10 @@ void RequestQueuer::requestProcessorExecutorThreadFunction() {
 			return;
 		}
 
-		Json::Value req = requests.top();
+		long id;
+		Json::Value req;
+
+		tie(id, req) = requests.top();
 		requests.pop();
 
 		lk.unlock();
@@ -162,9 +173,20 @@ void RequestQueuer::requestProcessorExecutorThreadFunction() {
 		response["timestamp"] = utils::getTimestamp();
 
 		logger.info((format("Request %d executed in %d us.") % serial % execTimeMicroseconds).str());
-		logger.debug(string("Response in JSON: ") + jsonWriter.write(response));
 
-		//TODO trzeba coś zrobić z odpowiedzią
+		bool skipResponse = req["skip_response"].asBool();
+
+		if (skipResponse) {
+			logger.debug("Skipping response sending.");
+		} else {
+			logger.debug(string("Response in JSON: ") + jsonWriter.write(response));
+		}
+
+		if (responseSender == nullptr) {
+			logger.error("Cannot send response. No ResponseSender set.");
+		} else {
+			responseSender(id, jsonWriter.write(response), skipResponse);
+		}
 	}
 }
 

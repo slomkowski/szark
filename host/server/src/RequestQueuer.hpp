@@ -16,6 +16,7 @@
 #include <string>
 #include <list>
 #include <vector>
+#include <functional>
 #include <queue>
 #include <mutex>
 #include <thread>
@@ -31,6 +32,11 @@
 
 namespace processing {
 
+typedef std::function<void(long, std::string, bool)> ResponseSender;
+typedef std::pair<long, Json::Value> Request;
+
+constexpr long INVALID_MESSAGE = -1;
+
 class IRequestQueuer {
 public:
 	/**
@@ -38,19 +44,21 @@ public:
 	 * @param request text of the request in JSON format
 	 * @return true if the request was added to the queue
 	 */
-	virtual bool addRequest(std::string request) = 0;
+	virtual long addRequest(std::string request) = 0;
 
 	virtual int getNumOfMessagess() = 0;
 
 	virtual int getNumOfProcessors() = 0;
+
+	virtual void setResponseSender(ResponseSender s) = 0;
 
 	virtual ~IRequestQueuer() = default;
 };
 
 class RequestValueComparer {
 public:
-	bool operator()(const Json::Value &r1, const Json::Value &r2) const {
-		return r1["serial"].asInt() < r2["serial"].asInt();
+	bool operator()(const Request &r1, const Request &r2) const {
+		return r1.second["serial"].asInt() < r2.second["serial"].asInt();
 	}
 };
 
@@ -59,9 +67,13 @@ public:
 	RequestQueuer();
 	~RequestQueuer();
 
-	virtual bool addRequest(std::string requestString);
+	virtual long addRequest(std::string requestString);
 	virtual int getNumOfMessagess();
 	virtual int getNumOfProcessors();
+
+	void setResponseSender(ResponseSender s) {
+		responseSender = s;
+	}
 
 private:
 	log4cpp::Category& logger;
@@ -69,17 +81,21 @@ private:
 	wallaroo::Plug<IRequestProcessor, wallaroo::collection> requestProcessors;
 
 	std::mutex requestsMutex;
-	std::priority_queue<Json::Value, std::vector<Json::Value>, RequestValueComparer> requests;
+	std::priority_queue<Request, std::vector<Request>, RequestValueComparer> requests;
 	volatile long lastSerial = 0;
 
 	std::unique_ptr<std::thread> requestProcessorExecutorThread;
 	std::condition_variable cv;
 	volatile bool finishCycleThread = false;
 
-	void requestProcessorExecutorThreadFunction();
-
 	Json::Reader jsonReader;
 	Json::FastWriter jsonWriter;
+
+	ResponseSender responseSender;
+
+	void requestProcessorExecutorThreadFunction();
+
+	long nextId();
 };
 
 } /* namespace processing */
