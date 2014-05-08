@@ -44,7 +44,7 @@ public class MainWindow extends MainWindowDummy {
 
 				mWinMoveCtrl.setEnabled(false);
 				mWinMoveCtrl.setText(mWinMoveCtrl.getText() + " (Disabled because of joystick)");
-			} catch (JoypadBackend.InvalidJoypadException e) {
+			} catch (final JoypadBackend.InvalidJoypadException e) {
 				JOptionPane.showMessageDialog(this, "Joystick error: " + e.getMessage());
 				e.printStackTrace();
 				enableJoystick = false;
@@ -74,10 +74,10 @@ public class MainWindow extends MainWindowDummy {
 			}
 			try {
 				szdUpdater.update();
-			} catch (SzarkDataUpdater.ConnectionErrorException e) {
+			} catch (final SzarkDataUpdater.ConnectionErrorException e) {
 				mainWin.thingsWhenDisconnect();
 				JOptionPane.showMessageDialog(mainWin, "Network error: " + e.getMessage());
-			} catch (SzarkDataUpdater.HardwareStoppedException e) {
+			} catch (final SzarkDataUpdater.HardwareStoppedException e) {
 				mainWin.thingsWhenDisabling();
 				JOptionPane.showMessageDialog(mainWin, "Hardware emergency stop occured!");
 			}
@@ -185,7 +185,7 @@ public class MainWindow extends MainWindowDummy {
 
 	@Override
 	public void actionPerformed(ActionEvent e) {
-		Object obj = e.getSource();
+		final Object obj = e.getSource();
 
 		if ((obj == connectButton) || (obj == mConnConnect)) {
 			if (connected == false) {

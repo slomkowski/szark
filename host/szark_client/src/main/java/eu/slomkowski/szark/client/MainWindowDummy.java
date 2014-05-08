@@ -54,7 +54,7 @@ public abstract class MainWindowDummy extends JFrame implements ActionListener, 
 
 	protected JLabel cameraScreenshot = new JLabel(new ImageIcon(getClass().getResource(Hardcoded.DEFAULT_LOGO)));
 
-	protected JComboBox connectHostnameField = new JComboBox(Hardcoded.DEFAULT_HOSTNAMES);
+	protected JComboBox<String> connectHostnameField = new JComboBox<String>(Hardcoded.DEFAULT_HOSTNAMES);
 	protected JButton connectButton = new JButton("CONNECT BUTTON");
 	protected JButton exitButton = new JButton("Exit");
 
@@ -115,11 +115,11 @@ public abstract class MainWindowDummy extends JFrame implements ActionListener, 
 		setLayout(new BorderLayout());
 
 		// MENU
-		JMenuBar menubar = new JMenuBar();
+		final JMenuBar menubar = new JMenuBar();
 		setJMenuBar(menubar);
 
 		// connection
-		JMenu mConn = new JMenu("Connection");
+		final JMenu mConn = new JMenu("Connection");
 		mConn.add(mConnConnect);
 		menubar.add(mConn);
 
@@ -136,7 +136,7 @@ public abstract class MainWindowDummy extends JFrame implements ActionListener, 
 		mServShutdown.addActionListener(this);
 
 		// windows
-		JMenu mWin = new JMenu("Windows");
+		final JMenu mWin = new JMenu("Windows");
 		mWin.add(mWinArmCtrl);
 		mWin.add(mWinMoveCtrl);
 		menubar.add(mWin);
@@ -144,7 +144,7 @@ public abstract class MainWindowDummy extends JFrame implements ActionListener, 
 		mWinArmCtrl.addActionListener(this);
 		mWinMoveCtrl.addActionListener(this);
 
-		JPanel sidePanel = new JPanel();
+		final JPanel sidePanel = new JPanel();
 		sidePanel.setLayout(new BoxLayout(sidePanel, BoxLayout.PAGE_AXIS));
 
 		p = new JPanel(new FlowLayout());
@@ -191,7 +191,7 @@ public abstract class MainWindowDummy extends JFrame implements ActionListener, 
 		p.add(cameraSelectHead);
 		p.add(cameraSelectGripper);
 		sidePanel.add(p);
-		ButtonGroup cameraBg = new ButtonGroup();
+		final ButtonGroup cameraBg = new ButtonGroup();
 		cameraBg.add(cameraSelectGripper);
 		cameraBg.add(cameraSelectHead);
 
@@ -210,14 +210,14 @@ public abstract class MainWindowDummy extends JFrame implements ActionListener, 
 		// p.add(armVis);
 		sidePanel.add(armVis);
 
-		JPanel lowerPanel = new JPanel();
+		final JPanel lowerPanel = new JPanel();
 		lowerPanel.setLayout(new BoxLayout(lowerPanel, BoxLayout.LINE_AXIS));
 
 		// DIAGNOSTICS MOTORS
 		statSpeedLeft.setStringPainted(true);
 		statSpeedRight.setStringPainted(true);
 
-		JPanel mot = new JPanel(new BorderLayout());
+		final JPanel mot = new JPanel(new BorderLayout());
 		p = new JPanel();
 		p.setLayout(new BoxLayout(p, BoxLayout.Y_AXIS));
 		p.setBorder(new TitledBorder("Motor driver parameters:"));
@@ -242,7 +242,7 @@ public abstract class MainWindowDummy extends JFrame implements ActionListener, 
 		p.add(speedLimit15);
 		mot.add(p, BorderLayout.SOUTH);
 		// group radio buttons
-		ButtonGroup speedBg = new ButtonGroup();
+		final ButtonGroup speedBg = new ButtonGroup();
 		speedBg.add(speedLimit5);
 		speedBg.add(speedLimit10);
 		speedBg.add(speedLimit15);
@@ -253,13 +253,13 @@ public abstract class MainWindowDummy extends JFrame implements ActionListener, 
 		p = new JPanel(new BorderLayout());
 		p.setBorder(new TitledBorder("Arm parameters & limiters:"));
 
-		JPanel agauge = new JPanel(new GridLayout(4, 1, 1, 2));
+		final JPanel agauge = new JPanel(new GridLayout(4, 1, 1, 2));
 		agauge.add(statArmShoulderSpeed);
 		agauge.add(statArmElbowSpeed);
 		agauge.add(statArmWristSpeed);
 		agauge.add(statArmGripperSpeed);
 
-		JPanel aslid = new JPanel(new GridLayout(4, 1, 1, 2));
+		final JPanel aslid = new JPanel(new GridLayout(4, 1, 1, 2));
 		aslid.add(armShoulderSpeedLimiter);
 		aslid.add(armElbowSpeedLimiter);
 		aslid.add(armWristSpeedLimiter);
@@ -286,7 +286,7 @@ public abstract class MainWindowDummy extends JFrame implements ActionListener, 
 		p.add(cameraScreenshot);// , BorderLayout.CENTER);
 		cameraScreenshot.setPreferredSize(new Dimension(640, 480));
 
-		JPanel pCamAndLower = new JPanel();
+		final JPanel pCamAndLower = new JPanel();
 		pCamAndLower.setLayout(new BoxLayout(pCamAndLower, BoxLayout.Y_AXIS));
 		pCamAndLower.add(p); // camera view
 		pCamAndLower.add(lowerPanel);
