@@ -185,7 +185,7 @@ void RequestQueuer::requestProcessorExecutorThreadFunction() {
 		if (responseSender == nullptr) {
 			logger.error("Cannot send response. No ResponseSender set.");
 		} else {
-			responseSender(id, jsonWriter.write(response), skipResponse);
+			responseSender(id, jsonWriter.write(response), not skipResponse);
 		}
 	}
 }

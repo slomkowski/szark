@@ -10,6 +10,7 @@
  *	under the terms of the GNU General Public License version 3 as
  *	published by the Free Software Foundation.
  */
+#include <functional>
 #include <boost/format.hpp>
 
 #include "NetServer.hpp"
@@ -32,20 +33,17 @@ NetServer::NetServer()
 				logger(log4cpp::Category::getInstance("NetServer")),
 				reqQueuer("requestQueuer", RegistrationToken()),
 				ioService(),
-				receiverSocket(ioService),
-				senderSocket(ioService) {
+				udpSocket(ioService) {
 
 	buff.reset(new char[MAX_PACKET_SIZE]);
 
 	udpPort = config::getInt("szark.server.NetServer.port");
 
-	logger.notice((format("Opening sockets with port %u.") % udpPort).str());
-
-	receiverSocket.open(udp::v4());
-	senderSocket.open(udp::v4());
+	logger.notice((format("Opening listener socket with port %u.") % udpPort).str());
 
 	system::error_code err;
-	receiverSocket.bind(udp::endpoint(udp::v4(), udpPort), err);
+	udpSocket.open(udp::v4());
+	udpSocket.bind(udp::endpoint(udp::v4(), udpPort), err);
 	if (err) {
 		throw NetException("error at binding socket: " + err.message());
 	}
@@ -57,17 +55,23 @@ NetServer::NetServer()
 
 void NetServer::doReceive()
 {
-	receiverSocket.async_receive_from(asio::buffer(buff.get(), MAX_PACKET_SIZE), recvSenderEndpoint,
+	udpSocket.async_receive_from(asio::buffer(buff.get(), MAX_PACKET_SIZE), recvSenderEndpoint,
 			[&](system::error_code ec, size_t bytes_recvd) {
 				if (!ec && bytes_recvd > 0) {
-					logger.debug((format("Received %u bytes.") % bytes_recvd).str());
+					logger.debug((format("Received %d bytes.") % bytes_recvd).str());
 
 					auto msg = string(buff.get(), 0, bytes_recvd);
 					long id = reqQueuer->addRequest(msg);
 					if(id != INVALID_MESSAGE) {
-						logger.debug((format("Adding key %l to senders map.") % id).str());
+						logger.debug((format("Adding key %ld to senders map.") % id).str());
+
 						sendersMap[id] = recvSenderEndpoint;
+
+						logger.debug((format("Senders map contains now %d keys.") % sendersMap.size()).str());
 					}
+
+					using namespace std::placeholders;
+					reqQueuer->setResponseSender(bind(&NetServer::sendResponse, this, _1, _2, _3));
 				} else {
 					logger.error((format("Error when receiving packet (%u bytes): %s.") % bytes_recvd % ec.message() ).str());
 				}
@@ -77,29 +81,36 @@ void NetServer::doReceive()
 
 void NetServer::sendResponse(long id, std::string response, bool transmit) {
 	if (sendersMap.find(id) == sendersMap.end()) {
-		throw NetException((format("senders map doesn't contain key: %l.") % id).str());
+		throw NetException((format("senders map doesn't contain key: %ld.") % id).str());
 	}
-	// 	TODO to zrobić thread-safe
+	// TODO zrobić thread-safe
 	auto senderEndpoint = sendersMap[id];
 
-	logger.debug((format("Removing key %l from senders map.") % id).str());
+	logger.debug((format("Removing key %ld from senders map.") % id).str());
 	sendersMap.erase(id);
+	logger.debug((format("Senders map contains now %d keys.") % sendersMap.size()).str());
 
 	if (transmit == true) {
 		logger.info((format("Sending response (length %d) to %s.") %
 				response.length() % senderEndpoint.address().to_string()).str());
 
-		unsigned int bytes_sent = senderSocket.send_to(asio::buffer(response), senderEndpoint);
-
-		if (bytes_sent != response.length()) {
-			throw NetException(
-					(format("wrong amount of data sent: %u instead of %u") % bytes_sent % response.length()).str());
-		}
+		udpSocket.async_send_to(asio::buffer(response), senderEndpoint,
+				[&](system::error_code ec, size_t bytes_sent)
+				{
+					if(ec) {
+						throw NetException("error when sending response: " + ec.message());
+					}
+					if (bytes_sent != response.length()) {
+						throw NetException(
+								(format("wrong amount of data sent: %u instead of %u") % bytes_sent % response.length()).str());
+					}
+				});
 	}
 }
 
 void NetServer::run() {
-	logger.notice((format("Starting UDP listener on port %u.") % udpPort).str());
+	logger.notice(
+			(format("Starting UDP listener on port %u.") % udpPort).str());
 
 	system::error_code err;
 	ioService.run();

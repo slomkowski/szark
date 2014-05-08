@@ -60,10 +60,8 @@ private:
 	wallaroo::Plug<IRequestQueuer> reqQueuer;
 
 	boost::asio::io_service ioService;
-	boost::asio::ip::udp::socket receiverSocket;
+	boost::asio::ip::udp::socket udpSocket;
 	boost::asio::ip::udp::endpoint recvSenderEndpoint;
-
-	boost::asio::ip::udp::socket senderSocket;
 
 	std::unordered_map<long, boost::asio::ip::udp::endpoint> sendersMap;
 
