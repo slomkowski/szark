@@ -1,3 +1,5 @@
+import os
+
 env = Environment()
 
 extLibsDir = '../../external-libs/'
@@ -15,6 +17,9 @@ env['LIBS'].append(Split(librariesNoPkgConfig))
 
 binary_name = 'szark_server'
 build_dir = 'build'
+
+env["CXX"] = "clang++"
+env['ENV']['TERM'] = os.environ['TERM']
 
 env.VariantDir(build_dir + '/src', 'src')
 env.VariantDir(build_dir + '/test', 'test')
