@@ -58,7 +58,7 @@ public:
 class RequestValueComparer {
 public:
 	bool operator()(const Request &r1, const Request &r2) const {
-		return r1.second["serial"].asInt() < r2.second["serial"].asInt();
+		return r1.second["serial"].asInt() > r2.second["serial"].asInt();
 	}
 };
 

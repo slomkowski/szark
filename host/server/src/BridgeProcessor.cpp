@@ -31,7 +31,8 @@ namespace bridge {
  * It prevents the device from going to stopped state, queries for battery etc.
  */
 const chrono::milliseconds TIMEOUT(25);
-const chrono::milliseconds MAINTAINANCE_TASK_INTERVAL(25);
+const chrono::milliseconds MAINTENANCE_TASK_INTERVAL(25);
+const bool MAINTENANCE_TASK_ENABLED = true;
 
 WALLAROO_REGISTER(BridgeProcessor);
 
@@ -40,7 +41,9 @@ BridgeProcessor::BridgeProcessor()
 				usbComm("communicator", RegistrationToken()),
 				lastProcessFunctionExecution(high_resolution_clock::now()) {
 
-	maintenanceThread.reset(new thread(&BridgeProcessor::maintenanceThreadFunction, this));
+	if (MAINTENANCE_TASK_ENABLED) {
+		maintenanceThread.reset(new thread(&BridgeProcessor::maintenanceThreadFunction, this));
+	}
 
 	logger.notice("Instance created.");
 }
@@ -78,7 +81,7 @@ void BridgeProcessor::process(Json::Value& request, Json::Value& response) {
 
 void BridgeProcessor::maintenanceThreadFunction() {
 	while (true) {
-		this_thread::sleep_for(MAINTAINANCE_TASK_INTERVAL);
+		this_thread::sleep_for(MAINTENANCE_TASK_INTERVAL);
 
 		unique_lock<mutex> lk(maintenanceMutex);
 

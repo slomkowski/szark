@@ -337,10 +337,10 @@ void Interface::ArmClass::calibrate() {
 void Interface::ExpanderClass::Device::setEnabled(bool enabled) {
 	if (enabled) {
 		expanderByte |= (1 << int(device));
-		logger.info(string("Enabling expander device ") + devToString(device));
+		logger.info(string("Enabling expander device ") + devToString(device) + ".");
 	} else {
 		expanderByte &= ~(1 << int(device));
-		logger.info(string("Disabling expander device ") + devToString(device));
+		logger.info(string("Disabling expander device ") + devToString(device) + ".");
 	}
 
 	requests["expander"] = DataHolder::create(USBCommands::EXPANDER_SET, expanderByte);
