@@ -193,10 +193,16 @@ public class SzarkStatus {
 
 		private boolean camera;
 
+		@Expose
+		@SerializedName("camera")
 		private boolean gripper;
 
+		@Expose
+		@SerializedName("left")
 		private boolean high;
 
+		@Expose
+		@SerializedName("right")
 		private boolean low;
 
 		public synchronized boolean isCamera() {
@@ -456,9 +462,11 @@ public class SzarkStatus {
 	public Battery battery;
 
 	@Expose(deserialize = false, serialize = true)
+	@SerializedName("killswitch")
 	private boolean emergencyStopped;
 
 	@Expose(deserialize = false, serialize = true)
+	@SerializedName("light")
 	public Lights lights;
 
 	@Expose

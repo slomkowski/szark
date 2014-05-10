@@ -17,7 +17,7 @@ public interface Hardcoded {
 	int CAMERA_REFRESH_INTERVAL = 50; // in milliseconds
 
 	int SZARK_SERVER_PORT = 10191;
-	int SZARK_REFRESH_INTERVAL = 30; // in milliseconds
+	int SZARK_REFRESH_INTERVAL = 50; // in milliseconds
 
 	boolean ENABLE_JOYSTICK = true;
 
