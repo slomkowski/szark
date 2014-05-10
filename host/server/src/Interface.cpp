@@ -12,6 +12,7 @@
 #include <algorithm>
 
 #include <boost/algorithm/string.hpp>
+#include <boost/format.hpp>
 
 #include "Interface.hpp"
 #include "DataHolder.hpp"
@@ -35,8 +36,44 @@ const unsigned int ARM_DRIVER_MAX_SPEED = 255;
 map<bridge::Joint, unsigned int> ARM_DRIVER_MAX_POSITION = { { Joint::ELBOW, 105 }, { Joint::SHOULDER, 79 }, {
 		Joint::WRIST, 95 }, { Joint::GRIPPER, 255 } };
 
+log4cpp::Category& Interface::logger = log4cpp::Category::getInstance("Interface");
+
+std::string devToString(ExpanderDevice dev) {
+	switch (dev) {
+	case ExpanderDevice::LIGHT_CAMERA:
+		return "camera light";
+	case ExpanderDevice::LIGHT_LEFT:
+		return "left light";
+	default:
+		return "right light";
+	};
+}
+
+std::string devToString(Joint dev) {
+	switch (dev) {
+	case Joint::ELBOW:
+		return "elbow";
+	case Joint::GRIPPER:
+		return "gripper";
+	case Joint::WRIST:
+		return "wrist";
+	case Joint::SHOULDER:
+		return "shoulder";
+	};
+}
+std::string devToString(Motor dev) {
+	if (dev == Motor::LEFT) {
+		return "left";
+	} else {
+		return "right";
+	}
+}
+
 Interface::Interface()
-		: expander(*(new ExpanderClass(requests))), motor(*(new MotorClass(requests))), arm(*(new ArmClass(requests))) {
+		:
+				expander(*(new ExpanderClass(requests))),
+				motor(*(new MotorClass(requests))),
+				arm(*(new ArmClass(requests))) {
 
 	rawVoltage.reset(new circular_buffer<unsigned int>(VOLTAGE_ARRAY_SIZE));
 	rawCurrent.reset(new circular_buffer<unsigned int>(CURRENT_ARRAY_SIZE));
@@ -96,6 +133,8 @@ void Interface::setLCDText(std::string text) {
 		data.push_back(character);
 	}
 
+	logger.info(string("Setting LCD text to: \"") + newString + "\"");
+
 	requests["lcdtext"] = DataHolder::create(USBCommands::BRIDGE_LCD_SET, data);
 }
 
@@ -103,6 +142,9 @@ void Interface::setKillSwitch(bool active) {
 	USBCommands::bridge::KillSwitch state = USBCommands::bridge::INACTIVE;
 	if (active) {
 		state = USBCommands::bridge::ACTIVE;
+		logger.info("Setting kill switch to active.");
+	} else {
+		logger.info("Setting kill switch to inactive.");
 	}
 	requests[KILLSWITCH_STRING] = DataHolder::create(USBCommands::BRIDGE_SET_KILLSWITCH, state);
 }
@@ -141,9 +183,16 @@ void Interface::MotorClass::SingleMotor::setSpeed(unsigned int speed) {
 
 	string key = initStructure();
 
-	programmedSpeed = speed <= MOTOR_DRIVER_MAX_SPEED ? speed : MOTOR_DRIVER_MAX_SPEED;
+	if (speed <= MOTOR_DRIVER_MAX_SPEED) {
+		programmedSpeed = speed;
+	} else {
+		logger.warn((format("Trying to set greater speed for %s than max: %d.") % devToString(motor) % speed).str());
+		programmedSpeed = MOTOR_DRIVER_MAX_SPEED;
+	}
 
 	requests[key]->getPayload<USBCommands::motor::SpecificMotorState>()->speed = programmedSpeed;
+
+	logger.info((format("Setting speed of %s to %d.") % devToString(motor) % (int) programmedSpeed).str());
 }
 
 void Interface::MotorClass::SingleMotor::setDirection(Direction direction) {
@@ -164,11 +213,15 @@ void Interface::MotorClass::SingleMotor::setDirection(Direction direction) {
 	};
 
 	requests[key]->getPayload<USBCommands::motor::SpecificMotorState>()->direction = dir;
+
+	logger.info((format("Setting direction of %s to %s.") % devToString(motor) % directionToString(direction)).str());
 }
 
 void Interface::MotorClass::brake() {
 	motors[Motor::LEFT]->setDirection(Direction::STOP);
 	motors[Motor::RIGHT]->setDirection(Direction::STOP);
+
+	logger.info("Braking all motors.");
 }
 
 void Interface::ArmClass::SingleJoint::onKillSwitchActivated() {
@@ -211,10 +264,18 @@ string Interface::ArmClass::SingleJoint::initStructure() {
 void Interface::ArmClass::SingleJoint::setSpeed(unsigned int speed) {
 	string key = initStructure();
 
-	// TODO wyrzucać warningi, gdy podawane są złe wartości
+	unsigned int effectiveSpeed = 0;
+	if (speed <= ARM_DRIVER_MAX_SPEED) {
+		effectiveSpeed = speed;
+	} else {
+		logger.warn(
+				(format("Trying to set greater speed for %s than max: %d.") % devToString(joint) % ARM_DRIVER_MAX_SPEED).str());
+		effectiveSpeed = ARM_DRIVER_MAX_SPEED;
+	}
 
-	requests[key]->getPayload<USBCommands::arm::JointState>()->speed =
-			speed <= ARM_DRIVER_MAX_SPEED ? speed : ARM_DRIVER_MAX_SPEED;
+	requests[key]->getPayload<USBCommands::arm::JointState>()->speed = effectiveSpeed;
+
+	logger.info((format("Setting speed of %s to %d.") % devToString(joint) % (int) effectiveSpeed).str());
 }
 
 void Interface::ArmClass::SingleJoint::setDirection(Direction direction) {
@@ -237,6 +298,8 @@ void Interface::ArmClass::SingleJoint::setDirection(Direction direction) {
 	auto state = requests[key]->getPayload<USBCommands::arm::JointState>();
 	state->direction = dir;
 	state->setPosition = false;
+
+	logger.info((format("Setting direction of %s to %s.") % devToString(joint) % directionToString(direction)).str());
 }
 
 void Interface::ArmClass::SingleJoint::setPosition(unsigned int position) {
@@ -244,23 +307,40 @@ void Interface::ArmClass::SingleJoint::setPosition(unsigned int position) {
 
 	auto state = requests[key]->getPayload<USBCommands::arm::JointState>();
 
-	state->position = position <= ARM_DRIVER_MAX_POSITION[joint] ? position : ARM_DRIVER_MAX_POSITION[joint];
+	unsigned int effectivePos;
+	if (position <= ARM_DRIVER_MAX_POSITION[joint]) {
+		effectivePos = position;
+	} else {
+		logger.warn(
+				(format("Trying to set greater position for %s than max: %d.") % devToString(joint)
+						% ARM_DRIVER_MAX_POSITION[joint]).str());
+		effectivePos = ARM_DRIVER_MAX_POSITION[joint];
+	}
+
+	state->position = effectivePos;
 	state->setPosition = true;
+
+	logger.info((format("Setting position of %s to %d.") % devToString(joint) % (int) effectivePos).str());
 }
 
 void Interface::ArmClass::brake() {
 	requests["arm_addon"] = DataHolder::create(USBCommands::ARM_DRIVER_SET, USBCommands::arm::BRAKE);
+
+	logger.info("Braking all joints.");
 }
 
 void Interface::ArmClass::calibrate() {
 	requests["arm_addon"] = DataHolder::create(USBCommands::ARM_DRIVER_SET, USBCommands::arm::CALIBRATE);
+	logger.info("Calibrating arm.");
 }
 
 void Interface::ExpanderClass::Device::setEnabled(bool enabled) {
 	if (enabled) {
 		expanderByte |= (1 << int(device));
+		logger.info(string("Enabling expander device ") + devToString(device));
 	} else {
 		expanderByte &= ~(1 << int(device));
+		logger.info(string("Disabling expander device ") + devToString(device));
 	}
 
 	requests["expander"] = DataHolder::create(USBCommands::EXPANDER_SET, expanderByte);
@@ -308,6 +388,8 @@ unsigned int Interface::ExpanderClass::updateFields(USBCommands::Request request
 	}
 
 	expanderByte = data[0];
+
+	logger.info("Updating state expander byte.");
 
 	return 1;
 }
@@ -357,21 +439,24 @@ unsigned int Interface::MotorClass::SingleMotor::updateFields(USBCommands::Reque
 		return 0;
 	}
 
-	/*
-	 switch (state->direction) {
-	 case Direction::STOP:
-	 case motor::BACKWARD:
-	 direction = Direction::FORWARD;
-	 break;
-	 case motor::BACKWARD:
-	 direction = Direction::BACKWARD;
-	 break;
-	 default:
-	 direction = Direction::STOP;
-	 break;
-	 };*/
+	switch (state->direction) {
+	case motor::FORWARD:
+		direction = Direction::FORWARD;
+		break;
+	case motor::BACKWARD:
+		direction = Direction::BACKWARD;
+		break;
+	default:
+		direction = Direction::STOP;
+		break;
+	};
 
 	power = state->speed;
+
+	logger.info(
+			(format("Updating state motor %s: direction: %s, power: %d.") % devToString(motorNo)
+					% directionToString(direction)
+					% (int) power).str());
 
 	return sizeof(USBCommands::motor::SpecificMotorState);
 }
@@ -419,6 +504,11 @@ unsigned int Interface::ArmClass::SingleJoint::updateFields(USBCommands::Request
 	speed = state->speed;
 	position = state->position;
 
+	logger.info(
+			(format("Updating state joint %s: direction: %s, position: %d.") % devToString(jointNo)
+					% directionToString(direction)
+					% (int) position).str());
+
 	return sizeof(USBCommands::arm::JointState);
 }
 
@@ -444,6 +534,10 @@ unsigned int Interface::updateFields(USBCommands::Request request, uint8_t* data
 
 	rawCurrent->push_back(state->rawCurrent);
 	rawVoltage->push_back(state->rawVoltage);
+
+	logger.info(
+			(format("Updating state: kill switch: %d (by hardware: %d), battery: %.1fV, %.1fA") % killSwitchActive
+					% killSwitchCausedByHardware % getVoltage() % getCurrent()).str());
 
 	return sizeof(USBCommands::bridge::State);
 }

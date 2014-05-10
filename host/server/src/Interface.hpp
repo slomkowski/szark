@@ -14,6 +14,7 @@
 
 #include <boost/noncopyable.hpp>
 #include <boost/circular_buffer.hpp>
+#include <log4cpp/Category.hh>
 
 #include "DataHolder.hpp"
 
@@ -78,6 +79,10 @@ enum class ExpanderDevice
 	: uint8_t {
 		LIGHT_CAMERA = 4, LIGHT_LEFT = 2, LIGHT_RIGHT = 3
 };
+
+std::string devToString(ExpanderDevice dev);
+std::string devToString(Joint dev);
+std::string devToString(Motor dev);
 
 typedef std::map<std::string, std::shared_ptr<DataHolder>> RequestMap;
 
@@ -187,6 +192,8 @@ protected:
 	const std::string KILLSWITCH_STRING = "killswitch";
 
 private:
+	static log4cpp::Category& logger;
+
 	std::unique_ptr<boost::circular_buffer<unsigned int>> rawVoltage;
 	std::unique_ptr<boost::circular_buffer<unsigned int>> rawCurrent;
 
