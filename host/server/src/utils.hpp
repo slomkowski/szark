@@ -15,6 +15,9 @@
 
 #include <functional>
 #include <chrono>
+#include <vector>
+#include <string>
+#include <sstream>
 
 namespace utils {
 
@@ -30,6 +33,26 @@ std::chrono::microseconds measureTime(std::function<void()> func);
  * @return timestamp in format: 21:31:42.150
  */
 std::string getTimestamp();
+
+/**
+ * Takes the vector of type given and returns the string with given format:
+ * {elem1,elem2,elem3}
+ * @param data vector of type T
+ * @return
+ */
+template<typename T> std::string toString(std::vector<T>& data) {
+	std::stringstream out;
+
+	out << "{";
+
+	for (T& elem : data) {
+		out << std::dec << (int) elem << ",";
+	}
+
+	out << "}";
+
+	return out.str();
+}
 
 } /* namespace utils */
 

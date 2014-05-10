@@ -133,6 +133,7 @@ void USBCommunicator::sendData(vector<uint8_t>& data) {
 	}).count();
 
 	logger.info(string("Sending data in ") + to_string(microseconds) + " us.");
+	logger.debug(string("Sending data: ") + utils::toString<uint8_t>(data));
 
 	if (transferred != USB_SETTINGS_HOST_TO_DEVICE_DATAPACKET_SIZE) {
 		throw CommException(
@@ -156,7 +157,7 @@ vector<uint8_t> USBCommunicator::receiveData() {
 				USB_SETTINGS_DEVICE_TO_HOST_DATAPACKET_SIZE, &transferred, MESSAGE_TIMEOUT);
 	}).count();
 
-	logger.info(string("receiving data in ") + to_string(microseconds) + " us");
+	logger.info(string("Received data in ") + to_string(microseconds) + " us.");
 
 	if (transferred != USB_SETTINGS_DEVICE_TO_HOST_DATAPACKET_SIZE) {
 		throw CommException(
@@ -172,7 +173,10 @@ vector<uint8_t> USBCommunicator::receiveData() {
 
 	vec.assign(data, data + transferred);
 
+	logger.debug(string("Received data: ") + utils::toString<uint8_t>(vec));
+
 	return vec;
 }
 
 } /* namespace USB */
+
