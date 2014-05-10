@@ -302,14 +302,12 @@ public class MainWindow extends MainWindowDummy {
 		statArmShoulderSpeed.setValue(status.arm.shoulder.getSpeed());
 		statArmGripperSpeed.setValue(status.arm.gripper.getSpeed());
 
-		statArmElbowSpeed.setString("Elbow " + status.arm.elbow.getExactDirectionText() + ", speed: "
-				+ status.arm.elbow.getSpeed() + "/15");
-		statArmShoulderSpeed.setString("Shoulder " + status.arm.shoulder.getExactDirectionText() + ", speed: "
+		statArmElbowSpeed.setString("Elbow " + status.arm.elbow + ", speed: " + status.arm.elbow.getSpeed() + "/15");
+		statArmShoulderSpeed.setString("Shoulder " + status.arm.shoulder + ", speed: "
 				+ status.arm.shoulder.getSpeed() + "/15");
-		statArmWristSpeed.setString("Wrist " + status.arm.wrist.getExactDirectionText() + ", speed: "
-				+ status.arm.wrist.getSpeed() + "/15");
-		statArmGripperSpeed.setString("Gripper " + status.arm.wrist.getExactDirectionText() + ", speed: "
-				+ status.arm.gripper.getSpeed() + "/15");
+		statArmWristSpeed.setString("Wrist " + status.arm.wrist + ", speed: " + status.arm.wrist.getSpeed() + "/15");
+		statArmGripperSpeed.setString("Gripper " + status.arm.wrist + ", speed: " + status.arm.gripper.getSpeed()
+				+ "/15");
 
 		// visualizer
 		armVis.setUpdateStatus(status);
