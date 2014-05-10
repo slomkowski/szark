@@ -49,6 +49,7 @@ private:
 	std::chrono::time_point<std::chrono::high_resolution_clock> lastProcessFunctionExecution;
 
 	volatile bool finishCycleThread = false;
+	volatile bool firstMaintenanceTask = true;
 
 	void maintenanceThreadFunction();
 

@@ -56,22 +56,28 @@ NetServer::NetServer()
 void NetServer::doReceive()
 {
 	udpSocket.async_receive_from(asio::buffer(buff.get(), MAX_PACKET_SIZE), recvSenderEndpoint,
-			[&](system::error_code ec, size_t bytes_recvd) {
+			[this](system::error_code ec, size_t bytes_recvd) {
 				if (!ec && bytes_recvd > 0) {
 					logger.debug((format("Received %d bytes.") % bytes_recvd).str());
+					if(recvSenderEndpoint.protocol() != udp::v4()) {
+						logger.error("Received address is not an IPv4 address: " + recvSenderEndpoint.address().to_string());
+					} else {
+						auto msg = string(buff.get(), 0, bytes_recvd);
+						logger.debug(string("Received data: ") + msg);
 
-					auto msg = string(buff.get(), 0, bytes_recvd);
-					long id = reqQueuer->addRequest(msg);
-					if(id != INVALID_MESSAGE) {
-						logger.debug((format("Adding key %ld to senders map.") % id).str());
+						long id = reqQueuer->addRequest(msg);
 
-						sendersMap[id] = recvSenderEndpoint;
+						if(id != INVALID_MESSAGE) {
+							logger.debug((format("Adding key %ld to senders map.") % id).str());
 
-						logger.debug((format("Senders map contains now %d keys.") % sendersMap.size()).str());
+							sendersMap[id] = recvSenderEndpoint;
+
+							logger.debug((format("Senders map contains now %d keys.") % sendersMap.size()).str());
+						}
+
+						using namespace std::placeholders;
+						reqQueuer->setResponseSender(bind(&NetServer::sendResponse, this, _1, _2, _3));
 					}
-
-					using namespace std::placeholders;
-					reqQueuer->setResponseSender(bind(&NetServer::sendResponse, this, _1, _2, _3));
 				} else {
 					logger.error((format("Error when receiving packet (%u bytes): %s.") % bytes_recvd % ec.message() ).str());
 				}
@@ -86,28 +92,34 @@ void NetServer::sendResponse(long id, std::string response, bool transmit) {
 		throw NetException((format("senders map doesn't contain key: %ld.") % id).str());
 	}
 
+	if (transmit == true) {
+		udp::endpoint endpoint = senderEndpoint->second;
+
+		unsigned int responseLength = response.length();
+
+		logger.info((format("Sending response (length %d) to %s.") %
+				responseLength % endpoint.address().to_string()).str());
+
+		logger.debug(string("Sending data: ") + response);
+
+		udpSocket.async_send_to(asio::buffer(response), endpoint,
+				[responseLength](system::error_code ec, size_t bytes_sent)
+				{
+					if(ec) {
+						throw NetException("error when sending response: " + ec.message());
+					}
+					if (bytes_sent != responseLength) {
+						throw NetException(
+								(format("wrong amount of data sent: %u instead of %u") % bytes_sent % responseLength).str());
+					}
+				});
+	}
+
 	ioService.post([id,this]() {
 		logger.debug((format("Removing key %ld from senders map.") % id).str());
 		sendersMap.erase(id);
 		logger.debug((format("Senders map contains now %d keys.") % sendersMap.size()).str());
 	});
-
-	if (transmit == true) {
-		logger.info((format("Sending response (length %d) to %s.") %
-				response.length() % senderEndpoint->second.address().to_string()).str());
-
-		udpSocket.async_send_to(asio::buffer(response), senderEndpoint->second,
-				[&](system::error_code ec, size_t bytes_sent)
-				{
-					if(ec) {
-						throw NetException("error when sending response: " + ec.message());
-					}
-					if (bytes_sent != response.length()) {
-						throw NetException(
-								(format("wrong amount of data sent: %u instead of %u") % bytes_sent % response.length()).str());
-					}
-				});
-	}
 }
 
 void NetServer::run() {

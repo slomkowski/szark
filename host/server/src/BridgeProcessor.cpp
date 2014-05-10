@@ -58,6 +58,10 @@ BridgeProcessor::~BridgeProcessor() {
 }
 
 void BridgeProcessor::process(Json::Value& request, Json::Value& response) {
+	unique_lock<mutex> lk(maintenanceMutex);
+
+	firstMaintenanceTask = true;
+
 	logger.info("Processing request.");
 
 	parseRequest(request);
@@ -88,6 +92,11 @@ void BridgeProcessor::maintenanceThreadFunction() {
 			continue;
 		}
 
+		if (firstMaintenanceTask) {
+			logger.notice("No requests, starting performing maintenance task.");
+			firstMaintenanceTask = false;
+		}
+
 		logger.info("Performing maintenance task.");
 		// TODO dodać - jeżeli przez 2s nie ma sygnału, to zatrzymaj wszystko
 
@@ -95,8 +104,6 @@ void BridgeProcessor::maintenanceThreadFunction() {
 			usbComm->sendData(r);
 			return usbComm->receiveData();
 		});
-
-		lk.unlock();
 	}
 }
 
