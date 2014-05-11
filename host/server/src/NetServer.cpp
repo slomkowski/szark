@@ -58,7 +58,8 @@ void NetServer::doReceive()
 	udpSocket.async_receive_from(asio::buffer(buff.get(), MAX_PACKET_SIZE), recvSenderEndpoint,
 			[this](system::error_code ec, size_t bytes_recvd) {
 				if (!ec && bytes_recvd > 0) {
-					logger.debug((format("Received %d bytes.") % bytes_recvd).str());
+					logger.info((format("Received %d bytes from %s.") % bytes_recvd % recvSenderEndpoint.address().to_string()).str());
+
 					if(recvSenderEndpoint.protocol() != udp::v4()) {
 						logger.error("Received address is not an IPv4 address: " + recvSenderEndpoint.address().to_string());
 					} else {

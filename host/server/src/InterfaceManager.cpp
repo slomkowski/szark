@@ -19,16 +19,22 @@
 #include <chrono>
 #include <tuple>
 
+#include <boost/format.hpp>
+
+#include "utils.hpp"
+
 using namespace std;
+using namespace boost;
 
 namespace bridge {
 
 InterfaceManager::InterfaceManager()
 		: logger(log4cpp::Category::getInstance("InterfaceManager")) {
+	logger.notice("Instance created.");
 }
 
 InterfaceManager::~InterfaceManager() {
-	// TODO Auto-generated destructor stub
+	logger.notice("Instance destroyed.");
 }
 
 pair<vector<uint8_t>, vector<USBCommands::Request>> InterfaceManager::generateGetRequests(bool killSwitchActive) {
@@ -92,7 +98,7 @@ void InterfaceManager::syncWithDevice(std::function<std::vector<uint8_t>(std::ve
 	auto killSwitchRequest = diff.find(KILLSWITCH_STRING);
 	if (killSwitchRequest != diff.end()
 			and killSwitchRequest->second->getPlainData()[1] == USBCommands::bridge::INACTIVE) {
-		logger.notice("disabling kill switch");
+		logger.notice("Disabling kill switch.");
 		killSwitchRequest->second->appendTo(concatenated);
 	}
 
@@ -110,25 +116,20 @@ void InterfaceManager::syncWithDevice(std::function<std::vector<uint8_t>(std::ve
 
 	if (killSwitchRequest != diff.end()
 			and killSwitchRequest->second->getPlainData()[1] == USBCommands::bridge::ACTIVE) {
-		logger.notice("enabling kill switch");
+		logger.notice("Enabling kill switch.");
 		killSwitchRequest->second->appendTo(concatenated);
 	}
 
 	concatenated.push_back(USBCommands::MESSAGE_END);
 
-	std::ostringstream oss;
-	std::copy(concatenated.begin(), concatenated.end() - 1, std::ostream_iterator<int>(oss, ","));
-	oss << concatenated.back();
-
-	logger.debug("sending request to the device (" + to_string(concatenated.size()) + " bytes):" + oss.str());
+	logger.debug(
+			(format("Sending request to the device (%d bytes): %s.") % concatenated.size()
+					% utils::toString<uint8_t>(concatenated)).str());
 
 	auto response = syncFunction(concatenated);
 
-	oss.clear();
-	std::copy(response.begin(), response.end() - 1, std::ostream_iterator<int>(oss, ","));
-	oss << response.back();
-
-	logger.debug("got response from device (" + to_string(response.size()) + " bytes): " + oss.str());
+	logger.debug(
+			(format("Got response from device (%d bytes): %s.") % response.size() % utils::toString<uint8_t>(response)).str());
 
 	updateDataStructures(getterReqs.second, response);
 }

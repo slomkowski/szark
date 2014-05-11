@@ -249,7 +249,7 @@ public:
 			 * Sets the motor's direction.
 			 * @param direction one of Direction::FORWARD, Direction::BACKWARD or Direction::STOP.
 			 */
-			void setDirection(Direction direction);
+			void setDirection(Direction dir);
 
 		private:
 			SingleMotor(RequestMap& requests, Motor motor)

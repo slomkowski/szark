@@ -195,26 +195,27 @@ void Interface::MotorClass::SingleMotor::setSpeed(unsigned int speed) {
 	logger.info((format("Setting speed of %s to %d.") % devToString(motor) % (int) programmedSpeed).str());
 }
 
-void Interface::MotorClass::SingleMotor::setDirection(Direction direction) {
+void Interface::MotorClass::SingleMotor::setDirection(Direction dir) {
 	string key = initStructure();
 
-	motor::Direction dir = motor::STOP;
+	motor::Direction dir2 = motor::STOP;
 
 	switch (direction) {
 	case Direction::STOP:
-		dir = motor::STOP;
+		dir2 = motor::STOP;
 		break;
 	case Direction::FORWARD:
-		dir = motor::FORWARD;
+		dir2 = motor::FORWARD;
 		break;
 	case Direction::BACKWARD:
-		dir = motor::BACKWARD;
+		dir2 = motor::BACKWARD;
 		break;
 	};
 
-	requests[key]->getPayload<USBCommands::motor::SpecificMotorState>()->direction = dir;
+	requests[key]->getPayload<USBCommands::motor::SpecificMotorState>()->direction = dir2;
+	this->direction = dir;
 
-	logger.info((format("Setting direction of %s to %s.") % devToString(motor) % directionToString(direction)).str());
+	logger.info((format("Setting direction of %s to %s.") % devToString(motor) % directionToString(dir)).str());
 }
 
 void Interface::MotorClass::brake() {
@@ -439,24 +440,22 @@ unsigned int Interface::MotorClass::SingleMotor::updateFields(USBCommands::Reque
 		return 0;
 	}
 
-	switch (state->direction) {
-	case motor::FORWARD:
-		direction = Direction::FORWARD;
-		break;
-	case motor::BACKWARD:
-		direction = Direction::BACKWARD;
-		break;
-	default:
-		direction = Direction::STOP;
-		break;
-	};
+	// direction field has no meaning value
+//	switch (state->direction) {
+//	case motor::FORWARD:
+//		direction = Direction::FORWARD;
+//		break;
+//	case motor::BACKWARD:
+//		direction = Direction::BACKWARD;
+//		break;
+//	default:
+//		direction = Direction::STOP;
+//		break;
+//	};
 
 	power = state->speed;
 
-	logger.info(
-			(format("Updating state motor %s: direction: %s, power: %d.") % devToString(motorNo)
-					% directionToString(direction)
-					% (int) power).str());
+	logger.info((format("Updating state motor %s power: %d.") % devToString(motorNo) % (int) power).str());
 
 	return sizeof(USBCommands::motor::SpecificMotorState);
 }
