@@ -37,7 +37,7 @@ private:
 
 	RequestMap previousRequests;
 
-	RequestMap generateDifferentialRequests();
+	RequestMap generateDifferentialRequests(bool killSwitchActive);
 };
 
 } /* namespace bridge */

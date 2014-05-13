@@ -96,7 +96,7 @@ void InterfaceManager::syncWithDevice(std::function<std::vector<uint8_t>(std::ve
 	vector<uint8_t> concatenated;
 	std::priority_queue<std::shared_ptr<DataHolder>, vector<std::shared_ptr<DataHolder>>, DataHolderComparer> sortedRequests;
 
-	auto diff = generateDifferentialRequests();
+	auto diff = generateDifferentialRequests(isKillSwitchActive());
 
 	for (auto& r : diff) {
 		sortedRequests.push(r.second);
@@ -124,10 +124,8 @@ void InterfaceManager::syncWithDevice(std::function<std::vector<uint8_t>(std::ve
 	updateDataStructures(getterReqs.second, response);
 }
 
-RequestMap InterfaceManager::generateDifferentialRequests() {
+RequestMap InterfaceManager::generateDifferentialRequests(bool killSwitchActive) {
 	RequestMap diff;
-
-	// TODO usunąć z newRequest te, które nei mają sensu dla killswitch
 
 	for (auto& newRequest : requests) {
 		if (previousRequests.find(newRequest.first) == previousRequests.end()) {
@@ -145,7 +143,15 @@ RequestMap InterfaceManager::generateDifferentialRequests() {
 	}
 
 	previousRequests = requests;
-
+	if (killSwitchActive) {
+		for (auto& r : requests) {
+			if (r.second->isKillSwitchDependent()) {
+				logger.debug((format("Removing key '%s' because kill switch is active.") % r.first).str());
+				diff.erase(r.first);
+				previousRequests.erase(r.first);
+			}
+		}
+	}
 	return diff;
 }
 

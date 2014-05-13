@@ -30,7 +30,7 @@ public:
 	 * @param request
 	 * @param pr priority of the request
 	 */
-	DataHolder(const USBCommands::Request request, const int pr);
+	DataHolder(const USBCommands::Request request, const int pr, bool killswitchDependent);
 
 	/**
 	 * Creates two-byte request.
@@ -38,7 +38,7 @@ public:
 	 * @param pr priority of the request
 	 * @param d
 	 */
-	DataHolder(const USBCommands::Request request, const int pr, const uint8_t byte);
+	DataHolder(const USBCommands::Request request, const int pr, bool killswitchDependent, const uint8_t byte);
 
 	DataHolder(const DataHolder &dh);
 
@@ -50,15 +50,15 @@ public:
 	 */
 	template<typename TYPE,
 			typename = typename std::enable_if<not std::is_same<TYPE, std::vector<uint8_t>>::value>::type>
-	DataHolder(const USBCommands::Request request, const int pr, TYPE& structure) {
+	DataHolder(const USBCommands::Request request, const int pr, bool killswitchDependent, TYPE& structure) {
 		static_assert(DATAHOLDER_MAX_DATA_SIZE >= sizeof(TYPE) + 1, "Should be at least of the size of the structure.");
 
-		initData(request, pr, sizeof(TYPE));
+		initData(request, pr, killswitchDependent, sizeof(TYPE));
 
 		std::memcpy(data + 1, &structure, sizeof(TYPE));
 	}
 
-	DataHolder(const USBCommands::Request request, const int pr, void* data, int size);
+	DataHolder(const USBCommands::Request request, const int pr, bool killswitchDependent, void* data, int size);
 
 	/**
 	 * Creates the request from the vector of bytes. The vector's data is copied into request.
@@ -66,7 +66,8 @@ public:
 	 * @param pr priority of the request
 	 * @param vec
 	 */
-	DataHolder(const USBCommands::Request request, const int pr, const std::vector<uint8_t>& vec);
+	DataHolder(const USBCommands::Request request, const int pr, bool killswitchDependent,
+			const std::vector<uint8_t>& vec);
 
 	DataHolder& operator=(const DataHolder &dh);
 
@@ -107,6 +108,10 @@ public:
 		return priority;
 	}
 
+	bool isKillSwitchDependent() const {
+		return killswitchDependent;
+	}
+
 	/**
 	 * Appends data to the given vector instance.
 	 * @param vec existing std::vector<uint8_t> instance.
@@ -126,10 +131,11 @@ private:
 	mutable uint8_t data[DATAHOLDER_MAX_DATA_SIZE];
 	unsigned int length = 0;
 	int priority = 0;
+	bool killswitchDependent = false;
 
 	static_assert(DATAHOLDER_MAX_DATA_SIZE >= 2, "Should be at least one byte.");
 
-	void initData(USBCommands::Request request, const int pr, unsigned int dataSize);
+	void initData(USBCommands::Request request, const int pr, bool killswitchDependent, unsigned int dataSize);
 };
 
 class DataHolderComparer {

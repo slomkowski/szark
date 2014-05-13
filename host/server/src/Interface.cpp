@@ -145,7 +145,7 @@ void Interface::setLCDText(std::string text) {
 
 	logger.info(string("Setting LCD text to: \"") + newString + "\"");
 
-	requests["lcdtext"] = DataHolder::create(USBCommands::BRIDGE_LCD_SET, PRIORITY_LCD, data);
+	requests["lcdtext"] = DataHolder::create(USBCommands::BRIDGE_LCD_SET, PRIORITY_LCD, false, data);
 }
 
 void Interface::setKillSwitch(bool active) {
@@ -153,11 +153,11 @@ void Interface::setKillSwitch(bool active) {
 		logger.info("Setting kill switch to active.");
 		killSwitchActive = true;
 		killSwitchCausedByHardware = false;
-		requests[KILLSWITCH_STRING] = DataHolder::create(USBCommands::BRIDGE_SET_KILLSWITCH, PRIORITY_KILLSWITCH,
+		requests[KILLSWITCH_STRING] = DataHolder::create(USBCommands::BRIDGE_SET_KILLSWITCH, false, PRIORITY_KILLSWITCH,
 				USBCommands::bridge::ACTIVE);
 	} else {
 		logger.info("Setting kill switch to inactive.");
-		requests[KILLSWITCH_STRING] = DataHolder::create(USBCommands::BRIDGE_SET_KILLSWITCH, PRIORITY_KILLSWITCH,
+		requests[KILLSWITCH_STRING] = DataHolder::create(USBCommands::BRIDGE_SET_KILLSWITCH, false, PRIORITY_KILLSWITCH,
 				USBCommands::bridge::INACTIVE);
 	}
 }
@@ -187,7 +187,7 @@ string Interface::MotorClass::SingleMotor::initStructure() {
 		};
 		mState.direction = motor::STOP;
 		mState.speed = 0;
-		requests[key] = DataHolder::create(USBCommands::MOTOR_DRIVER_SET, PRIORITY_MOTOR_SET, mState);
+		requests[key] = DataHolder::create(USBCommands::MOTOR_DRIVER_SET, PRIORITY_MOTOR_SET, true, mState);
 	}
 	return key;
 }
@@ -274,7 +274,7 @@ string Interface::ArmClass::SingleJoint::initStructure() {
 		jState.position = 0;
 		jState.setPosition = false;
 
-		requests[key] = DataHolder::create(USBCommands::ARM_DRIVER_SET, PRIORITY_ARM_SET, jState);
+		requests[key] = DataHolder::create(USBCommands::ARM_DRIVER_SET, PRIORITY_ARM_SET, true, jState);
 	}
 
 	return key;
@@ -346,14 +346,14 @@ void Interface::ArmClass::SingleJoint::setPosition(unsigned int position) {
 }
 
 void Interface::ArmClass::brake() {
-	requests["arm_addon"] = DataHolder::create(USBCommands::ARM_DRIVER_SET, PRIORITY_ARM_GENERAL_SET,
+	requests["arm_addon"] = DataHolder::create(USBCommands::ARM_DRIVER_SET, PRIORITY_ARM_GENERAL_SET, true,
 			USBCommands::arm::BRAKE);
 
 	logger.info("Braking all joints.");
 }
 
 void Interface::ArmClass::calibrate() {
-	requests["arm_addon"] = DataHolder::create(USBCommands::ARM_DRIVER_SET, PRIORITY_ARM_GENERAL_SET,
+	requests["arm_addon"] = DataHolder::create(USBCommands::ARM_DRIVER_SET, PRIORITY_ARM_GENERAL_SET, true,
 			USBCommands::arm::CALIBRATE);
 	logger.info("Calibrating arm.");
 }
@@ -367,7 +367,7 @@ void Interface::ExpanderClass::Device::setEnabled(bool enabled) {
 		logger.info(string("Disabling expander device ") + devToString(device) + ".");
 	}
 
-	requests["expander"] = DataHolder::create(USBCommands::EXPANDER_SET, PRIORITY_EXPANDER_SET, expanderByte);
+	requests["expander"] = DataHolder::create(USBCommands::EXPANDER_SET, PRIORITY_EXPANDER_SET, true, expanderByte);
 }
 
 bool Interface::ExpanderClass::Device::isEnabled() {
