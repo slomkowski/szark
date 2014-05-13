@@ -11,65 +11,64 @@
 #include <typeinfo>
 #include <cstring>
 #include <vector>
+#include <memory>
 #include <boost/utility/enable_if.hpp>
 
 #include "usb-commands.hpp"
 
 namespace bridge {
 
+const int DATAHOLDER_MAX_DATA_SIZE = 40;
+
 /**
- * Helpful class used by Interface class to hold each USB request. The class is immutable.
+ * Helpful class used by Interface class to hold each USB request. The class is immutable, only data can change.
  */
 class DataHolder {
-private:
-	uint8_t* data = nullptr;
-	unsigned int length = 0;
-
-	void initData(USBCommands::Request request, unsigned int dataSize = 0) {
-		length = dataSize + 1;
-		data = new uint8_t[length];
-		data[0] = request;
-	}
 public:
 	/**
 	 * Creates single-byte request.
 	 * @param request
+	 * @param pr priority of the request
 	 */
-	DataHolder(USBCommands::Request request) {
-		initData(request);
-	}
+	DataHolder(const USBCommands::Request request, const int pr);
 
-	~DataHolder() {
-		delete[] data;
-	}
+	/**
+	 * Creates two-byte request.
+	 * @param request
+	 * @param pr priority of the request
+	 * @param d
+	 */
+	DataHolder(const USBCommands::Request request, const int pr, const uint8_t byte);
+
+	DataHolder(const DataHolder &dh);
 
 	/**
 	 * Creates the request from the given structure. The structure content is copied byte by byte.
 	 * @param request
+	 * @param pr priority of the request
 	 * @param structure any data type except std::vector.
 	 */
 	template<typename TYPE,
 			typename = typename std::enable_if<not std::is_same<TYPE, std::vector<uint8_t>>::value>::type>
-	DataHolder(USBCommands::Request request, TYPE& structure) {
-		initData(request, sizeof(TYPE));
+	DataHolder(const USBCommands::Request request, const int pr, TYPE& structure) {
+		static_assert(DATAHOLDER_MAX_DATA_SIZE >= sizeof(TYPE) + 1, "Should be at least of the size of the structure.");
+
+		initData(request, pr, sizeof(TYPE));
 
 		std::memcpy(data + 1, &structure, sizeof(TYPE));
 	}
 
+	DataHolder(const USBCommands::Request request, const int pr, void* data, int size);
+
 	/**
 	 * Creates the request from the vector of bytes. The vector's data is copied into request.
 	 * @param request
+	 * @param pr priority of the request
 	 * @param vec
 	 */
-	DataHolder(USBCommands::Request request, const std::vector<uint8_t>& vec) {
-		initData(request, vec.size());
+	DataHolder(const USBCommands::Request request, const int pr, const std::vector<uint8_t>& vec);
 
-		unsigned int idx = 1;
-		for (auto& val : vec) {
-			data[idx] = val;
-			idx++;
-		}
-	}
+	DataHolder& operator=(const DataHolder &dh);
 
 	/**
 	 * Helper method, creates the \ref{DataHolder} instance and passes the arguments to the appropriate constructor.
@@ -84,7 +83,7 @@ public:
 	 * Returns the contained data along with the request number.
 	 * @return pointer to the stored data.
 	 */
-	uint8_t* getPlainData() {
+	const uint8_t* getPlainData() const {
 		return data;
 	}
 
@@ -92,25 +91,44 @@ public:
 	 * Returns the pointer to the payload (all data except USB request number) casted on the type given.
 	 * @return
 	 */
-	template<typename TYPE> TYPE* getPayload() {
+	template<typename TYPE> TYPE* getPayload() const {
 		return reinterpret_cast<TYPE*>(data + 1);
 	}
 
-	USBCommands::Request getRequest() {
-		return static_cast<USBCommands::Request>(data[0]);
+	const USBCommands::Request getRequest() const {
+		return static_cast<const USBCommands::Request>(data[0]);
 	}
 
-	unsigned int getSize() {
+	unsigned int getSize() const {
 		return length;
+	}
+
+	int getPriority() const {
+		return priority;
 	}
 
 	/**
 	 * Appends data to the given vector instance.
 	 * @param vec existing std::vector<uint8_t> instance.
 	 */
-	void appendTo(std::vector<uint8_t>& vec) {
+	void appendTo(std::vector<uint8_t>& vec) const {
 		vec.insert(vec.end(), data, data + length);
 	}
+
+	bool operator==(const DataHolder &dh) const;
+
+	bool operator!=(const DataHolder& other) const {
+		return !(*this == other);
+	}
+
+private:
+	mutable uint8_t data[DATAHOLDER_MAX_DATA_SIZE];
+	unsigned int length = 0;
+	int priority = 0;
+
+	static_assert(DATAHOLDER_MAX_DATA_SIZE >= 2, "Should be at least one byte.");
+
+	void initData(USBCommands::Request request, const int pr, unsigned int dataSize);
 };
 
 }
