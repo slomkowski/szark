@@ -13,11 +13,14 @@
 
 #include "InterfaceManager.hpp"
 #include "USBCommunicator.hpp"
+#include "DataHolder.hpp"
 
 #include <cstring>
 #include <thread>
 #include <chrono>
 #include <tuple>
+#include <memory>
+#include <queue>
 
 #include <boost/format.hpp>
 
@@ -91,34 +94,21 @@ pair<vector<uint8_t>, vector<USBCommands::Request>> InterfaceManager::generateGe
 void InterfaceManager::syncWithDevice(std::function<std::vector<uint8_t>(std::vector<uint8_t>)> syncFunction) {
 
 	vector<uint8_t> concatenated;
+	std::priority_queue<std::shared_ptr<DataHolder>, vector<std::shared_ptr<DataHolder>>, DataHolderComparer> sortedRequests;
 
 	auto diff = generateDifferentialRequests();
 
-	// ensure that disabling kill switch is the first command
-	auto killSwitchRequest = diff.find(KILLSWITCH_STRING);
-	if (killSwitchRequest != diff.end()
-			and killSwitchRequest->second->getPlainData()[1] == USBCommands::bridge::INACTIVE) {
-		logger.notice("Disabling kill switch.");
-		killSwitchRequest->second->appendTo(concatenated);
+	for (auto& r : diff) {
+		sortedRequests.push(r.second);
 	}
 
-	for (auto& request : diff) {
-		if (request.first == KILLSWITCH_STRING) {
-			continue;
-		}
-
-		request.second->appendTo(concatenated);
+	while (not sortedRequests.empty()) {
+		sortedRequests.top()->appendTo(concatenated);
+		sortedRequests.pop();
 	}
 
 	auto getterReqs = generateGetRequests(isKillSwitchActive());
-
 	concatenated.insert(concatenated.end(), getterReqs.first.begin(), getterReqs.first.end());
-
-	if (killSwitchRequest != diff.end()
-			and killSwitchRequest->second->getPlainData()[1] == USBCommands::bridge::ACTIVE) {
-		logger.notice("Enabling kill switch.");
-		killSwitchRequest->second->appendTo(concatenated);
-	}
 
 	concatenated.push_back(USBCommands::MESSAGE_END);
 
@@ -136,6 +126,8 @@ void InterfaceManager::syncWithDevice(std::function<std::vector<uint8_t>(std::ve
 
 RequestMap InterfaceManager::generateDifferentialRequests() {
 	RequestMap diff;
+
+	// TODO usunąć z newRequest te, które nei mają sensu dla killswitch
 
 	for (auto& newRequest : requests) {
 		if (previousRequests.find(newRequest.first) == previousRequests.end()) {

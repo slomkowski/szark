@@ -132,6 +132,13 @@ private:
 	void initData(USBCommands::Request request, const int pr, unsigned int dataSize);
 };
 
+class DataHolderComparer {
+public:
+	bool operator()(std::shared_ptr<DataHolder>& lhs, std::shared_ptr<DataHolder>& rhs) const {
+		return lhs->getPriority() > rhs->getPriority();
+	}
+};
+
 }
 
 #endif /* DATAHOLDER_HPP_ */

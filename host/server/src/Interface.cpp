@@ -40,13 +40,12 @@ map<bridge::Joint, unsigned int> ARM_DRIVER_MAX_POSITION = { { Joint::ELBOW, 105
 log4cpp::Category& Interface::logger = log4cpp::Category::getInstance("Interface");
 
 enum Priority {
-	PRIORITY_KILLSWITCH_ENABLE,
+	PRIORITY_KILLSWITCH,
 	PRIORITY_ARM_SET,
 	PRIORITY_MOTOR_SET,
-	PRIORITY_EXPANDER_SET,
-	PRIORITY_LCD,
 	PRIORITY_ARM_GENERAL_SET,
-	PRIORITY_KILLSWITCH_DISABLE
+	PRIORITY_EXPANDER_SET,
+	PRIORITY_LCD
 };
 
 std::string devToString(ExpanderDevice dev) {
@@ -152,12 +151,13 @@ void Interface::setLCDText(std::string text) {
 void Interface::setKillSwitch(bool active) {
 	if (active) {
 		logger.info("Setting kill switch to active.");
-		requests[KILLSWITCH_STRING] = DataHolder::create(USBCommands::BRIDGE_SET_KILLSWITCH, PRIORITY_KILLSWITCH_ENABLE,
+		killSwitchActive = true;
+		killSwitchCausedByHardware = false;
+		requests[KILLSWITCH_STRING] = DataHolder::create(USBCommands::BRIDGE_SET_KILLSWITCH, PRIORITY_KILLSWITCH,
 				USBCommands::bridge::ACTIVE);
 	} else {
 		logger.info("Setting kill switch to inactive.");
-		requests[KILLSWITCH_STRING] = DataHolder::create(USBCommands::BRIDGE_SET_KILLSWITCH,
-				PRIORITY_KILLSWITCH_DISABLE,
+		requests[KILLSWITCH_STRING] = DataHolder::create(USBCommands::BRIDGE_SET_KILLSWITCH, PRIORITY_KILLSWITCH,
 				USBCommands::bridge::INACTIVE);
 	}
 }
