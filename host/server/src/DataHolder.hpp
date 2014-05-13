@@ -115,11 +115,12 @@ public:
 		vec.insert(vec.end(), data, data + length);
 	}
 
-	bool operator==(const DataHolder &dh) const;
-
-	bool operator!=(const DataHolder& other) const {
-		return !(*this == other);
-	}
+	/**
+	 * Checks if the object is equal to the given one.
+	 * @param right
+	 * @return
+	 */
+	bool equals(const DataHolder &right);
 
 private:
 	mutable uint8_t data[DATAHOLDER_MAX_DATA_SIZE];

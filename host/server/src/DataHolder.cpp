@@ -55,16 +55,17 @@ DataHolder& bridge::DataHolder::operator=(const DataHolder &dh) {
 	return *this;
 }
 
-bool bridge::DataHolder::operator==(const DataHolder &dh) const {
-	if (this->priority != dh.priority) {
+bool bridge::DataHolder::equals(const DataHolder &right) {
+
+	if (this->priority != right.priority) {
 		return false;
 	}
 
-	if (this->length != dh.length) {
+	if (this->length != right.length) {
 		return false;
 	}
 
-	if (std::memcmp(this->data, dh.data, length + 1) != 0) {
+	if (std::memcmp(this->data, right.data, this->length + 1) != 0) {
 		return false;
 	}
 

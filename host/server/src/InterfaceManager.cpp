@@ -143,12 +143,11 @@ RequestMap InterfaceManager::generateDifferentialRequests() {
 			diff[newRequest.first] = newRequest.second;
 		}
 		else {
-			if (memcmp(previousRequests[newRequest.first]->getPlainData(), newRequest.second->getPlainData(),
-					newRequest.second->getSize()) != 0) {
+			if (previousRequests[newRequest.first]->equals(*newRequest.second)) {
+				logger.debug((format("Key '%s' identical to the previous one. Skipping.") % newRequest.first).str());
+			} else {
 				logger.debug((format("Key '%s' differs from previous state's one. Adding.") % newRequest.first).str());
 				diff[newRequest.first] = newRequest.second;
-			} else {
-				logger.debug((format("Key '%s' identical to the previous one. Skipping.") % newRequest.first).str());
 			}
 		}
 	}

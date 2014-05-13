@@ -10,6 +10,7 @@
 #include <vector>
 #include <map>
 #include <algorithm>
+#include <memory>
 
 #include <boost/algorithm/string.hpp>
 #include <boost/format.hpp>
@@ -202,7 +203,9 @@ void Interface::MotorClass::SingleMotor::setSpeed(unsigned int speed) {
 		programmedSpeed = MOTOR_DRIVER_MAX_SPEED;
 	}
 
-	requests[key]->getPayload<USBCommands::motor::SpecificMotorState>()->speed = programmedSpeed;
+	auto newState = std::shared_ptr<DataHolder>(new DataHolder(*requests[key]));
+	newState->getPayload<USBCommands::motor::SpecificMotorState>()->speed = programmedSpeed;
+	requests[key] = newState;
 
 	logger.info((format("Setting speed of %s to %d.") % devToString(motor) % (int) programmedSpeed).str());
 }
@@ -224,8 +227,11 @@ void Interface::MotorClass::SingleMotor::setDirection(Direction dir) {
 		break;
 	};
 
-	requests[key]->getPayload<USBCommands::motor::SpecificMotorState>()->direction = dir2;
 	this->direction = dir;
+
+	auto newState = std::shared_ptr<DataHolder>(new DataHolder(*requests[key]));
+	newState->getPayload<USBCommands::motor::SpecificMotorState>()->direction = dir2;
+	requests[key] = newState;
 
 	logger.info((format("Setting direction of %s to %s.") % devToString(motor) % directionToString(dir)).str());
 }
@@ -286,7 +292,9 @@ void Interface::ArmClass::SingleJoint::setSpeed(unsigned int speed) {
 		effectiveSpeed = ARM_DRIVER_MAX_SPEED;
 	}
 
-	requests[key]->getPayload<USBCommands::arm::JointState>()->speed = effectiveSpeed;
+	auto newState = std::shared_ptr<DataHolder>(new DataHolder(*requests[key]));
+	newState->getPayload<USBCommands::arm::JointState>()->speed = effectiveSpeed;
+	requests[key] = newState;
 
 	logger.info((format("Setting speed of %s to %d.") % devToString(joint) % (int) effectiveSpeed).str());
 }
@@ -308,17 +316,16 @@ void Interface::ArmClass::SingleJoint::setDirection(Direction direction) {
 		break;
 	};
 
-	auto state = requests[key]->getPayload<USBCommands::arm::JointState>();
-	state->direction = dir;
-	state->setPosition = false;
+	auto newState = std::shared_ptr<DataHolder>(new DataHolder(*requests[key]));
+	newState->getPayload<USBCommands::arm::JointState>()->direction = dir;
+	newState->getPayload<USBCommands::arm::JointState>()->setPosition = false;
+	requests[key] = newState;
 
 	logger.info((format("Setting direction of %s to %s.") % devToString(joint) % directionToString(direction)).str());
 }
 
 void Interface::ArmClass::SingleJoint::setPosition(unsigned int position) {
 	string key = initStructure();
-
-	auto state = requests[key]->getPayload<USBCommands::arm::JointState>();
 
 	unsigned int effectivePos;
 	if (position <= ARM_DRIVER_MAX_POSITION[joint]) {
@@ -330,8 +337,10 @@ void Interface::ArmClass::SingleJoint::setPosition(unsigned int position) {
 		effectivePos = ARM_DRIVER_MAX_POSITION[joint];
 	}
 
-	state->position = effectivePos;
-	state->setPosition = true;
+	auto newState = std::shared_ptr<DataHolder>(new DataHolder(*requests[key]));
+	newState->getPayload<USBCommands::arm::JointState>()->position = effectivePos;
+	newState->getPayload<USBCommands::arm::JointState>()->setPosition = true;
+	requests[key] = newState;
 
 	logger.info((format("Setting position of %s to %d.") % devToString(joint) % (int) effectivePos).str());
 }
