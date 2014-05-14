@@ -171,7 +171,7 @@ public class SzarkStatus {
 		@SerializedName("backward")
 		BACKWARD("backward"),
 
-		@SerializedName("backward")
+		@SerializedName("forward")
 		FORWARD("forward"),
 
 		@SerializedName("stop")

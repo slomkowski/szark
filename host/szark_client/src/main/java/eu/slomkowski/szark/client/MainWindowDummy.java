@@ -73,8 +73,8 @@ public abstract class MainWindowDummy extends JFrame implements ActionListener, 
 	protected JCheckBox lightCamera = new JCheckBox("Camera");
 
 	protected JRadioButton speedLimit5 = new JRadioButton("5     ");
-	protected JRadioButton speedLimit10 = new JRadioButton("10     ");
-	protected JRadioButton speedLimit15 = new JRadioButton("15");
+	protected JRadioButton speedLimit8 = new JRadioButton("8      ");
+	protected JRadioButton speedLimit12 = new JRadioButton("12");
 
 	protected ArmVisualizer armVis = new ArmVisualizer();
 
@@ -238,14 +238,14 @@ public abstract class MainWindowDummy extends JFrame implements ActionListener, 
 		p = new JPanel(new FlowLayout());
 		p.setBorder(new TitledBorder("Motors speed limiter:"));
 		p.add(speedLimit5);
-		p.add(speedLimit10);
-		p.add(speedLimit15);
+		p.add(speedLimit8);
+		p.add(speedLimit12);
 		mot.add(p, BorderLayout.SOUTH);
 		// group radio buttons
 		final ButtonGroup speedBg = new ButtonGroup();
 		speedBg.add(speedLimit5);
-		speedBg.add(speedLimit10);
-		speedBg.add(speedLimit15);
+		speedBg.add(speedLimit8);
+		speedBg.add(speedLimit12);
 
 		lowerPanel.add(mot);
 
@@ -304,8 +304,8 @@ public abstract class MainWindowDummy extends JFrame implements ActionListener, 
 		lightHigh.addActionListener(this);
 		lightCamera.addActionListener(this);
 
-		speedLimit10.addActionListener(this);
-		speedLimit15.addActionListener(this);
+		speedLimit8.addActionListener(this);
+		speedLimit12.addActionListener(this);
 		speedLimit5.addActionListener(this);
 
 		cameraSelectGripper.addActionListener(this);
@@ -345,8 +345,8 @@ public abstract class MainWindowDummy extends JFrame implements ActionListener, 
 		statDirectionRight.setEnabled(enable);
 		// speed limiter radios
 		speedLimit5.setEnabled(enable);
-		speedLimit10.setEnabled(enable);
-		speedLimit15.setEnabled(enable);
+		speedLimit8.setEnabled(enable);
+		speedLimit12.setEnabled(enable);
 
 		mServ.setEnabled(enable);
 		// camera selector

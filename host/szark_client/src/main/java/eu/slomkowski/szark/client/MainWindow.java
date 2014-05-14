@@ -231,10 +231,10 @@ public class MainWindow extends MainWindowDummy {
 			cameraUpdater.setChoosenCamera(CameraImageUpdater.Camera.GRIPPER);
 		} else if (obj == speedLimit5) {
 			status.motors.setSpeedLimit(5);
-		} else if (obj == speedLimit10) {
-			status.motors.setSpeedLimit(10);
-		} else if (obj == speedLimit15) {
-			status.motors.setSpeedLimit(15);
+		} else if (obj == speedLimit8) {
+			status.motors.setSpeedLimit(8);
+		} else if (obj == speedLimit12) {
+			status.motors.setSpeedLimit(12);
 		} else if (obj == mServShutdown) {
 			status.server.shutdown();
 			thingsWhenDisconnect();
