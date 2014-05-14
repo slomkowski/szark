@@ -259,11 +259,17 @@ public:
 				power = 0;
 			}
 
+			std::string getKey() {
+				return std::string("motor_") + std::to_string(int(motor));
+			}
+
 			unsigned int updateFields(USBCommands::Request request, uint8_t* data);
+
+			void createMotorState();
 
 			void onKillSwitchActivated();
 
-			std::string initStructure();
+			void initStructure();
 
 			RequestMap& requests;
 			Motor motor;

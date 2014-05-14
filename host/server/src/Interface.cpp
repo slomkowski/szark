@@ -31,7 +31,7 @@ const double CURRENT_FACTOR = 34.0;
 const int VOLTAGE_ARRAY_SIZE = 5;
 const int CURRENT_ARRAY_SIZE = 5;
 
-const uint8_t MOTOR_DRIVER_MAX_SPEED = 12;
+const uint8_t MOTOR_DRIVER_MAX_SPEED = 11;
 const unsigned int ARM_DRIVER_MAX_SPEED = 255;
 
 map<bridge::Joint, unsigned int> ARM_DRIVER_MAX_POSITION = { { Joint::ELBOW, 105 }, { Joint::SHOULDER, 79 }, {
@@ -172,30 +172,45 @@ void Interface::MotorClass::SingleMotor::onKillSwitchActivated() {
 	direction = Direction::STOP;
 }
 
-string Interface::MotorClass::SingleMotor::initStructure() {
-	string key = "motor_" + to_string(int(motor));
-	if (requests.find(key) == requests.end()) {
-		USBCommands::motor::SpecificMotorState mState;
-		switch (motor) {
-		case Motor::LEFT:
-			mState.motor = motor::MOTOR1;
-			break;
-		case Motor::RIGHT:
-			default:
-			mState.motor = motor::MOTOR2;
-			break;
-		};
-		mState.direction = motor::STOP;
-		mState.speed = 0;
-		requests[key] = DataHolder::create(USBCommands::MOTOR_DRIVER_SET, PRIORITY_MOTOR_SET, true, mState);
+void Interface::MotorClass::SingleMotor::initStructure() {
+	if (requests.find(getKey()) == requests.end()) {
+		programmedSpeed = 0;
+		direction = Direction::STOP;
+		power = 0;
+		createMotorState();
 	}
-	return key;
+}
+
+void Interface::MotorClass::SingleMotor::createMotorState() {
+	USBCommands::motor::SpecificMotorState mState;
+	mState.speed = programmedSpeed;
+
+	switch (motor) {
+	case Motor::LEFT:
+		mState.motor = motor::MOTOR1;
+		break;
+	case Motor::RIGHT:
+		default:
+		mState.motor = motor::MOTOR2;
+		break;
+	};
+
+	switch (direction) {
+	case Direction::STOP:
+		mState.direction = motor::STOP;
+		break;
+	case Direction::FORWARD:
+		mState.direction = motor::FORWARD;
+		break;
+	case Direction::BACKWARD:
+		mState.direction = motor::BACKWARD;
+		break;
+	};
+
+	requests[getKey()] = DataHolder::create(USBCommands::MOTOR_DRIVER_SET, PRIORITY_MOTOR_SET, true, mState);
 }
 
 void Interface::MotorClass::SingleMotor::setSpeed(unsigned int speed) {
-
-	string key = initStructure();
-
 	if (speed <= MOTOR_DRIVER_MAX_SPEED) {
 		programmedSpeed = speed;
 	} else {
@@ -203,35 +218,15 @@ void Interface::MotorClass::SingleMotor::setSpeed(unsigned int speed) {
 		programmedSpeed = MOTOR_DRIVER_MAX_SPEED;
 	}
 
-	auto newState = std::shared_ptr<DataHolder>(new DataHolder(*requests[key]));
-	newState->getPayload<USBCommands::motor::SpecificMotorState>()->speed = programmedSpeed;
-	requests[key] = newState;
+	createMotorState();
 
 	logger.info((format("Setting speed of %s to %d.") % devToString(motor) % (int) programmedSpeed).str());
 }
 
 void Interface::MotorClass::SingleMotor::setDirection(Direction dir) {
-	string key = initStructure();
-
-	motor::Direction dir2 = motor::STOP;
-
-	switch (direction) {
-	case Direction::STOP:
-		dir2 = motor::STOP;
-		break;
-	case Direction::FORWARD:
-		dir2 = motor::FORWARD;
-		break;
-	case Direction::BACKWARD:
-		dir2 = motor::BACKWARD;
-		break;
-	};
-
 	this->direction = dir;
 
-	auto newState = std::shared_ptr<DataHolder>(new DataHolder(*requests[key]));
-	newState->getPayload<USBCommands::motor::SpecificMotorState>()->direction = dir2;
-	requests[key] = newState;
+	createMotorState();
 
 	logger.info((format("Setting direction of %s to %s.") % devToString(motor) % directionToString(dir)).str());
 }
