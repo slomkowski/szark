@@ -243,41 +243,56 @@ void Interface::ArmClass::SingleJoint::onKillSwitchActivated() {
 	speed = 0;
 }
 
-string Interface::ArmClass::SingleJoint::initStructure() {
-	string key = "arm_" + to_string(int(joint));
-	if (requests.find(key) == requests.end()) {
-		USBCommands::arm::JointState jState;
+void Interface::ArmClass::SingleJoint::initStructure() {
+	if (requests.find(getKey()) == requests.end()) {
+		direction = Direction::STOP;
+		speed = 0;
+		settingPosition = false;
+		programmedPosition = 0;
 
-		switch (joint) {
-		case Joint::ELBOW:
-			jState.motor = arm::ELBOW;
-			break;
-		case Joint::WRIST:
-			jState.motor = arm::WRIST;
-			break;
-		case Joint::GRIPPER:
-			jState.motor = arm::GRIPPER;
-			break;
-		case Joint::SHOULDER:
-			default:
-			jState.motor = arm::SHOULDER;
-			break;
-		};
-
-		jState.direction = arm::STOP;
-		jState.speed = 0;
-		jState.position = 0;
-		jState.setPosition = false;
-
-		requests[key] = DataHolder::create(USBCommands::ARM_DRIVER_SET, PRIORITY_ARM_SET, true, jState);
+		createJointState();
 	}
+}
 
-	return key;
+void Interface::ArmClass::SingleJoint::createJointState() {
+	USBCommands::arm::JointState jState;
+
+	switch (joint) {
+	case Joint::ELBOW:
+		jState.motor = arm::ELBOW;
+		break;
+	case Joint::WRIST:
+		jState.motor = arm::WRIST;
+		break;
+	case Joint::GRIPPER:
+		jState.motor = arm::GRIPPER;
+		break;
+	case Joint::SHOULDER:
+		default:
+		jState.motor = arm::SHOULDER;
+		break;
+	};
+
+	switch (direction) {
+	case Direction::STOP:
+		jState.direction = arm::STOP;
+		break;
+	case Direction::FORWARD:
+		jState.direction = arm::FORWARD;
+		break;
+	case Direction::BACKWARD:
+		jState.direction = arm::BACKWARD;
+		break;
+	};
+
+	jState.speed = speed;
+	jState.position = programmedPosition;
+	jState.setPosition = settingPosition;
+
+	requests[getKey()] = DataHolder::create(USBCommands::ARM_DRIVER_SET, PRIORITY_ARM_SET, true, jState);
 }
 
 void Interface::ArmClass::SingleJoint::setSpeed(unsigned int speed) {
-	string key = initStructure();
-
 	unsigned int effectiveSpeed = 0;
 	if (speed <= ARM_DRIVER_MAX_SPEED) {
 		effectiveSpeed = speed;
@@ -287,41 +302,23 @@ void Interface::ArmClass::SingleJoint::setSpeed(unsigned int speed) {
 		effectiveSpeed = ARM_DRIVER_MAX_SPEED;
 	}
 
-	auto newState = std::shared_ptr<DataHolder>(new DataHolder(*requests[key]));
-	newState->getPayload<USBCommands::arm::JointState>()->speed = effectiveSpeed;
-	requests[key] = newState;
+	this->speed = speed;
+
+	createJointState();
 
 	logger.info((format("Setting speed of %s to %d.") % devToString(joint) % (int) effectiveSpeed).str());
 }
 
 void Interface::ArmClass::SingleJoint::setDirection(Direction direction) {
-	string key = initStructure();
+	this->direction = direction;
+	this->settingPosition = false;
 
-	arm::Direction dir = arm::STOP;
-
-	switch (direction) {
-	case Direction::STOP:
-		dir = arm::STOP;
-		break;
-	case Direction::FORWARD:
-		dir = arm::FORWARD;
-		break;
-	case Direction::BACKWARD:
-		dir = arm::BACKWARD;
-		break;
-	};
-
-	auto newState = std::shared_ptr<DataHolder>(new DataHolder(*requests[key]));
-	newState->getPayload<USBCommands::arm::JointState>()->direction = dir;
-	newState->getPayload<USBCommands::arm::JointState>()->setPosition = false;
-	requests[key] = newState;
+	createJointState();
 
 	logger.info((format("Setting direction of %s to %s.") % devToString(joint) % directionToString(direction)).str());
 }
 
 void Interface::ArmClass::SingleJoint::setPosition(unsigned int position) {
-	string key = initStructure();
-
 	unsigned int effectivePos;
 	if (position <= ARM_DRIVER_MAX_POSITION[joint]) {
 		effectivePos = position;
@@ -332,10 +329,10 @@ void Interface::ArmClass::SingleJoint::setPosition(unsigned int position) {
 		effectivePos = ARM_DRIVER_MAX_POSITION[joint];
 	}
 
-	auto newState = std::shared_ptr<DataHolder>(new DataHolder(*requests[key]));
-	newState->getPayload<USBCommands::arm::JointState>()->position = effectivePos;
-	newState->getPayload<USBCommands::arm::JointState>()->setPosition = true;
-	requests[key] = newState;
+	this->programmedPosition = effectivePos;
+	this->settingPosition = true;
+
+	createJointState();
 
 	logger.info((format("Setting position of %s to %d.") % devToString(joint) % (int) effectivePos).str());
 }
@@ -576,7 +573,8 @@ void Interface::onKillSwitchActivated() {
 	lcdText = "";
 }
 
-std::string directionToString(const Direction dir) {
+std::string
+directionToString(const Direction dir) {
 	switch (dir) {
 	case Direction::STOP:
 		return "stop";
@@ -589,7 +587,8 @@ std::string directionToString(const Direction dir) {
 	return "";
 }
 
-Direction stringToDirection(std::string dir) {
+Direction
+stringToDirection(std::string dir) {
 	boost::algorithm::to_lower(dir);
 
 	if (dir == "stop") {

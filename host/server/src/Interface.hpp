@@ -339,13 +339,22 @@ public:
 				speed = 0;
 				direction = Direction::STOP;
 				position = 0;
+				programmedPosition = 0;
+
+				settingPosition = false;
 			}
 
 			unsigned int updateFields(USBCommands::Request request, uint8_t* data);
 
 			void onKillSwitchActivated();
 
-			std::string initStructure();
+			void initStructure();
+
+			void createJointState();
+
+			std::string getKey() {
+				return std::string("arm_") + std::to_string(int(joint));
+			}
 
 			RequestMap& requests;
 			Joint joint;
@@ -353,6 +362,8 @@ public:
 			uint8_t speed;
 			Direction direction;
 			uint8_t position;
+			uint8_t programmedPosition;
+			bool settingPosition;
 
 			friend class ArmClass;
 		};
