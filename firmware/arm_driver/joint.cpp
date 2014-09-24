@@ -51,14 +51,22 @@ static volatile struct {
 
 // these values index the 'joints' table.
 typedef enum {
-	S_SHOULDER = 0, S_ELBOW, S_GRIPPER, S_WRIST
+	S_SHOULDER = 0,
+	S_ELBOW,
+	S_GRIPPER,
+#if WRIST_ENABLED
+    S_WRIST
+#endif
 } JOINT_INDEX;
 
 //*** local functions
 static JOINT_INDEX toJoint(Motor motor);
+
 static Motor toMotors(uint8_t index);
+
 static void setTimerMs(uint16_t interval); // in milliseconds
 static void setTimerContinuous();
+
 static bool getMsState(JOINT_INDEX index);
 
 static volatile bool timerNotClear = true, timerOneShot = true;
@@ -89,18 +97,20 @@ void joint::setSpeed(Motor motor, Speed speed) {
 
 	// put it to the registers
 	switch (motor) {
-	case SHOULDER:
-		PWM_SHOULDER_REG = speed << 4;
-		break;
-	case ELBOW:
-		PWM_ELBOW_REG = speed << 4;
-		break;
-	case WRIST:
-		PWM_WRIST_REG = speed << 4;
-		break;
-	case GRIPPER:
-		PWM_GRIPPER_REG = speed << 4;
-		break;
+		case SHOULDER:
+			PWM_SHOULDER_REG = speed << 4;
+			break;
+		case ELBOW:
+			PWM_ELBOW_REG = speed << 4;
+			break;
+		case GRIPPER:
+			PWM_GRIPPER_REG = speed << 4;
+			break;
+#if WRIST_ENABLED
+		case WRIST:
+			PWM_WRIST_REG = speed << 4;
+			break;
+#endif
 	};
 }
 
@@ -112,7 +122,8 @@ void joint::setDirection(Motor motor, Direction direction) {
 
 	// put data to the struct, checking if the command is
 	if ((((direction == FORWARD) || (direction == BACKWARD)) && (joints[idx].allowedDir == BOTH))
-		|| (joints[idx].allowedDir == direction)) joints[idx].currDir = direction;
+			|| (joints[idx].allowedDir == direction))
+		joints[idx].currDir = direction;
 
 	else joints[idx].currDir = STOP;
 
@@ -120,58 +131,60 @@ void joint::setDirection(Motor motor, Direction direction) {
 
 	// put them to the output
 	switch (motor) {
-	case SHOULDER:
-		if (currentDir == FORWARD) {
-			PORT(MOTOR_SHOULDER_FORWARD_PORT) |= (1 << MOTOR_SHOULDER_FORWARD_PIN);
-			PORT(MOTOR_SHOULDER_BACKWARD_PORT) &= ~(1 << MOTOR_SHOULDER_BACKWARD_PIN);
-		} else if (currentDir == BACKWARD) {
-			PORT(MOTOR_SHOULDER_FORWARD_PORT) &= ~(1 << MOTOR_SHOULDER_FORWARD_PIN);
-			PORT(MOTOR_SHOULDER_BACKWARD_PORT) |= (1 << MOTOR_SHOULDER_BACKWARD_PIN);
-		} else {
-			// braking
-			PORT(MOTOR_SHOULDER_FORWARD_PORT) |= (1 << MOTOR_SHOULDER_FORWARD_PIN);
-			PORT(MOTOR_SHOULDER_BACKWARD_PORT) |= (1 << MOTOR_SHOULDER_BACKWARD_PIN);
-		}
-		break;
-	case ELBOW:
-		if (currentDir == FORWARD) {
-			PORT(MOTOR_ELBOW_FORWARD_PORT) |= (1 << MOTOR_ELBOW_FORWARD_PIN);
-			PORT(MOTOR_ELBOW_BACKWARD_PORT) &= ~(1 << MOTOR_ELBOW_BACKWARD_PIN);
+		case SHOULDER:
+			if (currentDir == FORWARD) {
+				PORT(MOTOR_SHOULDER_FORWARD_PORT) |= (1 << MOTOR_SHOULDER_FORWARD_PIN);
+				PORT(MOTOR_SHOULDER_BACKWARD_PORT) &= ~(1 << MOTOR_SHOULDER_BACKWARD_PIN);
+			} else if (currentDir == BACKWARD) {
+				PORT(MOTOR_SHOULDER_FORWARD_PORT) &= ~(1 << MOTOR_SHOULDER_FORWARD_PIN);
+				PORT(MOTOR_SHOULDER_BACKWARD_PORT) |= (1 << MOTOR_SHOULDER_BACKWARD_PIN);
+			} else {
+				// braking
+				PORT(MOTOR_SHOULDER_FORWARD_PORT) |= (1 << MOTOR_SHOULDER_FORWARD_PIN);
+				PORT(MOTOR_SHOULDER_BACKWARD_PORT) |= (1 << MOTOR_SHOULDER_BACKWARD_PIN);
+			}
+			break;
+		case ELBOW:
+			if (currentDir == FORWARD) {
+				PORT(MOTOR_ELBOW_FORWARD_PORT) |= (1 << MOTOR_ELBOW_FORWARD_PIN);
+				PORT(MOTOR_ELBOW_BACKWARD_PORT) &= ~(1 << MOTOR_ELBOW_BACKWARD_PIN);
 
-		} else if (currentDir == BACKWARD) {
-			PORT(MOTOR_ELBOW_FORWARD_PORT) &= ~(1 << MOTOR_ELBOW_FORWARD_PIN);
-			PORT(MOTOR_ELBOW_BACKWARD_PORT) |= (1 << MOTOR_ELBOW_BACKWARD_PIN);
-		} else {
-			PORT(MOTOR_ELBOW_FORWARD_PORT) |= (1 << MOTOR_ELBOW_FORWARD_PIN);
-			PORT(MOTOR_ELBOW_BACKWARD_PORT) |= (1 << MOTOR_ELBOW_BACKWARD_PIN);
-		}
-		break;
-	case WRIST:
-		if (currentDir == FORWARD) {
-			PORT(MOTOR_WRIST_FORWARD_PORT) |= (1 << MOTOR_WRIST_FORWARD_PIN);
-			PORT(MOTOR_WRIST_BACKWARD_PORT) &= ~(1 << MOTOR_WRIST_BACKWARD_PIN);
+			} else if (currentDir == BACKWARD) {
+				PORT(MOTOR_ELBOW_FORWARD_PORT) &= ~(1 << MOTOR_ELBOW_FORWARD_PIN);
+				PORT(MOTOR_ELBOW_BACKWARD_PORT) |= (1 << MOTOR_ELBOW_BACKWARD_PIN);
+			} else {
+				PORT(MOTOR_ELBOW_FORWARD_PORT) |= (1 << MOTOR_ELBOW_FORWARD_PIN);
+				PORT(MOTOR_ELBOW_BACKWARD_PORT) |= (1 << MOTOR_ELBOW_BACKWARD_PIN);
+			}
+			break;
+#if WRIST_ENABLED
+        case WRIST:
+            if (currentDir == FORWARD) {
+                PORT(MOTOR_WRIST_FORWARD_PORT) |= (1 << MOTOR_WRIST_FORWARD_PIN);
+                PORT(MOTOR_WRIST_BACKWARD_PORT) &= ~(1 << MOTOR_WRIST_BACKWARD_PIN);
 
-		} else if (currentDir == BACKWARD) {
-			PORT(MOTOR_WRIST_FORWARD_PORT) &= ~(1 << MOTOR_WRIST_FORWARD_PIN);
-			PORT(MOTOR_WRIST_BACKWARD_PORT) |= (1 << MOTOR_WRIST_BACKWARD_PIN);
-		} else {
-			PORT(MOTOR_WRIST_FORWARD_PORT) |= (1 << MOTOR_WRIST_FORWARD_PIN);
-			PORT(MOTOR_WRIST_BACKWARD_PORT) |= (1 << MOTOR_WRIST_BACKWARD_PIN);
-		}
-		break;
-	case GRIPPER:
-		if (currentDir == FORWARD) {
-			PORT(MOTOR_GRIPPER_FORWARD_PORT) |= (1 << MOTOR_GRIPPER_FORWARD_PIN);
-			PORT(MOTOR_GRIPPER_BACKWARD_PORT) &= ~(1 << MOTOR_GRIPPER_BACKWARD_PIN);
+            } else if (currentDir == BACKWARD) {
+                PORT(MOTOR_WRIST_FORWARD_PORT) &= ~(1 << MOTOR_WRIST_FORWARD_PIN);
+                PORT(MOTOR_WRIST_BACKWARD_PORT) |= (1 << MOTOR_WRIST_BACKWARD_PIN);
+            } else {
+                PORT(MOTOR_WRIST_FORWARD_PORT) |= (1 << MOTOR_WRIST_FORWARD_PIN);
+                PORT(MOTOR_WRIST_BACKWARD_PORT) |= (1 << MOTOR_WRIST_BACKWARD_PIN);
+            }
+            break;
+#endif
+		case GRIPPER:
+			if (currentDir == FORWARD) {
+				PORT(MOTOR_GRIPPER_FORWARD_PORT) |= (1 << MOTOR_GRIPPER_FORWARD_PIN);
+				PORT(MOTOR_GRIPPER_BACKWARD_PORT) &= ~(1 << MOTOR_GRIPPER_BACKWARD_PIN);
 
-		} else if (currentDir == BACKWARD) {
-			PORT(MOTOR_GRIPPER_FORWARD_PORT) &= ~(1 << MOTOR_GRIPPER_FORWARD_PIN);
-			PORT(MOTOR_GRIPPER_BACKWARD_PORT) |= (1 << MOTOR_GRIPPER_BACKWARD_PIN);
-		} else {
-			PORT(MOTOR_GRIPPER_FORWARD_PORT) |= (1 << MOTOR_GRIPPER_FORWARD_PIN);
-			PORT(MOTOR_GRIPPER_BACKWARD_PORT) |= (1 << MOTOR_GRIPPER_BACKWARD_PIN);
-		}
-		break;
+			} else if (currentDir == BACKWARD) {
+				PORT(MOTOR_GRIPPER_FORWARD_PORT) &= ~(1 << MOTOR_GRIPPER_FORWARD_PIN);
+				PORT(MOTOR_GRIPPER_BACKWARD_PORT) |= (1 << MOTOR_GRIPPER_BACKWARD_PIN);
+			} else {
+				PORT(MOTOR_GRIPPER_FORWARD_PORT) |= (1 << MOTOR_GRIPPER_FORWARD_PIN);
+				PORT(MOTOR_GRIPPER_BACKWARD_PORT) |= (1 << MOTOR_GRIPPER_BACKWARD_PIN);
+			}
+			break;
 	};
 }
 
@@ -276,13 +289,17 @@ static void init_structure() {
 
 	// load max positions
 	joints[S_SHOULDER].maxPos = POS_MAX_SHOULDER;
-	joints[S_ELBOW].maxPos = POS_MAX_ELBOW;
-	joints[S_WRIST].maxPos = POS_MAX_WRIST;
-	joints[S_GRIPPER].maxPos = POS_MAX_GRIPPER;
-
 	joints[S_SHOULDER].initSpeed = CAL_SPEED_SHOULDER;
+
+	joints[S_ELBOW].maxPos = POS_MAX_ELBOW;
 	joints[S_ELBOW].initSpeed = CAL_SPEED_ELBOW;
-	joints[S_WRIST].initSpeed = CAL_SPEED_WRIST;
+
+#if WRIST_ENABLED
+    joints[S_WRIST].maxPos = POS_MAX_WRIST;
+    joints[S_WRIST].initSpeed = CAL_SPEED_WRIST;
+#endif
+
+	joints[S_GRIPPER].maxPos = POS_MAX_GRIPPER;
 	joints[S_GRIPPER].initSpeed = CAL_SPEED_GRIPPER;
 
 	for (i = 0; i < 4; i++) {
@@ -317,11 +334,15 @@ void joint::init() {
 
 	// get values from buttons
 	joints[S_ELBOW].prevEncoderState = joints[S_ELBOW].encoderState =
-		getval(PIN(SENSOR_ELBOW_ENC_PORT), SENSOR_ELBOW_ENC_PIN);
-	joints[S_WRIST].prevEncoderState = joints[S_WRIST].encoderState =
-		getval(PIN(SENSOR_WRIST_ENC_PORT), SENSOR_WRIST_ENC_PIN);
+			getval(PIN(SENSOR_ELBOW_ENC_PORT), SENSOR_ELBOW_ENC_PIN);
+
+#if WRIST_ENABLED
+    joints[S_WRIST].prevEncoderState = joints[S_WRIST].encoderState =
+            getval(PIN(SENSOR_WRIST_ENC_PORT), SENSOR_WRIST_ENC_PIN);
+#endif
+
 	joints[S_SHOULDER].prevEncoderState = joints[S_SHOULDER].encoderState =
-		getval(PIN(SENSOR_SHOULDER_ENC_PORT), SENSOR_SHOULDER_ENC_PIN);
+			getval(PIN(SENSOR_SHOULDER_ENC_PORT), SENSOR_SHOULDER_ENC_PIN);
 }
 
 static void abortCalibration() {
@@ -345,16 +366,19 @@ void joint::calibrate() {
 	/// neutral positions: shoulder, gripper - backward, elbow - forward
 	// elbow
 	if (bit_is_set(PIN(SENSOR_ELBOW_MS_PORT), SENSOR_ELBOW_MS_PIN)) // jeżeli jest na którymś wyłączniku
-	setDirection(ELBOW, FORWARD);
+		setDirection(ELBOW, FORWARD);
 	// shoulder
 	if (bit_is_set(PIN(SENSOR_SHOULDER_MS_PORT), SENSOR_SHOULDER_MS_PIN)) setDirection(SHOULDER, BACKWARD);
 	// gripper
 	if (bit_is_set(PIN(SENSOR_GRIPPER_MS_PORT), SENSOR_GRIPPER_MS_PIN)) setDirection(GRIPPER, BACKWARD);
-	// wrist
-	if (bit_is_set(PIN(SENSOR_WRIST_MS_PORT), SENSOR_WRIST_MS_PIN)) {
-		joints[S_WRIST].calibrated = true;
-		joints[S_WRIST].mode = DIR;
-	}
+
+#if WRIST_ENABLED
+    // wrist
+    if (bit_is_set(PIN(SENSOR_WRIST_MS_PORT), SENSOR_WRIST_MS_PIN)) {
+        joints[S_WRIST].calibrated = true;
+        joints[S_WRIST].mode = DIR;
+    }
+#endif
 
 	setTimerMs(800);
 
@@ -401,18 +425,25 @@ void joint::calibrate() {
 
 	setTimerContinuous();
 
-	if (joints[S_WRIST].calibrated == false) {
-		joints[S_WRIST].currPos = 0;
-		setDirection(WRIST, FORWARD);
-		joints[S_WRIST].mode = CAL;
-	}
+#if WRIST_ENABLED
+    if (joints[S_WRIST].calibrated == false) {
+        joints[S_WRIST].currPos = 0;
+        setDirection(WRIST, FORWARD);
+        joints[S_WRIST].mode = CAL;
+    }
+#endif
 
 	// wait till all the joints are calibrated
 	while (!interruptCalibration) {
 		wdt_reset();
 
-		if (joints[S_ELBOW].calibrated && joints[S_SHOULDER].calibrated && joints[S_WRIST].calibrated
-			&& joints[S_GRIPPER].calibrated) break;
+		if (joints[S_ELBOW].calibrated &&
+				joints[S_SHOULDER].calibrated &&
+#if WRIST_ENABLED
+                joints[S_WRIST].calibrated &&
+#endif
+				joints[S_GRIPPER].calibrated)
+			break;
 	}
 
 	if (interruptCalibration) {
@@ -423,7 +454,9 @@ void joint::calibrate() {
 	joints[S_SHOULDER].currPos = 0;
 	joints[S_GRIPPER].currPos = 0;
 	joints[S_ELBOW].currPos = joints[S_ELBOW].maxPos;
-	joints[S_WRIST].currPos = joints[S_WRIST].maxPos / 2;
+#if WRIST_ENABLED
+    joints[S_WRIST].currPos = joints[S_WRIST].maxPos / 2;
+#endif
 
 	for (uint8_t i = 0; i < 4; i++)
 		joints[i].mode = DIR;
@@ -431,49 +464,54 @@ void joint::calibrate() {
 	calibrated = true;
 }
 
+#if WRIST_ENABLED
 static inline void wristEncoderSupport() {
 //	if(joints[WRIST].calibrated)
-	static bool backward = false;
+    static bool backward = false;
 
-	if (joints[S_WRIST].mode == CAL) {
-		if ((joints[S_WRIST].currPos < (POS_MAX_WRIST / 2)) && !backward) setDirection(WRIST, FORWARD);
-		if (joints[S_WRIST].currPos > (POS_MAX_WRIST / 2)) {
-			setDirection(WRIST, BACKWARD);
-			backward = true;
-		}
-	}
+    if (joints[S_WRIST].mode == CAL) {
+        if ((joints[S_WRIST].currPos < (POS_MAX_WRIST / 2)) && !backward) setDirection(WRIST, FORWARD);
+        if (joints[S_WRIST].currPos > (POS_MAX_WRIST / 2)) {
+            setDirection(WRIST, BACKWARD);
+            backward = true;
+        }
+    }
 
-	else if (joints[S_WRIST].calibrated == true) {
-		if ((joints[S_WRIST].currPos == 0) && (joints[S_WRIST].currDir == BACKWARD)) {
-			joints[S_WRIST].allowedDir = FORWARD;
-			setDirection(WRIST, STOP);
-		} else if ((joints[S_WRIST].currPos >= POS_MAX_WRIST) && (joints[S_WRIST].currDir == FORWARD)) {
-			joints[S_WRIST].allowedDir = BACKWARD;
-			setDirection(WRIST, STOP);
-		} else if ((joints[S_WRIST].currPos != 0) && (joints[S_WRIST].currPos != POS_MAX_WRIST)) joints[S_WRIST].allowedDir =
-			BOTH;
-	}
+    else if (joints[S_WRIST].calibrated == true) {
+        if ((joints[S_WRIST].currPos == 0) && (joints[S_WRIST].currDir == BACKWARD)) {
+            joints[S_WRIST].allowedDir = FORWARD;
+            setDirection(WRIST, STOP);
+        } else if ((joints[S_WRIST].currPos >= POS_MAX_WRIST) && (joints[S_WRIST].currDir == FORWARD)) {
+            joints[S_WRIST].allowedDir = BACKWARD;
+            setDirection(WRIST, STOP);
+        } else if ((joints[S_WRIST].currPos != 0) && (joints[S_WRIST].currPos != POS_MAX_WRIST))
+            joints[S_WRIST].allowedDir =
+                    BOTH;
+    }
 }
+#endif
 
 // timer interrupt
 ISR(TIMER1_COMPA_vect) {
-	if (timerOneShot) // this is used when calibration
-	{
-		TIMSK1 &= ~(1 << OCIE1A); // disable timer interrupt
-		timerNotClear = false;
-	} else {
-		// standard; one tick per 2 ms
-		for (uint8_t idx = 0; idx < 4; idx++) {
-			if (getMsState((JOINT_INDEX) idx) && (joints[idx].msCurrState == false)) {
-				if (joints[idx].msCounter == MS_DEBOUNCE_COUNTER) {
-					if (idx == S_WRIST) {
-						joints[S_WRIST].currPos = joints[S_WRIST].maxPos / 2;
-						if (joints[S_WRIST].mode == CAL) {
-							setDirection(WRIST, STOP);
-							joints[S_WRIST].mode = DIR;
-						}
-						joints[S_WRIST].calibrated = true;
-					} else {
+		if (timerOneShot) // this is used when calibration
+		{
+			TIMSK1 &= ~(1 << OCIE1A); // disable timer interrupt
+			timerNotClear = false;
+		} else {
+			// standard; one tick per 2 ms
+			for (uint8_t idx = 0; idx < 4; idx++) {
+				if (getMsState((JOINT_INDEX) idx) && (joints[idx].msCurrState == false)) {
+					if (joints[idx].msCounter == MS_DEBOUNCE_COUNTER) {
+#if WRIST_ENABLED
+                        if (idx == S_WRIST) {
+                            joints[S_WRIST].currPos = joints[S_WRIST].maxPos / 2;
+                            if (joints[S_WRIST].mode == CAL) {
+                                setDirection(WRIST, STOP);
+                                joints[S_WRIST].mode = DIR;
+                            }
+                            joints[S_WRIST].calibrated = true;
+                        } else {
+#endif
 						joints[idx].calibrated = true;
 
 						if (joints[idx].currDir == BACKWARD) {
@@ -484,79 +522,90 @@ ISR(TIMER1_COMPA_vect) {
 							joints[idx].currPos = joints[idx].maxPos;
 						}
 						setDirection(toMotors(idx), STOP);
-					}
-					joints[idx].msCurrState = true;
-					joints[idx].msCounter = 0;
-				} else joints[idx].msCounter++;
-			} else if (!getMsState((JOINT_INDEX) idx) && (joints[idx].msCurrState == true)) {
-				if (joints[idx].msCounter == MS_DEBOUNCE_COUNTER) {
-					joints[idx].allowedDir = BOTH;
+#if WRIST_ENABLED
+                        }
+#endif
+						joints[idx].msCurrState = true;
+						joints[idx].msCounter = 0;
+					} else joints[idx].msCounter++;
+				} else if (!getMsState((JOINT_INDEX) idx) && (joints[idx].msCurrState == true)) {
+					if (joints[idx].msCounter == MS_DEBOUNCE_COUNTER) {
+						joints[idx].allowedDir = BOTH;
 
-					if (idx == S_GRIPPER) joints[S_GRIPPER].currPos = joints[S_GRIPPER].maxPos;
+						if (idx == S_GRIPPER) joints[S_GRIPPER].currPos = joints[S_GRIPPER].maxPos;
 
-					joints[idx].msCurrState = false;
-					joints[idx].msCounter = 0;
-				} else joints[idx].msCounter++;
-			}
-		}
-
-		// encoders
-		for (uint8_t i = 0; i < 4; i++)
-			joints[i].prevEncoderState = joints[i].encoderState;
-
-		joints[S_ELBOW].encoderState = getval(PIN(SENSOR_ELBOW_ENC_PORT), SENSOR_ELBOW_ENC_PIN);
-		joints[S_WRIST].encoderState = getval(PIN(SENSOR_WRIST_ENC_PORT), SENSOR_WRIST_ENC_PIN);
-		joints[S_SHOULDER].encoderState = getval(PIN(SENSOR_SHOULDER_ENC_PORT), SENSOR_SHOULDER_ENC_PIN);
-
-		for (uint8_t i = 0; i < 4; i++)
-			if (joints[i].prevEncoderState != joints[i].encoderState) {
-				if (i == S_GRIPPER) continue;
-
-				if (joints[i].mode == POS) {
-					if (joints[i].destPos == joints[i].currPos) {
-						setDirection(toMotors(i), STOP);
-						joints[i].mode = DIR;
-					}
+						joints[idx].msCurrState = false;
+						joints[idx].msCounter = 0;
+					} else joints[idx].msCounter++;
 				}
-
-				// with limit values to maxPos and zero
-				if (joints[i].currDir == FORWARD) joints[i].currPos =
-					joints[i].currPos >= joints[i].maxPos ? joints[i].maxPos : joints[i].currPos + 1;
-				else if (joints[i].currDir == BACKWARD) joints[i].currPos =
-					joints[i].currPos == 0 ? 0 : joints[i].currPos - 1;
-
-				if (i == S_WRIST) wristEncoderSupport();
 			}
-	}
+
+			// encoders
+			for (uint8_t i = 0; i < 4; i++)
+				joints[i].prevEncoderState = joints[i].encoderState;
+
+			joints[S_ELBOW].encoderState = getval(PIN(SENSOR_ELBOW_ENC_PORT), SENSOR_ELBOW_ENC_PIN);
+#if WRIST_ENABLED
+            joints[S_WRIST].encoderState = getval(PIN(SENSOR_WRIST_ENC_PORT), SENSOR_WRIST_ENC_PIN);
+#endif
+			joints[S_SHOULDER].encoderState = getval(PIN(SENSOR_SHOULDER_ENC_PORT), SENSOR_SHOULDER_ENC_PIN);
+
+			for (uint8_t i = 0; i < 4; i++)
+				if (joints[i].prevEncoderState != joints[i].encoderState) {
+					if (i == S_GRIPPER) continue;
+
+					if (joints[i].mode == POS) {
+						if (joints[i].destPos == joints[i].currPos) {
+							setDirection(toMotors(i), STOP);
+							joints[i].mode = DIR;
+						}
+					}
+
+					// with limit values to maxPos and zero
+					if (joints[i].currDir == FORWARD)
+						joints[i].currPos =
+								joints[i].currPos >= joints[i].maxPos ? joints[i].maxPos : joints[i].currPos + 1;
+					else if (joints[i].currDir == BACKWARD)
+						joints[i].currPos =
+								joints[i].currPos == 0 ? 0 : joints[i].currPos - 1;
+#if WRIST_ENABLED
+                    if (i == S_WRIST) wristEncoderSupport();
+#endif
+				}
+		}
 }
 
 //*** local auxiliary functions
 
 static JOINT_INDEX toJoint(Motor motor) {
 	switch (motor) {
-	case SHOULDER:
-		return S_SHOULDER;
-	case GRIPPER:
-		return S_GRIPPER;
-	case WRIST:
-		return S_WRIST;
-	case ELBOW:
-	default:
-		return S_ELBOW;
+		case SHOULDER:
+			return S_SHOULDER;
+		case GRIPPER:
+			return S_GRIPPER;
+#if WRIST_ENABLED
+        case WRIST:
+            return S_WRIST;
+#endif
+		case ELBOW:
+		default:
+			return S_ELBOW;
 	}
 }
 
 static Motor toMotors(uint8_t index) {
 	switch (index) {
-	case S_SHOULDER:
-		return SHOULDER;
-	case S_GRIPPER:
-		return GRIPPER;
-	case S_WRIST:
-		return WRIST;
-	case S_ELBOW:
-	default:
-		return ELBOW;
+		case S_SHOULDER:
+			return SHOULDER;
+		case S_GRIPPER:
+			return GRIPPER;
+#if WRIST_ENABLED
+        case S_WRIST:
+            return WRIST;
+#endif
+		case S_ELBOW:
+		default:
+			return ELBOW;
 	}
 }
 
@@ -580,20 +629,22 @@ static void setTimerContinuous() {
 static bool getMsState(JOINT_INDEX index) {
 	uint8_t val;
 	switch (index) {
-	case S_SHOULDER:
-		val = bit_is_set(PIN(SENSOR_SHOULDER_MS_PORT), SENSOR_SHOULDER_MS_PIN);
-		break;
-	case S_GRIPPER:
-		val = bit_is_set(PIN(SENSOR_GRIPPER_MS_PORT), SENSOR_GRIPPER_MS_PIN);
-		break;
-	case S_WRIST:
-		val = bit_is_set(PIN(SENSOR_WRIST_MS_PORT), SENSOR_WRIST_MS_PIN);
-		break;
-	case S_ELBOW:
-		val = bit_is_set(PIN(SENSOR_ELBOW_MS_PORT), SENSOR_ELBOW_MS_PIN);
-		break;
-	default:
-		return false;
+		case S_SHOULDER:
+			val = bit_is_set(PIN(SENSOR_SHOULDER_MS_PORT), SENSOR_SHOULDER_MS_PIN);
+			break;
+		case S_GRIPPER:
+			val = bit_is_set(PIN(SENSOR_GRIPPER_MS_PORT), SENSOR_GRIPPER_MS_PIN);
+			break;
+#if WRIST_ENABLED
+        case S_WRIST:
+            val = bit_is_set(PIN(SENSOR_WRIST_MS_PORT), SENSOR_WRIST_MS_PIN);
+            break;
+#endif
+		case S_ELBOW:
+			val = bit_is_set(PIN(SENSOR_ELBOW_MS_PORT), SENSOR_ELBOW_MS_PIN);
+			break;
+		default:
+			return false;
 	}
 
 	return val ? true : false;

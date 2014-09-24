@@ -16,6 +16,8 @@
 
 #define F_CPU 8000000UL
 
+#define WRIST_ENABLED 0
+
 #include <inttypes.h>
 
 /*
