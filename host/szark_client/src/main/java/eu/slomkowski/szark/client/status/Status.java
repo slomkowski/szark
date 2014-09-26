@@ -21,16 +21,21 @@ public class Status {
 	@SerializedName("batt")
 	public Battery battery;
 
-	@Expose(serialize = true, deserialize = false)
-	private int serial = 0;
-
-	@Expose(deserialize = false, serialize = true)
-	@SerializedName("killswitch")
-	private boolean emergencyStopped;
-
 	@Expose(deserialize = true, serialize = false)
 	@SerializedName("wifi")
 	private int wirelessPower;
+
+	@Expose(deserialize = false, serialize = true)
+	@SerializedName("ks_en")
+	private boolean killswitchEnable;
+
+	@Expose(deserialize = true, serialize = false)
+	@SerializedName("ks_stat")
+	private KillSwitchStatus receivedKillSwitchStatus;
+
+	@Expose(serialize = true, deserialize = false)
+	@SuppressWarnings("unused")
+	private int serial = 0;
 
 	public Status() {
 		clean();
@@ -43,7 +48,8 @@ public class Status {
 		joints = new JointSet();
 
 		wirelessPower = 0;
-		emergencyStopped = true;
+		killswitchEnable = true;
+		receivedKillSwitchStatus = KillSwitchStatus.ACTIVE_SOFTWARE;
 		serial = 0;
 	}
 
@@ -55,15 +61,15 @@ public class Status {
 		return wirelessPower;
 	}
 
-	public void setWirelessPower(int wirelessPower) {
-		this.wirelessPower = wirelessPower;
+	public synchronized boolean isKillswitchEnable() {
+		return killswitchEnable;
 	}
 
-	public synchronized boolean isEmergencyStopped() {
-		return emergencyStopped;
+	public synchronized void setKillswitchEnable(boolean killswitchEnable) {
+		this.killswitchEnable = killswitchEnable;
 	}
 
-	public synchronized void setEmergencyStopped(boolean emergencyStopped) {
-		this.emergencyStopped = emergencyStopped;
+	public KillSwitchStatus getReceivedKillSwitchStatus() {
+		return receivedKillSwitchStatus;
 	}
 }

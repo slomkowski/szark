@@ -61,7 +61,7 @@ public class MainWindowLogic extends MainWindowView {
 	public void thingsWhenEnabling() {
 		thingsWhenDisabling();
 
-		status.setEmergencyStopped(false);
+		status.setKillswitchEnable(false);
 		startStopButton.setIcon(iconStop);
 		setControlsEnabled(true);
 
@@ -73,7 +73,7 @@ public class MainWindowLogic extends MainWindowView {
 	public void thingsWhenDisabling() {
 		status.clean();
 
-		status.setEmergencyStopped(true);
+		status.setKillswitchEnable(true);
 		startStopButton.setIcon(iconStart);
 
 		setControlsEnabled(false); // disabling all controls
@@ -137,7 +137,7 @@ public class MainWindowLogic extends MainWindowView {
 		}
 
 		// ensure sending any recent changes
-		status.setEmergencyStopped(true);
+		status.setKillswitchEnable(true);
 
 		if (szarkUpdater != null) {
 			szarkUpdater.sendChanges();
@@ -164,7 +164,7 @@ public class MainWindowLogic extends MainWindowView {
 				thingsWhenDisconnect();
 			}
 		} else if (obj == startStopButton) {
-			if (status.isEmergencyStopped()) {
+			if (status.isKillswitchEnable()) {
 				thingsWhenEnabling();
 			} else {
 				thingsWhenDisabling();
@@ -210,7 +210,9 @@ public class MainWindowLogic extends MainWindowView {
 				mWinMoveCtrl.setText("Hide move control window");
 			}
 		} else if (obj == exitButton) {
-			thingsWhenDisconnect();
+			if (connected == true) {
+				thingsWhenDisconnect();
+			}
 			System.exit(0);
 		}
 	}
@@ -302,7 +304,7 @@ public class MainWindowLogic extends MainWindowView {
 				JOptionPane.showMessageDialog(mainWin, "Network error: " + e.getMessage());
 			} catch (final SzarkDataUpdater.HardwareStoppedException e) {
 				mainWin.thingsWhenDisabling();
-				JOptionPane.showMessageDialog(mainWin, "Hardware emergency stop occurred!");
+				JOptionPane.showMessageDialog(mainWin, "Kill switch: " + e.getMessage());
 			}
 		}
 	}

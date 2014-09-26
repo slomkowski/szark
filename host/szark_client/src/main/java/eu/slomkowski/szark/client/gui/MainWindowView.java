@@ -285,7 +285,7 @@ public abstract class MainWindowView extends JFrame implements ActionListener, C
 		batteryCurrBar.setEnabled(enable);
 		// wifi
 		wifiPowerBar.setEnabled(enable);
-		// emergency stop button
+		// software kill switch button
 		startStopButton.setEnabled(enable);
 		// light
 		lightGripper.setEnabled(enable);

@@ -2,6 +2,7 @@ package eu.slomkowski.szark.client.updaters;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import eu.slomkowski.szark.client.status.KillSwitchStatus;
 import eu.slomkowski.szark.client.status.Status;
 
 import java.io.IOException;
@@ -49,7 +50,8 @@ public class SzarkDataUpdater {
 	 *
 	 * @throws HardwareStoppedException , ConnectException,
 	 */
-	public synchronized Status update() throws HardwareStoppedException, ConnectionErrorException {
+	public synchronized Status update()
+			throws HardwareStoppedException, ConnectionErrorException {
 
 		try {
 			String output = gson.toJson(status);
@@ -64,28 +66,29 @@ public class SzarkDataUpdater {
 			buff.clear();
 			int length = channel.read(buff);
 			String receivedJson = new String(buff.array(), 0, length);
-			Status recvStatus = gson.fromJson(receivedJson, Status.class);
+			Status receivedStatus = gson.fromJson(receivedJson, Status.class);
 
-			fillStatus(recvStatus);
+			if (status.isKillswitchEnable() == false &&
+					receivedStatus.getReceivedKillSwitchStatus() != KillSwitchStatus.INACTIVE) {
 
-			return recvStatus;
+				if (receivedStatus.getReceivedKillSwitchStatus() == KillSwitchStatus.ACTIVE_HARDWARE) {
+					throw new HardwareStoppedException("Kill switch has been pressed!");
+				} else {
+					throw new HardwareStoppedException("Other client has disabled the device");
+				}
+			}
+
+			return receivedStatus;
 		} catch (final IOException e) {
 			e.printStackTrace();
 			throw new ConnectionErrorException(e);
 		}
 	}
 
-	private void fillStatus(Status recv) throws HardwareStoppedException {
-		status.battery = recv.battery;
-
-		//status.joints.shoulder = recv.joints.shoulder;
-		//status.joints.elbow = recv.joints.elbow;
-		//status.joints.gripper = recv.joints.gripper;
-
-		//TODO emergency stopped
-	}
-
 	public class HardwareStoppedException extends Exception {
+		public HardwareStoppedException(String msg) {
+			super(msg);
+		}
 	}
 
 	public class ConnectionErrorException extends IOException {
