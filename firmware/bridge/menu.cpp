@@ -38,15 +38,13 @@ const uint8_t MOTOR_SPEED = 3;
 const uint8_t ARM_SPEED = 5;
 const uint8_t ARM_SHOULDER_SPEED = ARM_SPEED;
 const uint8_t ARM_ELBOW_SPEED = ARM_SPEED;
-const uint8_t ARM_WRIST_SPEED = ARM_SPEED;
 const uint8_t ARM_GRIPPER_SPEED = ARM_SPEED;
 
-static MenuItem armMenuItems[] = { { "CALIBRATE", nullptr }, { "SHOULDER", nullptr }, { "ELBOW", nullptr }, { "WRIST",
-	nullptr }, { "GRIPPER", nullptr } };
+static MenuItem armMenuItems[] = { { "CALIBRATE", nullptr }, { "SHOULDER", nullptr }, { "ELBOW", nullptr }, { "GRIPPER", nullptr } };
 
 static MenuItem motorMenuItems[] = { { "LEFT WHEEL", nullptr }, { "RIGHT WHEEL", nullptr }, { "BOTH WHEELS", nullptr } };
 
-static MenuClass armMenu("Arm driver:", 5, armMenuItems);
+static MenuClass armMenu("Arm driver:", 4, armMenuItems);
 static MenuClass motorMenu("Motor driver:", 3, motorMenuItems);
 static MenuClass expanderMenu("I2C expander:", 0);
 static MenuClass versionMenu("Version:", 0);
@@ -185,7 +183,6 @@ static void armSubMenuFunction(bool isFirstCall, uint8_t currentPosition, button
 		calibrationFired = false;
 		arm::setSpeed(arm::SHOULDER, ARM_SHOULDER_SPEED);
 		arm::setSpeed(arm::ELBOW, ARM_ELBOW_SPEED);
-		arm::setSpeed(arm::WRIST, ARM_WRIST_SPEED);
 		arm::setSpeed(arm::GRIPPER, ARM_GRIPPER_SPEED);
 	}
 
@@ -227,10 +224,6 @@ static void armSubMenuFunction(bool isFirstCall, uint8_t currentPosition, button
 		motor = arm::ELBOW;
 		break;
 	case 3:
-		lcd_putsP("wrist\n");
-		motor = arm::WRIST;
-		break;
-	case 4:
 		lcd_putsP("gripper\n");
 		motor = arm::GRIPPER;
 		break;
