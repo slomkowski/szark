@@ -65,20 +65,17 @@ pair<vector<uint8_t>, vector<USBCommands::Request>> InterfaceManager::generateGe
 	commands.push_back(USBCommands::Request::ARM_DRIVER_GET);
 	responseOrder.push_back(USBCommands::Request::ARM_DRIVER_GET);
 
-	switch (counter % 5) {
+	switch (counter % 4) {
 	case 0:
 		commands.push_back(arm::ELBOW);
 		break;
 	case 1:
-		commands.push_back(arm::WRIST);
-		break;
-	case 2:
 		commands.push_back(arm::GRIPPER);
 		break;
-	case 3:
+	case 2:
 		commands.push_back(arm::SHOULDER);
 		break;
-	case 4:
+	case 3:
 		commands.pop_back();
 		commands.push_back(USBCommands::Request::ARM_DRIVER_GET_GENERAL_STATE);
 		responseOrder.pop_back();

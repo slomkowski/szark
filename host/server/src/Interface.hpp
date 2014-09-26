@@ -52,7 +52,7 @@ enum class Button {
  * Joints of the arm driver.
  */
 enum class Joint {
-	ELBOW = 'e', WRIST = 'w', GRIPPER = 'g', SHOULDER = 's'
+	ELBOW = 'e', GRIPPER = 'g', SHOULDER = 's'
 };
 
 /**
@@ -387,7 +387,7 @@ public:
 	private:
 		ArmClass(RequestMap& requests)
 				: requests(requests) {
-			for (auto j : { Joint::ELBOW, Joint::GRIPPER, Joint::SHOULDER, Joint::WRIST }) {
+			for (auto j : { Joint::ELBOW, Joint::GRIPPER, Joint::SHOULDER }) {
 				joints[j] = std::shared_ptr<SingleJoint>(new SingleJoint(requests, j));
 			}
 

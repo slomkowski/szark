@@ -34,8 +34,8 @@ const int CURRENT_ARRAY_SIZE = 5;
 const uint8_t MOTOR_DRIVER_MAX_SPEED = 11;
 const unsigned int ARM_DRIVER_MAX_SPEED = 255;
 
-map<bridge::Joint, unsigned int> ARM_DRIVER_MAX_POSITION = { { Joint::ELBOW, 105 }, { Joint::SHOULDER, 79 }, {
-		Joint::WRIST, 95 }, { Joint::GRIPPER, 255 } };
+map<bridge::Joint, unsigned int> ARM_DRIVER_MAX_POSITION = { { Joint::ELBOW, 105 }, { Joint::SHOULDER, 79 },
+		 { Joint::GRIPPER, 255 } };
 
 log4cpp::Category& Interface::logger = log4cpp::Category::getInstance("Interface");
 
@@ -65,8 +65,6 @@ std::string devToString(Joint dev) {
 		return "elbow";
 	case Joint::GRIPPER:
 		return "gripper";
-	case Joint::WRIST:
-		return "wrist";
 	case Joint::SHOULDER:
 		return "shoulder";
 	};
@@ -260,9 +258,6 @@ void Interface::ArmClass::SingleJoint::createJointState() {
 	switch (joint) {
 	case Joint::ELBOW:
 		jState.motor = arm::ELBOW;
-		break;
-	case Joint::WRIST:
-		jState.motor = arm::WRIST;
 		break;
 	case Joint::GRIPPER:
 		jState.motor = arm::GRIPPER;
@@ -490,9 +485,6 @@ unsigned int Interface::ArmClass::SingleJoint::updateFields(USBCommands::Request
 		break;
 	case arm::GRIPPER:
 		jointNo = Joint::GRIPPER;
-		break;
-	case arm::WRIST:
-		jointNo = Joint::WRIST;
 		break;
 	case arm::SHOULDER:
 		jointNo = Joint::SHOULDER;
