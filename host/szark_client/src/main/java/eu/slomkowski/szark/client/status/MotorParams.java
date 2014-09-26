@@ -1,4 +1,4 @@
-package eu.slomkowski.szark.client;
+package eu.slomkowski.szark.client.status;
 
 public class MotorParams {
 

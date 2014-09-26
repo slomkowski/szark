@@ -1,60 +1,34 @@
-package eu.slomkowski.szark.client;
+package eu.slomkowski.szark.client.gui;
 
-import java.awt.BorderLayout;
-import java.awt.Dimension;
-import java.awt.FlowLayout;
-import java.awt.GridLayout;
+import eu.slomkowski.szark.client.HardcodedConfiguration;
+import eu.slomkowski.szark.client.gui.ArmVisualizer;
+
+import javax.swing.*;
+import javax.swing.border.TitledBorder;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 
-import javax.swing.BoxLayout;
-import javax.swing.ButtonGroup;
-import javax.swing.ImageIcon;
-import javax.swing.JButton;
-import javax.swing.JCheckBox;
-import javax.swing.JComboBox;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JMenu;
-import javax.swing.JMenuBar;
-import javax.swing.JMenuItem;
-import javax.swing.JPanel;
-import javax.swing.JProgressBar;
-import javax.swing.JRadioButton;
-import javax.swing.JSeparator;
-import javax.swing.JSlider;
-import javax.swing.border.TitledBorder;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
-
 /**
  * The main window class. This class holds only the appearance (button, fields
  * etc), all the logic is held in the MainWindow class.
- * 
+ *
  * @author Michał Słomkowski
- * 
  */
-public abstract class MainWindowDummy extends JFrame implements ActionListener, ChangeListener {
-
-	private static final long serialVersionUID = 2600284271006796298L;
-
-	// menu do rozbudowania
+public abstract class MainWindowView extends JFrame implements ActionListener, ChangeListener {
 
 	protected JMenuItem mConnConnect = new JMenuItem("CONNECT BUTTON");
 
 	protected JMenuItem mWinMoveCtrl = new JMenuItem("Show move control window");
-	protected JMenuItem mWinArmCtrl = new JMenuItem("Show arm control window");
+	protected JMenuItem mWinArmCtrl = new JMenuItem("Show joints control window");
 
-	protected JMenu mServ = new JMenu("Server commands");
-	protected JMenuItem mServExit = new JMenuItem("Exit the server app");
-	protected JMenuItem mServShutdown = new JMenuItem("Shutdown the machine");
-	protected JMenuItem mServReboot = new JMenuItem("Reboot the machine");
+	protected JLabel cameraScreenshot = new JLabel(new ImageIcon(getClass().getResource(HardcodedConfiguration.DEFAULT_LOGO)));
 
-	protected JLabel cameraScreenshot = new JLabel(new ImageIcon(getClass().getResource(Hardcoded.DEFAULT_LOGO)));
-
-	protected JComboBox<String> connectHostnameField = new JComboBox<String>(Hardcoded.DEFAULT_HOSTNAMES);
+	protected JComboBox<String> connectHostnameField = new JComboBox<String>(HardcodedConfiguration.DEFAULT_HOSTNAMES);
 	protected JButton connectButton = new JButton("CONNECT BUTTON");
 	protected JButton exitButton = new JButton("Exit");
 
@@ -84,7 +58,6 @@ public abstract class MainWindowDummy extends JFrame implements ActionListener, 
 	protected JLabel statDirectionRight = new JLabel();
 
 	protected JProgressBar statArmGripperSpeed = new JProgressBar(JProgressBar.HORIZONTAL);
-	protected JProgressBar statArmWristSpeed = new JProgressBar(JProgressBar.HORIZONTAL);
 	protected JProgressBar statArmShoulderSpeed = new JProgressBar(JProgressBar.HORIZONTAL);
 	protected JProgressBar statArmElbowSpeed = new JProgressBar(JProgressBar.HORIZONTAL);
 
@@ -93,15 +66,14 @@ public abstract class MainWindowDummy extends JFrame implements ActionListener, 
 
 	protected JSlider armShoulderSpeedLimiter = new JSlider(JSlider.HORIZONTAL, 0, 15, 0);
 	protected JSlider armElbowSpeedLimiter = new JSlider(JSlider.HORIZONTAL, 0, 15, 0);
-	protected JSlider armWristSpeedLimiter = new JSlider(JSlider.HORIZONTAL, 0, 15, 0);
 	protected JSlider armGripperSpeedLimiter = new JSlider(JSlider.HORIZONTAL, 0, 15, 0);
 
-	protected JButton armCalibrateButton = new JButton("Calibrate arm");
+	protected JButton armCalibrateButton = new JButton("Calibrate joints");
 
-	public MainWindowDummy() {
+	public MainWindowView() {
 		JPanel p; // temporary reference
 
-		setTitle("SZARK - client v. " + Hardcoded.VERSION);
+		setTitle("SZARK - client v. " + HardcodedConfiguration.VERSION);
 
 		setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
 		addWindowListener(new WindowAdapter() {
@@ -124,16 +96,6 @@ public abstract class MainWindowDummy extends JFrame implements ActionListener, 
 		menubar.add(mConn);
 
 		mConnConnect.addActionListener(this);
-
-		mServ.add(mServExit);
-		mServ.add(mServReboot);
-		mServ.add(new JSeparator());
-		mServ.add(mServShutdown);
-		menubar.add(mServ);
-
-		mServExit.addActionListener(this);
-		mServReboot.addActionListener(this);
-		mServShutdown.addActionListener(this);
 
 		// windows
 		final JMenu mWin = new JMenu("Windows");
@@ -170,13 +132,12 @@ public abstract class MainWindowDummy extends JFrame implements ActionListener, 
 		p.add(batteryCurrBar);
 		sidePanel.add(p);
 
-		// WIFI
-		/*
-		 * p = new JPanel(); p.setLayout(new BoxLayout(p, BoxLayout.Y_AXIS));
-		 * p.setBorder(new TitledBorder("SZARK WiFi signal strength:"));
-		 * p.add(wifiPowerBar); wifiPowerBar.setStringPainted(true);
-		 * sidePanel.add(p);
-		 */
+		p = new JPanel();
+		p.setLayout(new BoxLayout(p, BoxLayout.Y_AXIS));
+		p.setBorder(new TitledBorder("Wi-Fi signal strength:"));
+		p.add(wifiPowerBar);
+		wifiPowerBar.setStringPainted(true);
+		sidePanel.add(p);
 
 		// EMERGENCY BUTTON
 		p = new JPanel(new BorderLayout());
@@ -231,7 +192,7 @@ public abstract class MainWindowDummy extends JFrame implements ActionListener, 
 
 		p = new JPanel();
 		p.setLayout(new BoxLayout(p, BoxLayout.Y_AXIS));
-		p.setBorder(new TitledBorder("Calibrate arm:"));
+		p.setBorder(new TitledBorder("Calibrate joints:"));
 		mot.add(armCalibrateButton);
 
 		// MOTOR SPEED LIMIT RADIOS
@@ -253,27 +214,23 @@ public abstract class MainWindowDummy extends JFrame implements ActionListener, 
 		p = new JPanel(new BorderLayout());
 		p.setBorder(new TitledBorder("Arm parameters & limiters:"));
 
-		final JPanel agauge = new JPanel(new GridLayout(4, 1, 1, 2));
+		final JPanel agauge = new JPanel(new GridLayout(3, 1, 1, 2));
 		agauge.add(statArmShoulderSpeed);
 		agauge.add(statArmElbowSpeed);
-		agauge.add(statArmWristSpeed);
 		agauge.add(statArmGripperSpeed);
 
-		final JPanel aslid = new JPanel(new GridLayout(4, 1, 1, 2));
+		final JPanel aslid = new JPanel(new GridLayout(3, 1, 1, 2));
 		aslid.add(armShoulderSpeedLimiter);
 		aslid.add(armElbowSpeedLimiter);
-		aslid.add(armWristSpeedLimiter);
 		aslid.add(armGripperSpeedLimiter);
 
 		statArmElbowSpeed.setStringPainted(true);
 		statArmGripperSpeed.setStringPainted(true);
 		statArmShoulderSpeed.setStringPainted(true);
-		statArmWristSpeed.setStringPainted(true);
 
 		statArmElbowSpeed.setMaximum(15);
 		statArmGripperSpeed.setMaximum(15);
 		statArmShoulderSpeed.setMaximum(15);
-		statArmWristSpeed.setMaximum(15);
 
 		p.add(agauge);
 		p.add(aslid, BorderLayout.EAST);
@@ -312,7 +269,6 @@ public abstract class MainWindowDummy extends JFrame implements ActionListener, 
 		cameraSelectHead.addActionListener(this);
 
 		armGripperSpeedLimiter.addChangeListener(this);
-		armWristSpeedLimiter.addChangeListener(this);
 		armShoulderSpeedLimiter.addChangeListener(this);
 		armElbowSpeedLimiter.addChangeListener(this);
 
@@ -348,20 +304,17 @@ public abstract class MainWindowDummy extends JFrame implements ActionListener, 
 		speedLimit8.setEnabled(enable);
 		speedLimit12.setEnabled(enable);
 
-		mServ.setEnabled(enable);
 		// camera selector
 		cameraSelectGripper.setEnabled(enable);
 		cameraSelectHead.setEnabled(enable);
 
-		// arm
+		// joints
 		statArmElbowSpeed.setEnabled(enable);
 		statArmGripperSpeed.setEnabled(enable);
 		statArmShoulderSpeed.setEnabled(enable);
-		statArmWristSpeed.setEnabled(enable);
 
 		armShoulderSpeedLimiter.setEnabled(enable);
 		armElbowSpeedLimiter.setEnabled(enable);
-		armWristSpeedLimiter.setEnabled(enable);
 		armGripperSpeedLimiter.setEnabled(enable);
 	}
 

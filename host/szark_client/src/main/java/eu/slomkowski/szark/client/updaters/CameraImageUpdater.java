@@ -1,4 +1,6 @@
-package eu.slomkowski.szark.client;
+package eu.slomkowski.szark.client.updaters;
+
+import eu.slomkowski.szark.client.HardcodedConfiguration;
 
 import java.net.URL;
 import java.util.TimerTask;
@@ -8,14 +10,14 @@ import javax.swing.JLabel;
 
 /**
  * This is the TimerTask, which refreshes the image in the camera view panel.
- * 
+ *
  * @author Michał Słomkowski
  */
 public class CameraImageUpdater extends TimerTask {
 
 	public static enum Camera {
 		HEAD, GRIPPER
-	};
+	}
 
 	public synchronized Camera getChoosenCamera() {
 		return choosenCamera;
@@ -31,14 +33,12 @@ public class CameraImageUpdater extends TimerTask {
 
 	/**
 	 * Constructor takes the reference
-	 * 
-	 * @param displayJLabel
-	 *             the JLabel which has to display the image taken from the
-	 *             webcam.
-	 * @param hostname
-	 *             the host name or the IP address of the SZARK server
+	 *
+	 * @param displayJLabel the JLabel which has to display the image taken from the
+	 *                      webcam.
+	 * @param hostname      the host name or the IP address of the SZARK server
 	 */
-	CameraImageUpdater(JLabel displayJLabel, String hostname) {
+	public CameraImageUpdater(JLabel displayJLabel, String hostname) {
 		displayLabel = displayJLabel;
 		this.hostname = hostname;
 
@@ -47,16 +47,13 @@ public class CameraImageUpdater extends TimerTask {
 
 	/**
 	 * Constructor takes the reference
-	 * 
-	 * @param displayJLabel
-	 *             the JLabel which has to display the image taken from the
-	 *             webcam.
-	 * @param hostname
-	 *             the host name or the IP address of the SZARK server
-	 * @param choosenCamera
-	 *             default camera to use
+	 *
+	 * @param displayJLabel the JLabel which has to display the image taken from the
+	 *                      webcam.
+	 * @param hostname      the host name or the IP address of the SZARK server
+	 * @param choosenCamera default camera to use
 	 */
-	CameraImageUpdater(JLabel displayJLabel, String hostname, Camera choosenCamera) {
+	public CameraImageUpdater(JLabel displayJLabel, String hostname, Camera choosenCamera) {
 		this(displayJLabel, hostname);
 		setChoosenCamera(choosenCamera);
 	}
@@ -78,9 +75,9 @@ public class CameraImageUpdater extends TimerTask {
 
 			synchronized (synchronizator) {
 				if (choosenCamera == Camera.HEAD) {
-					camStreamPort = Hardcoded.HEAD_CAMERA_PORT;
+					camStreamPort = HardcodedConfiguration.HEAD_CAMERA_PORT;
 				} else {
-					camStreamPort = Hardcoded.GRIPPER_CAMERA_PORT;
+					camStreamPort = HardcodedConfiguration.GRIPPER_CAMERA_PORT;
 				}
 			}
 

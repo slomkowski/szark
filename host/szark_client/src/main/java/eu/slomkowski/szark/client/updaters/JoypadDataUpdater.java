@@ -1,14 +1,18 @@
-package eu.slomkowski.szark.client;
+package eu.slomkowski.szark.client.updaters;
+
+import eu.slomkowski.szark.client.joystick.JoystickBackend;
+import eu.slomkowski.szark.client.status.Direction;
+import eu.slomkowski.szark.client.status.Status;
 
 public class JoypadDataUpdater {
 
-	JoypadDataUpdater(SzarkStatus status, JoypadBackend joypadBackend) {
-		joy = joypadBackend;
+	public JoypadDataUpdater(Status status, JoystickBackend joystickBackend) {
+		joy = joystickBackend;
 		this.status = status;
 	}
 
-	private final JoypadBackend joy;
-	private final SzarkStatus status;
+	private final JoystickBackend joy;
+	private final Status status;
 
 	private static float ROTATE_SPEED_FACTOR = 0.5f;
 
@@ -18,7 +22,7 @@ public class JoypadDataUpdater {
 		final float fowBack = joy.getForwBackVal();
 		final float leftRight = joy.getLeftRightVal();
 
-		// arm
+		// joints
 		final float armShoulder = joy.getShoulderVal();
 		final float armElbow = joy.getElbowVal();
 		final float armWrist = joy.getWristVal();
@@ -32,24 +36,24 @@ public class JoypadDataUpdater {
 		if (fowBack == 0) // rotate or stop
 		{
 			if (leftRight == 0) {
-				status.motors.left.setDirection(SzarkStatus.Direction.STOP);
-				status.motors.right.setDirection(SzarkStatus.Direction.STOP);
+				status.motors.left.setDirection(Direction.STOP);
+				status.motors.right.setDirection(Direction.STOP);
 				status.motors.left.setSpeed((byte) 0);
 				status.motors.right.setSpeed((byte) 0);
 			} else if (leftRight < 0) {
-				status.motors.left.setDirection(SzarkStatus.Direction.FORWARD);
-				status.motors.right.setDirection(SzarkStatus.Direction.BACKWARD);
+				status.motors.left.setDirection(Direction.FORWARD);
+				status.motors.right.setDirection(Direction.BACKWARD);
 				status.motors.left.setSpeed((byte) (motorSpeedLimit * ROTATE_SPEED_FACTOR * Math.abs(leftRight)));
 				status.motors.right.setSpeed((byte) (motorSpeedLimit * ROTATE_SPEED_FACTOR * Math.abs(leftRight)));
 			} else if (leftRight > 0) {
-				status.motors.left.setDirection(SzarkStatus.Direction.BACKWARD);
-				status.motors.right.setDirection(SzarkStatus.Direction.FORWARD);
+				status.motors.left.setDirection(Direction.BACKWARD);
+				status.motors.right.setDirection(Direction.FORWARD);
 				status.motors.left.setSpeed((byte) (motorSpeedLimit * ROTATE_SPEED_FACTOR * Math.abs(leftRight)));
 				status.motors.right.setSpeed((byte) (motorSpeedLimit * ROTATE_SPEED_FACTOR * Math.abs(leftRight)));
 			}
 		} else if (fowBack > 0) {
-			status.motors.left.setDirection(SzarkStatus.Direction.FORWARD);
-			status.motors.right.setDirection(SzarkStatus.Direction.FORWARD);
+			status.motors.left.setDirection(Direction.FORWARD);
+			status.motors.right.setDirection(Direction.FORWARD);
 
 			if (leftRight < 0) {
 				status.motors.left.setSpeed((byte) (motorSpeedLimit * Math.abs(fowBack)));
@@ -65,8 +69,8 @@ public class JoypadDataUpdater {
 			}
 		}
 		if (fowBack < 0) {
-			status.motors.left.setDirection(SzarkStatus.Direction.BACKWARD);
-			status.motors.right.setDirection(SzarkStatus.Direction.BACKWARD);
+			status.motors.left.setDirection(Direction.BACKWARD);
+			status.motors.right.setDirection(Direction.BACKWARD);
 
 			if (leftRight < 0) {
 				status.motors.left.setSpeed((byte) (motorSpeedLimit * Math.abs(fowBack)));
@@ -82,50 +86,38 @@ public class JoypadDataUpdater {
 			}
 		}
 
-		// arm
+		// joints
 		if (armShoulder == 0) {
-			status.arm.shoulder.setDirection(SzarkStatus.Direction.STOP);
-			status.arm.shoulder.setSpeed(0);
+			status.joints.shoulder.setDirection(Direction.STOP);
+			status.joints.shoulder.setSpeed(0);
 		} else if (armShoulder > 0) {
-			status.arm.shoulder.setDirection(SzarkStatus.Direction.FORWARD);
-			status.arm.shoulder.setSpeed((byte) (status.arm.shoulder.getSpeedLimit() * Math.abs(armShoulder)));
+			status.joints.shoulder.setDirection(Direction.FORWARD);
+			status.joints.shoulder.setSpeed((byte) (status.joints.shoulder.getSpeedLimit() * Math.abs(armShoulder)));
 		} else if (armShoulder < 0) {
-			status.arm.shoulder.setDirection(SzarkStatus.Direction.BACKWARD);
-			status.arm.shoulder.setSpeed((byte) (status.arm.shoulder.getSpeedLimit() * Math.abs(armShoulder)));
+			status.joints.shoulder.setDirection(Direction.BACKWARD);
+			status.joints.shoulder.setSpeed((byte) (status.joints.shoulder.getSpeedLimit() * Math.abs(armShoulder)));
 		}
 
 		if (armElbow == 0) {
-			status.arm.elbow.setDirection(SzarkStatus.Direction.STOP);
-			status.arm.elbow.setSpeed(0);
+			status.joints.elbow.setDirection(Direction.STOP);
+			status.joints.elbow.setSpeed(0);
 		} else if (armElbow > 0) {
-			status.arm.elbow.setDirection(SzarkStatus.Direction.FORWARD);
-			status.arm.elbow.setSpeed((byte) (status.arm.elbow.getSpeedLimit() * Math.abs(armElbow)));
+			status.joints.elbow.setDirection(Direction.FORWARD);
+			status.joints.elbow.setSpeed((byte) (status.joints.elbow.getSpeedLimit() * Math.abs(armElbow)));
 		} else if (armElbow < 0) {
-			status.arm.elbow.setDirection(SzarkStatus.Direction.BACKWARD);
-			status.arm.elbow.setSpeed((byte) (status.arm.elbow.getSpeedLimit() * Math.abs(armElbow)));
+			status.joints.elbow.setDirection(Direction.BACKWARD);
+			status.joints.elbow.setSpeed((byte) (status.joints.elbow.getSpeedLimit() * Math.abs(armElbow)));
 		}
 
 		if (armGripper == 0) {
-			status.arm.gripper.setDirection(SzarkStatus.Direction.STOP);
-			status.arm.gripper.setSpeed(0);
+			status.joints.gripper.setDirection(Direction.STOP);
+			status.joints.gripper.setSpeed(0);
 		} else if (armGripper > 0) {
-			status.arm.gripper.setDirection(SzarkStatus.Direction.FORWARD);
-			status.arm.gripper.setSpeed((byte) (status.arm.gripper.getSpeedLimit() * Math.abs(armGripper)));
+			status.joints.gripper.setDirection(Direction.FORWARD);
+			status.joints.gripper.setSpeed((byte) (status.joints.gripper.getSpeedLimit() * Math.abs(armGripper)));
 		} else if (armGripper < 0) {
-			status.arm.gripper.setDirection(SzarkStatus.Direction.BACKWARD);
-			status.arm.gripper.setSpeed((byte) (status.arm.gripper.getSpeedLimit() * Math.abs(armGripper)));
-		}
-
-		if (armWrist == 0) {
-			status.arm.wrist.setDirection(SzarkStatus.Direction.STOP);
-			status.arm.wrist.setSpeed(0);
-		} else if (armWrist > 0) {
-			status.arm.wrist.setDirection(SzarkStatus.Direction.FORWARD);
-			status.arm.wrist.setSpeed((byte) (status.arm.wrist.getSpeedLimit() * Math.abs(armWrist)));
-		} else if (armWrist < 0) {
-			status.arm.wrist.setDirection(SzarkStatus.Direction.BACKWARD);
-			status.arm.wrist.setSpeed((byte) (status.arm.wrist.getSpeedLimit() * Math.abs(armWrist)));
+			status.joints.gripper.setDirection(Direction.BACKWARD);
+			status.joints.gripper.setSpeed((byte) (status.joints.gripper.getSpeedLimit() * Math.abs(armGripper)));
 		}
 	}
-
 }

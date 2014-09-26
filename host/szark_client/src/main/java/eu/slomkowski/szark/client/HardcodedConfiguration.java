@@ -5,7 +5,7 @@ package eu.slomkowski.szark.client;
  *
  * @author Michał Słomkowski
  */
-public interface Hardcoded {
+public interface HardcodedConfiguration {
 
 	String VERSION = "0.17";
 
@@ -22,7 +22,7 @@ public interface Hardcoded {
 
 	String DEFAULT_LOGO = "/img/logo.jpg";
 
-	// arm initial speeds
+	// joints initial speeds
 	int ELBOW_SPEED = 5;
 	int SHOULDER_SPEED = 5;
 	int WRIST_SPEED = 3;

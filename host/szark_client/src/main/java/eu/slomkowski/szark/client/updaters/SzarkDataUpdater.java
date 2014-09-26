@@ -1,13 +1,13 @@
-package eu.slomkowski.szark.client;
+package eu.slomkowski.szark.client.updaters;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import eu.slomkowski.szark.client.status.Status;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.DatagramChannel;
-import java.util.concurrent.TimeoutException;
 
 /**
  * This is the TimerTask, which refreshes the image in the camera view panel and
@@ -18,7 +18,7 @@ import java.util.concurrent.TimeoutException;
 public class SzarkDataUpdater {
 
 	private final Gson gson;
-	private final SzarkStatus status;
+	private final Status status;
 	private final ByteBuffer buff = ByteBuffer.allocate(1024);
 	private DatagramChannel channel;
 
@@ -28,7 +28,7 @@ public class SzarkDataUpdater {
 	 * @param hostname or the IP address of the SZARK server
 	 * @param port     port used by the port
 	 */
-	public SzarkDataUpdater(String hostname, int port, SzarkStatus status) {
+	public SzarkDataUpdater(String hostname, int port, Status status) {
 
 		gson = new GsonBuilder().excludeFieldsWithoutExposeAnnotation().create();
 
@@ -49,7 +49,7 @@ public class SzarkDataUpdater {
 	 *
 	 * @throws HardwareStoppedException , ConnectException,
 	 */
-	public synchronized void update() throws HardwareStoppedException, ConnectionErrorException {
+	public synchronized Status update() throws HardwareStoppedException, ConnectionErrorException {
 
 		try {
 			String output = gson.toJson(status);
@@ -64,21 +64,23 @@ public class SzarkDataUpdater {
 			buff.clear();
 			int length = channel.read(buff);
 			String receivedJson = new String(buff.array(), 0, length);
-			SzarkStatus recvStatus = gson.fromJson(receivedJson, SzarkStatus.class);
+			Status recvStatus = gson.fromJson(receivedJson, Status.class);
 
 			fillStatus(recvStatus);
+
+			return recvStatus;
 		} catch (final IOException e) {
 			e.printStackTrace();
 			throw new ConnectionErrorException(e);
 		}
 	}
 
-	private void fillStatus(SzarkStatus recv) throws HardwareStoppedException {
+	private void fillStatus(Status recv) throws HardwareStoppedException {
 		status.battery = recv.battery;
 
-		//status.arm.shoulder = recv.arm.shoulder;
-		//status.arm.elbow = recv.arm.elbow;
-		//status.arm.gripper = recv.arm.gripper;
+		//status.joints.shoulder = recv.joints.shoulder;
+		//status.joints.elbow = recv.joints.elbow;
+		//status.joints.gripper = recv.joints.gripper;
 
 		//TODO emergency stopped
 	}

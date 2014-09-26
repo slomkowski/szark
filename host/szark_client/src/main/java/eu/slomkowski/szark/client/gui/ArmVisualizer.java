@@ -1,4 +1,6 @@
-package eu.slomkowski.szark.client;
+package eu.slomkowski.szark.client.gui;
+
+import eu.slomkowski.szark.client.status.Status;
 
 import java.awt.Color;
 import java.awt.Dimension;
@@ -14,15 +16,15 @@ public class ArmVisualizer extends JPanel {
 
 	private static final long serialVersionUID = 1L;
 
-	private SzarkStatus status;
+	private Status status;
 
-	public ArmVisualizer(SzarkStatus status) {
+	public ArmVisualizer(Status status) {
 		this();
 
 		this.status = status;
 	}
 
-	public void setUpdateStatus(SzarkStatus status) {
+	public void setUpdateStatus(Status status) {
 		this.status = status;
 		repaint();
 	}

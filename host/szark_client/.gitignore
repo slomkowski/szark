@@ -4,3 +4,7 @@
 .project
 .pydevproject
 .classpath
+
+#IntelliJ
+.idea/
+*.iml

@@ -1,4 +1,7 @@
-package eu.slomkowski.szark.client;
+package eu.slomkowski.szark.client.gui;
+
+import eu.slomkowski.szark.client.status.Direction;
+import eu.slomkowski.szark.client.status.Status;
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;
@@ -33,7 +36,7 @@ public class MoveControlWindow extends JDialog implements ActionListener, KeyEve
 
 	// the reference to the SzarkStatus class - it will be modified by button
 	// presses etc.
-	private final SzarkStatus status;
+	private final Status status;
 
 	private final JPanel directionP = new JPanel(new GridLayout(3, 3));
 
@@ -73,7 +76,7 @@ public class MoveControlWindow extends JDialog implements ActionListener, KeyEve
 	 *             - reference to the SzarkStatus object, which will be
 	 *             modified by the class.
 	 */
-	public MoveControlWindow(final SzarkStatus status) {
+	public MoveControlWindow(final Status status) {
 		this.status = status;
 
 		// grid of buttons
@@ -191,36 +194,36 @@ public class MoveControlWindow extends JDialog implements ActionListener, KeyEve
 	@Override
 	public void actionPerformed(ActionEvent e) {
 		if (e.getSource() == directionForwardB) {
-			status.motors.left.setDirection(SzarkStatus.Direction.FORWARD);
-			status.motors.right.setDirection(SzarkStatus.Direction.FORWARD);
+			status.motors.left.setDirection(Direction.FORWARD);
+			status.motors.right.setDirection(Direction.FORWARD);
 		} else if (e.getSource() == directionForwardLeftB) {
-			status.motors.left.setDirection(SzarkStatus.Direction.STOP);
-			status.motors.right.setDirection(SzarkStatus.Direction.FORWARD);
+			status.motors.left.setDirection(Direction.STOP);
+			status.motors.right.setDirection(Direction.FORWARD);
 		} else if (e.getSource() == directionForwardRightB) {
-			status.motors.left.setDirection(SzarkStatus.Direction.FORWARD);
-			status.motors.right.setDirection(SzarkStatus.Direction.STOP);
+			status.motors.left.setDirection(Direction.FORWARD);
+			status.motors.right.setDirection(Direction.STOP);
 		}
 
 		else if (e.getSource() == directionRotateLeftB) {
-			status.motors.left.setDirection(SzarkStatus.Direction.BACKWARD);
-			status.motors.right.setDirection(SzarkStatus.Direction.FORWARD);
+			status.motors.left.setDirection(Direction.BACKWARD);
+			status.motors.right.setDirection(Direction.FORWARD);
 		} else if (e.getSource() == directionStopB) {
-			status.motors.left.setDirection(SzarkStatus.Direction.STOP);
-			status.motors.right.setDirection(SzarkStatus.Direction.STOP);
+			status.motors.left.setDirection(Direction.STOP);
+			status.motors.right.setDirection(Direction.STOP);
 		} else if (e.getSource() == directionRotateRightB) {
-			status.motors.left.setDirection(SzarkStatus.Direction.FORWARD);
-			status.motors.right.setDirection(SzarkStatus.Direction.BACKWARD);
+			status.motors.left.setDirection(Direction.FORWARD);
+			status.motors.right.setDirection(Direction.BACKWARD);
 		}
 
 		else if (e.getSource() == directionBackwardB) {
-			status.motors.left.setDirection(SzarkStatus.Direction.BACKWARD);
-			status.motors.right.setDirection(SzarkStatus.Direction.BACKWARD);
+			status.motors.left.setDirection(Direction.BACKWARD);
+			status.motors.right.setDirection(Direction.BACKWARD);
 		} else if (e.getSource() == directionBackwardLeftB) {
-			status.motors.left.setDirection(SzarkStatus.Direction.STOP);
-			status.motors.right.setDirection(SzarkStatus.Direction.BACKWARD);
+			status.motors.left.setDirection(Direction.STOP);
+			status.motors.right.setDirection(Direction.BACKWARD);
 		} else if (e.getSource() == directionBackwardRightB) {
-			status.motors.left.setDirection(SzarkStatus.Direction.BACKWARD);
-			status.motors.right.setDirection(SzarkStatus.Direction.STOP);
+			status.motors.left.setDirection(Direction.BACKWARD);
+			status.motors.right.setDirection(Direction.STOP);
 		}
 	}
 
