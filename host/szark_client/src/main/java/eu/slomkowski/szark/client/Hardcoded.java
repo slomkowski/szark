@@ -2,15 +2,14 @@ package eu.slomkowski.szark.client;
 
 /**
  * Stores the settings for the SZARK-client
- * 
+ *
  * @author Michał Słomkowski
- * 
  */
 public interface Hardcoded {
 
-	String VERSION = "0.16";
+	String VERSION = "0.17";
 
-	String[] DEFAULT_HOSTNAMES = { "localhost", "10.0.0.1", "10.0.1.1", "192.168.1.31" };
+	String[] DEFAULT_HOSTNAMES = {"localhost", "szark.local"};
 
 	int GRIPPER_CAMERA_PORT = 8081;
 	int HEAD_CAMERA_PORT = 8080;
@@ -28,8 +27,4 @@ public interface Hardcoded {
 	int SHOULDER_SPEED = 5;
 	int WRIST_SPEED = 3;
 	int GRIPPER_SPPED = 7;
-
-	// more low-level settings
-	int MAX_DATA_LENGTH = 255;
-	int SOCKET_TIMEOUT = 1000; // in milliseconds
 }
