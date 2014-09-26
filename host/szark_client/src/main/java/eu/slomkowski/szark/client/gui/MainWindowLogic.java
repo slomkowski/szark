@@ -42,7 +42,7 @@ public class MainWindowLogic extends MainWindowView {
 	private CameraImageUpdater cameraUpdater;
 
 	public MainWindowLogic() {
-		thingsWhenDisconnect();
+		thingsWhenDisconnect(false);
 		// joystick setup
 		if (enableJoystick) {
 			try {
@@ -51,7 +51,10 @@ public class MainWindowLogic extends MainWindowView {
 				mWinMoveCtrl.setEnabled(false);
 				mWinMoveCtrl.setText(mWinMoveCtrl.getText() + " (Disabled because of joystick)");
 			} catch (final JoystickBackend.InvalidJoypadException e) {
-				JOptionPane.showMessageDialog(this, "Joystick error: " + e.getMessage());
+				JOptionPane.showMessageDialog(this,
+						"Joystick error: " + e.getMessage() + ". Joystick won't be used.",
+						"Joystick error",
+						JOptionPane.WARNING_MESSAGE);
 				e.printStackTrace();
 				enableJoystick = false;
 			}
@@ -128,7 +131,7 @@ public class MainWindowLogic extends MainWindowView {
 		batteryVoltBar.setEnabled(true);
 	}
 
-	public void thingsWhenDisconnect() {
+	public void thingsWhenDisconnect(boolean sendDisablingCommand) {
 		if (szarkUpdaterTimer != null) {
 			szarkUpdaterTimer.cancel();
 		}
@@ -139,7 +142,7 @@ public class MainWindowLogic extends MainWindowView {
 		// ensure sending any recent changes
 		status.setKillswitchEnable(true);
 
-		if (szarkUpdater != null) {
+		if (sendDisablingCommand && szarkUpdater != null) {
 			szarkUpdater.sendChanges();
 		}
 
@@ -161,7 +164,7 @@ public class MainWindowLogic extends MainWindowView {
 			if (connected == false) {
 				thingsWhenConnect();
 			} else {
-				thingsWhenDisconnect();
+				thingsWhenDisconnect(true);
 			}
 		} else if (obj == startStopButton) {
 			if (status.isKillswitchEnable()) {
@@ -211,7 +214,7 @@ public class MainWindowLogic extends MainWindowView {
 			}
 		} else if (obj == exitButton) {
 			if (connected == true) {
-				thingsWhenDisconnect();
+				thingsWhenDisconnect(true);
 			}
 			System.exit(0);
 		}
@@ -300,11 +303,17 @@ public class MainWindowLogic extends MainWindowView {
 			try {
 				updateIndicators(szdUpdater.update());
 			} catch (final SzarkDataUpdater.ConnectionErrorException e) {
-				mainWin.thingsWhenDisconnect();
-				JOptionPane.showMessageDialog(mainWin, "Network error: " + e.getMessage());
+				mainWin.thingsWhenDisconnect(false);
+				JOptionPane.showMessageDialog(mainWin,
+						"Network error: " + e.getMessage(),
+						"Network error",
+						JOptionPane.ERROR_MESSAGE);
 			} catch (final SzarkDataUpdater.HardwareStoppedException e) {
 				mainWin.thingsWhenDisabling();
-				JOptionPane.showMessageDialog(mainWin, "Kill switch: " + e.getMessage());
+				JOptionPane.showMessageDialog(mainWin,
+						"Kill switch: " + e.getMessage(),
+						"Kill switch activated",
+						JOptionPane.WARNING_MESSAGE);
 			}
 		}
 	}

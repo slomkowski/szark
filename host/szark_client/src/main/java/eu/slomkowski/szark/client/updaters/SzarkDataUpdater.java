@@ -80,7 +80,6 @@ public class SzarkDataUpdater {
 
 			return receivedStatus;
 		} catch (final IOException e) {
-			e.printStackTrace();
 			throw new ConnectionErrorException(e);
 		}
 	}
