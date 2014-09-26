@@ -20,6 +20,10 @@ install_manifest.txt
 CTestTestfile.cmake
 Testing/
 
+# for IntelliJ
+.idea/
+*.iml
+
 # executables and libs
 szark_server
 szark_server_test
