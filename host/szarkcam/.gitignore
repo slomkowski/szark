@@ -1,0 +1,30 @@
+/Debug
+/Release
+/.settings
+/build
+
+# for Scons
+.sconsign.dblite
+
+# for Eclipse
+.cproject
+.project
+.pydevproject
+
+# for CMake build
+CMakeCache.txt
+CMakeFiles
+Makefile
+cmake_install.cmake
+install_manifest.txt
+CTestTestfile.cmake
+Testing/
+
+# for IntelliJ
+.idea/
+*.iml
+
+# executables and libs
+szark_server
+szark_server_test
+libszark_server_lib.a
