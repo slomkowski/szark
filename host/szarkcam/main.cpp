@@ -60,13 +60,20 @@ int main() {
 		std::cout << "Duration frame grabbing: " << duration.count() << " us" << std::endl;
 
 		auto duration2 = measureTime([&]() {
-			cv::Size sz1 = leftFrame.size();
-			cv::Size sz2 = rightFrame.size();
 
-			cv::Mat im3(sz1.height, sz1.width + sz2.width, CV_8UC3);
-			cv::Mat left(im3, cv::Rect(0, 0, sz1.width, sz1.height));
+			cv::flip(leftFrame, leftFrame, 0);
+			cv::transpose(leftFrame, leftFrame);
+			cv::flip(leftFrame, leftFrame, 0);
+
+			cv::transpose(rightFrame, rightFrame);
+
+			cv::Size sizeLeft = leftFrame.size();
+			cv::Size sizeRight = rightFrame.size();
+
+			cv::Mat im3(sizeLeft.height, sizeLeft.width + sizeRight.width, CV_8UC3);
+			cv::Mat left(im3, cv::Rect(0, 0, sizeLeft.width, sizeLeft.height));
 			leftFrame.copyTo(left);
-			cv::Mat right(im3, cv::Rect(sz1.width, 0, sz2.width, sz2.height));
+			cv::Mat right(im3, cv::Rect(sizeLeft.width, 0, sizeRight.width, sizeRight.height));
 			rightFrame.copyTo(right);
 
 			cv::imshow("im3", im3);
