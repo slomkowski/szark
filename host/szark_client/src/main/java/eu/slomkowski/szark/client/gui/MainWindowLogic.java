@@ -1,11 +1,11 @@
 package eu.slomkowski.szark.client.gui;
 
 import eu.slomkowski.szark.client.HardcodedConfiguration;
+import eu.slomkowski.szark.client.camera.CameraType;
 import eu.slomkowski.szark.client.joystick.JoystickBackend;
 import eu.slomkowski.szark.client.status.CalibrationStatus;
 import eu.slomkowski.szark.client.status.Direction;
 import eu.slomkowski.szark.client.status.Status;
-import eu.slomkowski.szark.client.updaters.CameraImageUpdater;
 import eu.slomkowski.szark.client.updaters.JoypadDataUpdater;
 import eu.slomkowski.szark.client.updaters.SzarkDataUpdater;
 
@@ -38,8 +38,6 @@ public class MainWindowLogic extends MainWindowView {
 	private boolean connected = false;
 
 	private SzarkUpdater szarkUpdater;
-
-	private CameraImageUpdater cameraUpdater;
 
 	public MainWindowLogic() {
 		thingsWhenDisconnect(false);
@@ -192,9 +190,9 @@ public class MainWindowLogic extends MainWindowView {
 		} else if (obj == armCalibrateButton) {
 			status.joints.setCalStatus(CalibrationStatus.REQUESTED);
 		} else if (obj == cameraSelectHead) {
-			cameraUpdater.setChoosenCamera(CameraImageUpdater.Camera.HEAD);
+			cameraScreenshot.setChosenCameraType(CameraType.HEAD);
 		} else if (obj == cameraSelectGripper) {
-			cameraUpdater.setChoosenCamera(CameraImageUpdater.Camera.GRIPPER);
+			cameraScreenshot.setChosenCameraType(CameraType.GRIPPER);
 		} else if (obj == speedLimit5) {
 			status.motors.setSpeedLimit(5);
 		} else if (obj == speedLimit8) {

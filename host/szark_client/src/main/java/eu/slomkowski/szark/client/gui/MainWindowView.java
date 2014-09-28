@@ -1,8 +1,7 @@
 package eu.slomkowski.szark.client.gui;
 
 import eu.slomkowski.szark.client.HardcodedConfiguration;
-import eu.slomkowski.szark.client.gui.ArmVisualizer;
-import eu.slomkowski.szark.client.updaters.CameraImageUpdater;
+import eu.slomkowski.szark.client.camera.CameraImageUpdater;
 
 import javax.swing.*;
 import javax.swing.border.TitledBorder;

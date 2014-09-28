@@ -1,4 +1,4 @@
-package eu.slomkowski.szark.client.updaters;
+package eu.slomkowski.szark.client.camera;
 
 import eu.slomkowski.szark.client.HardcodedConfiguration;
 import eu.slomkowski.szark.client.utils.ByteBufferBackedInputStream;
@@ -18,21 +18,42 @@ import javax.swing.*;
 public class CameraImageUpdater extends JLabel {
 
 	private UpdateTask updateTask = null;
-	private Camera choosenCamera;
+	private CameraType chosenCameraType = CameraType.HEAD;
 	private DatagramChannel channel;
+	private String hostname;
+	private boolean enabled = false;
 
-	public void setChoosenCamera(Camera choosenCamera) {
-		this.choosenCamera = choosenCamera;
+	public void setChosenCameraType(CameraType chosenCameraType) {
+		if (chosenCameraType == this.chosenCameraType) {
+			return;
+		}
+
+		if (enabled) {
+			disableCameraView();
+			this.chosenCameraType = chosenCameraType;
+			enableCameraView(hostname);
+		} else {
+			this.chosenCameraType = chosenCameraType;
+		}
 	}
 
 	public void enableCameraView(String hostname) {
+		this.hostname = hostname;
 		setIcon(null);
+
 		try {
 			channel = DatagramChannel.open();
-			channel.connect(new InetSocketAddress(hostname, 10192));
+
+			int port = chosenCameraType == CameraType.GRIPPER
+					? HardcodedConfiguration.GRIPPER_CAMERA_PORT
+					: HardcodedConfiguration.HEAD_CAMERA_PORT;
+
+			channel.connect(new InetSocketAddress(hostname, port));
 		} catch (final IOException e) {
 			e.printStackTrace();
 		}
+
+		enabled = true;
 
 		updateTask = new UpdateTask();
 		updateTask.execute();
@@ -43,6 +64,8 @@ public class CameraImageUpdater extends JLabel {
 			updateTask.stopThread();
 			updateTask = null;
 		}
+
+		enabled = false;
 
 		setIcon(new ImageIcon(getClass().getResource(HardcodedConfiguration.DEFAULT_LOGO)));
 		repaint();
@@ -59,10 +82,6 @@ public class CameraImageUpdater extends JLabel {
 		g.drawImage(updateTask.getBufferedImage(), 0, 0, this);
 	}
 
-	public static enum Camera {
-		HEAD, GRIPPER
-	}
-
 	private class UpdateTask extends SwingWorker<Void, BufferedImage> {
 		private final ByteBuffer buff = ByteBuffer.allocate(50000);
 		private AtomicBoolean needToStop = new AtomicBoolean(false);
@@ -70,7 +89,7 @@ public class CameraImageUpdater extends JLabel {
 
 		@Override
 		protected Void doInBackground() throws Exception {
-			while (needToStop.get() == false) {
+			while (!needToStop.get()) {
 				try {
 					buff.clear();
 					buff.put((byte) 1);
