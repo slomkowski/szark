@@ -26,7 +26,7 @@ public abstract class MainWindowView extends JFrame implements ActionListener, C
 	protected JMenuItem mWinMoveCtrl = new JMenuItem("Show move control window");
 	protected JMenuItem mWinArmCtrl = new JMenuItem("Show joints control window");
 
-	protected CameraImageUpdater cameraScreenshot = new CameraImageUpdater();
+	protected CameraImageUpdater cameraScreen = new CameraImageUpdater();
 
 	protected JComboBox<String> connectHostnameField = new JComboBox<String>(HardcodedConfiguration.DEFAULT_HOSTNAMES);
 	protected JButton connectButton = new JButton("CONNECT BUTTON");
@@ -63,6 +63,8 @@ public abstract class MainWindowView extends JFrame implements ActionListener, C
 
 	protected JRadioButton cameraSelectHead = new JRadioButton("Head");
 	protected JRadioButton cameraSelectGripper = new JRadioButton("Gripper");
+
+	protected JCheckBox cameraDisplayHud = new JCheckBox("Display HUD");
 
 	protected JSlider armShoulderSpeedLimiter = new JSlider(JSlider.HORIZONTAL, 0, 15, 0);
 	protected JSlider armElbowSpeedLimiter = new JSlider(JSlider.HORIZONTAL, 0, 15, 0);
@@ -148,9 +150,10 @@ public abstract class MainWindowView extends JFrame implements ActionListener, C
 		// CAMERA SELECTOR
 		p = new JPanel();
 		p.setLayout(new FlowLayout());
-		p.setBorder(new TitledBorder("Select camera:"));
+		p.setBorder(new TitledBorder("Cameras:"));
 		p.add(cameraSelectHead);
 		p.add(cameraSelectGripper);
+		p.add(cameraDisplayHud);
 		sidePanel.add(p);
 		final ButtonGroup cameraBg = new ButtonGroup();
 		cameraBg.add(cameraSelectGripper);
@@ -240,8 +243,8 @@ public abstract class MainWindowView extends JFrame implements ActionListener, C
 		// CAMERA VIEW
 		p = new JPanel();
 		p.setBorder(new TitledBorder("Camera view:"));
-		p.add(cameraScreenshot);// , BorderLayout.CENTER);
-		cameraScreenshot.setPreferredSize(new Dimension(640, 480));
+		p.add(cameraScreen);// , BorderLayout.CENTER);
+		cameraScreen.setPreferredSize(new Dimension(640, 480));
 
 		final JPanel pCamAndLower = new JPanel();
 		pCamAndLower.setLayout(new BoxLayout(pCamAndLower, BoxLayout.Y_AXIS));
@@ -267,6 +270,7 @@ public abstract class MainWindowView extends JFrame implements ActionListener, C
 
 		cameraSelectGripper.addActionListener(this);
 		cameraSelectHead.addActionListener(this);
+		cameraDisplayHud.addActionListener(this);
 
 		armGripperSpeedLimiter.addChangeListener(this);
 		armShoulderSpeedLimiter.addChangeListener(this);
@@ -307,6 +311,7 @@ public abstract class MainWindowView extends JFrame implements ActionListener, C
 		// camera selector
 		cameraSelectGripper.setEnabled(enable);
 		cameraSelectHead.setEnabled(enable);
+		cameraDisplayHud.setEnabled(enable);
 
 		// joints
 		statArmElbowSpeed.setEnabled(enable);
@@ -322,7 +327,7 @@ public abstract class MainWindowView extends JFrame implements ActionListener, C
 	public abstract void actionPerformed(ActionEvent e);
 
 	public JLabel getCameraScreenshotJLabel() {
-		return cameraScreenshot;
+		return cameraScreen;
 	}
 
 	@Override

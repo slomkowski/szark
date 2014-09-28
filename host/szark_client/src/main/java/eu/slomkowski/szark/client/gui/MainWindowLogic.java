@@ -1,6 +1,7 @@
 package eu.slomkowski.szark.client.gui;
 
 import eu.slomkowski.szark.client.HardcodedConfiguration;
+import eu.slomkowski.szark.client.camera.CameraMode;
 import eu.slomkowski.szark.client.camera.CameraType;
 import eu.slomkowski.szark.client.joystick.JoystickBackend;
 import eu.slomkowski.szark.client.status.CalibrationStatus;
@@ -83,6 +84,7 @@ public class MainWindowLogic extends MainWindowView {
 
 		cameraSelectGripper.setEnabled(true);
 		cameraSelectHead.setEnabled(true);
+		cameraDisplayHud.setEnabled(true);
 
 		batteryCurrBar.setEnabled(true);
 		batteryVoltBar.setEnabled(true);
@@ -114,7 +116,7 @@ public class MainWindowLogic extends MainWindowView {
 		szarkUpdater = new SzarkUpdater(this, connectHostnameField.getSelectedItem().toString());
 		szarkUpdaterTimer.schedule(szarkUpdater, 0, HardcodedConfiguration.SZARK_REFRESH_INTERVAL);
 
-		cameraScreenshot.enableCameraView(connectHostnameField.getSelectedItem().toString());
+		cameraScreen.enableCameraView(connectHostnameField.getSelectedItem().toString());
 
 		connected = true;
 
@@ -124,6 +126,7 @@ public class MainWindowLogic extends MainWindowView {
 		connectHostnameField.setEnabled(false);
 
 		cameraSelectHead.setSelected(true);
+		cameraDisplayHud.setSelected(true);
 		batteryCurrBar.setEnabled(true);
 		batteryVoltBar.setEnabled(true);
 	}
@@ -150,7 +153,7 @@ public class MainWindowLogic extends MainWindowView {
 		mConnConnect.setText("Connect");
 		connectHostnameField.setEnabled(true);
 		setControlsEnabled(false);
-		cameraScreenshot.disableCameraView();
+		cameraScreen.disableCameraView();
 	}
 
 	@Override
@@ -190,9 +193,15 @@ public class MainWindowLogic extends MainWindowView {
 		} else if (obj == armCalibrateButton) {
 			status.joints.setCalStatus(CalibrationStatus.REQUESTED);
 		} else if (obj == cameraSelectHead) {
-			cameraScreenshot.setChosenCameraType(CameraType.HEAD);
+			cameraScreen.setChosenCameraType(CameraType.HEAD);
 		} else if (obj == cameraSelectGripper) {
-			cameraScreenshot.setChosenCameraType(CameraType.GRIPPER);
+			cameraScreen.setChosenCameraType(CameraType.GRIPPER);
+		} else if (obj == cameraDisplayHud) {
+			if (cameraDisplayHud.isSelected()) {
+				cameraScreen.setCameraMode(CameraMode.HUD);
+			} else {
+				cameraScreen.setCameraMode(CameraMode.RAW);
+			}
 		} else if (obj == speedLimit5) {
 			status.motors.setSpeedLimit(5);
 		} else if (obj == speedLimit8) {

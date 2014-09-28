@@ -22,6 +22,7 @@ public class CameraImageUpdater extends JLabel {
 	private DatagramChannel channel;
 	private String hostname;
 	private boolean enabled = false;
+	private CameraMode cameraMode = CameraMode.HUD;
 
 	public void setChosenCameraType(CameraType chosenCameraType) {
 		if (chosenCameraType == this.chosenCameraType) {
@@ -35,6 +36,10 @@ public class CameraImageUpdater extends JLabel {
 		} else {
 			this.chosenCameraType = chosenCameraType;
 		}
+	}
+
+	public void setCameraMode(CameraMode cameraMode) {
+		this.cameraMode = cameraMode;
 	}
 
 	public void enableCameraView(String hostname) {
@@ -92,7 +97,7 @@ public class CameraImageUpdater extends JLabel {
 			while (!needToStop.get()) {
 				try {
 					buff.clear();
-					buff.put((byte) 1);
+					buff.put(cameraMode.getMnemonic().getBytes());
 
 					channel.write(buff);
 
