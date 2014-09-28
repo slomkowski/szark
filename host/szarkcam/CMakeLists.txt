@@ -9,6 +9,7 @@ include_directories( ${OpenCV_INCLUDE_DIRS} )
 set(SOURCE_FILES main.cpp)
 add_executable(szarkcam ${SOURCE_FILES})
 
-target_link_libraries( szarkcam ${OpenCV_LIBS} ${Boost_LIBS})
+target_link_libraries(szarkcam ${OpenCV_LIBS})
+target_link_libraries(szarkcam ${Boost_LIBRARIES})
 
 add_definitions(-std=c++11)
