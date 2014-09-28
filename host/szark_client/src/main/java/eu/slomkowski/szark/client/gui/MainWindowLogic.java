@@ -3,11 +3,12 @@ package eu.slomkowski.szark.client.gui;
 import eu.slomkowski.szark.client.HardcodedConfiguration;
 import eu.slomkowski.szark.client.camera.CameraMode;
 import eu.slomkowski.szark.client.camera.CameraType;
+import eu.slomkowski.szark.client.joystick.InvalidJoystickException;
 import eu.slomkowski.szark.client.joystick.JoystickBackend;
 import eu.slomkowski.szark.client.status.CalibrationStatus;
 import eu.slomkowski.szark.client.status.Direction;
 import eu.slomkowski.szark.client.status.Status;
-import eu.slomkowski.szark.client.updaters.JoypadDataUpdater;
+import eu.slomkowski.szark.client.updaters.JoystickDataUpdater;
 import eu.slomkowski.szark.client.updaters.SzarkDataUpdater;
 
 import javax.swing.*;
@@ -29,8 +30,7 @@ public class MainWindowLogic extends MainWindowView {
 	// windows are initialized now, buttons only make them visible
 	private final MoveControlWindow mConWin = new MoveControlWindow(status);
 
-	private Timer szarkUpdaterTimer;
-	private Timer cameraImageUpdaterTimer;
+	private Timer szarkUpdaterTimer; // TODO zamienić na SwingWorker
 
 	private JoystickBackend jBackend;
 
@@ -49,7 +49,7 @@ public class MainWindowLogic extends MainWindowView {
 
 				mWinMoveCtrl.setEnabled(false);
 				mWinMoveCtrl.setText(mWinMoveCtrl.getText() + " (Disabled because of joystick)");
-			} catch (final JoystickBackend.InvalidJoypadException e) {
+			} catch (final InvalidJoystickException e) {
 				JOptionPane.showMessageDialog(this,
 						"Joystick error: " + e.getMessage() + ". Joystick won't be used.",
 						"Joystick error",
@@ -111,7 +111,6 @@ public class MainWindowLogic extends MainWindowView {
 		thingsWhenDisabling();
 
 		szarkUpdaterTimer = new Timer(true);
-		cameraImageUpdaterTimer = new Timer(true);
 
 		szarkUpdater = new SzarkUpdater(this, connectHostnameField.getSelectedItem().toString());
 		szarkUpdaterTimer.schedule(szarkUpdater, 0, HardcodedConfiguration.SZARK_REFRESH_INTERVAL);
@@ -134,9 +133,6 @@ public class MainWindowLogic extends MainWindowView {
 	public void thingsWhenDisconnect(boolean sendDisablingCommand) {
 		if (szarkUpdaterTimer != null) {
 			szarkUpdaterTimer.cancel();
-		}
-		if (cameraImageUpdaterTimer != null) {
-			cameraImageUpdaterTimer.cancel();
 		}
 
 		// ensure sending any recent changes
@@ -161,7 +157,7 @@ public class MainWindowLogic extends MainWindowView {
 		final Object obj = e.getSource();
 
 		if ((obj == connectButton) || (obj == mConnConnect)) {
-			if (connected == false) {
+			if (!connected) {
 				thingsWhenConnect();
 			} else {
 				thingsWhenDisconnect(true);
@@ -219,7 +215,7 @@ public class MainWindowLogic extends MainWindowView {
 				mWinMoveCtrl.setText("Hide move control window");
 			}
 		} else if (obj == exitButton) {
-			if (connected == true) {
+			if (connected) {
 				thingsWhenDisconnect(true);
 			}
 			System.exit(0);
@@ -286,12 +282,12 @@ public class MainWindowLogic extends MainWindowView {
 
 		private final SzarkDataUpdater szdUpdater;
 		private final MainWindowLogic mainWin;
-		private JoypadDataUpdater jUpdater;
+		private JoystickDataUpdater jUpdater;
 
 		public SzarkUpdater(MainWindowLogic win, String hostname) {
 			mainWin = win;
 			if (enableJoystick) {
-				jUpdater = new JoypadDataUpdater(status, jBackend);
+				jUpdater = new JoystickDataUpdater(status, jBackend);
 			}
 			szdUpdater = new SzarkDataUpdater(hostname, HardcodedConfiguration.SZARK_SERVER_PORT, status);
 			armVis.setUpdateStatus(status);

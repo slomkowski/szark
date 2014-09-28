@@ -8,13 +8,14 @@ import net.java.games.input.ControllerEnvironment;
 public class JoystickBackend {
 
 	private Controller controller;
-	private Component forwBackComp;
+
+	private Component forwardBackComp;
 	private Component leftRightComp;
 	private Component armShoulderComp;
 	private Component armElbowComp;
 	private Component POVComp;
 
-	public JoystickBackend() throws InvalidJoypadException {
+	public JoystickBackend() throws InvalidJoystickException {
 		final ControllerEnvironment ce = ControllerEnvironment.getDefaultEnvironment();
 		final Controller[] cs = ce.getControllers();
 
@@ -31,8 +32,8 @@ public class JoystickBackend {
 			}
 		}
 
-		if (valid == false) {
-			throw new InvalidJoypadException("Hardcoded joypad not found.");
+		if (!valid) {
+			throw new InvalidJoystickException("Hardcoded joystick not found.");
 		}
 
 		final Component[] compList = controller.getComponents();
@@ -46,8 +47,8 @@ public class JoystickBackend {
 				break;
 			}
 		}
-		if (valid == false) {
-			throw new InvalidJoypadException("Hardcoded joypad has no POV hat.");
+		if (!valid) {
+			throw new InvalidJoystickException("Hardcoded joystick has no POV hat.");
 		}
 
 		// forward - backward axis
@@ -55,12 +56,12 @@ public class JoystickBackend {
 		for (final Component element : compList) {
 			if (element.getName().equals(JoystickConfiguration.MOV_FORW_BACK.getName())) {
 				valid = true;
-				forwBackComp = element;
+				forwardBackComp = element;
 				break;
 			}
 		}
-		if (valid == false) {
-			throw new InvalidJoypadException("Forward/backward axis: the joystick has no "
+		if (!valid) {
+			throw new InvalidJoystickException("Forward/backward axis: the joystick has no "
 					+ JoystickConfiguration.MOV_FORW_BACK.getName() + " axis.");
 		}
 
@@ -73,8 +74,8 @@ public class JoystickBackend {
 				break;
 			}
 		}
-		if (valid == false) {
-			throw new InvalidJoypadException("Left/right axis: the joystick has no "
+		if (!valid) {
+			throw new InvalidJoystickException("Left/right axis: the joystick has no "
 					+ JoystickConfiguration.MOV_FORW_BACK.getName() + " axis.");
 		}
 
@@ -87,8 +88,8 @@ public class JoystickBackend {
 				break;
 			}
 		}
-		if (valid == false) {
-			throw new InvalidJoypadException("Arm shoudler axis: the joystick has no "
+		if (!valid) {
+			throw new InvalidJoystickException("Arm shoulder axis: the joystick has no "
 					+ JoystickConfiguration.MOV_FORW_BACK.getName() + " axis.");
 		}
 
@@ -101,8 +102,8 @@ public class JoystickBackend {
 				break;
 			}
 		}
-		if (valid == false) {
-			throw new InvalidJoypadException("Arm elbow axis: the joystick has no "
+		if (!valid) {
+			throw new InvalidJoystickException("Arm elbow axis: the joystick has no "
 					+ JoystickConfiguration.MOV_FORW_BACK.getName() + " axis.");
 		}
 
@@ -125,21 +126,8 @@ public class JoystickBackend {
 		return 0.0f;
 	}
 
-	public float getWristVal() {
-		final float data = POVComp.getPollData();
-
-		if ((data == 0.625f) || (data == 0.5f) || (data == 0.375f)) {
-			return JoystickConfiguration.WRIST_MFACTOR * 1.0f;
-		}
-		if ((data == 0.125f) || (data == 1.0f) || (data == 0.875f)) {
-			return JoystickConfiguration.WRIST_MFACTOR * -1.0f;
-		}
-
-		return 0.0f;
-	}
-
-	public float getForwBackVal() {
-		return -1.0f * forwBackComp.getPollData() * JoystickConfiguration.MOV_FORW_BACK.getMFactor();
+	public float getForwardBackwardVal() {
+		return -1.0f * forwardBackComp.getPollData() * JoystickConfiguration.MOV_FORW_BACK.getMFactor();
 	}
 
 	public float getLeftRightVal() {
@@ -152,15 +140,6 @@ public class JoystickBackend {
 
 	public float getElbowVal() {
 		return armElbowComp.getPollData() * JoystickConfiguration.ARM_ELBOW.getMFactor();
-	}
-
-	public class InvalidJoypadException extends Exception {
-
-		private static final long serialVersionUID = 1L;
-
-		public InvalidJoypadException(String string) {
-			super(string);
-		}
 	}
 
 }

@@ -21,56 +21,56 @@ import java.awt.event.WindowEvent;
  */
 public abstract class MainWindowView extends JFrame implements ActionListener, ChangeListener {
 
-	protected JMenuItem mConnConnect = new JMenuItem("CONNECT BUTTON");
+	protected final JMenuItem mConnConnect = new JMenuItem("CONNECT BUTTON");
 
-	protected JMenuItem mWinMoveCtrl = new JMenuItem("Show move control window");
-	protected JMenuItem mWinArmCtrl = new JMenuItem("Show joints control window");
+	protected final JMenuItem mWinMoveCtrl = new JMenuItem("Show move control window");
+	private final JMenuItem mWinArmCtrl = new JMenuItem("Show joints control window");
 
-	protected CameraImageUpdater cameraScreen = new CameraImageUpdater();
+	protected final CameraImageUpdater cameraScreen = new CameraImageUpdater();
 
-	protected JComboBox<String> connectHostnameField = new JComboBox<String>(HardcodedConfiguration.DEFAULT_HOSTNAMES);
-	protected JButton connectButton = new JButton("CONNECT BUTTON");
-	protected JButton exitButton = new JButton("Exit");
+	protected final JComboBox<String> connectHostnameField = new JComboBox<>(HardcodedConfiguration.DEFAULT_HOSTNAMES);
+	protected final JButton connectButton = new JButton("CONNECT BUTTON");
+	protected final JButton exitButton = new JButton("Exit");
 
-	protected JButton startStopButton = new JButton();
+	protected final JButton startStopButton = new JButton();
 	protected ImageIcon iconStop = new ImageIcon(getClass().getResource("/img/stop.png"));
 	protected ImageIcon iconStart = new ImageIcon(getClass().getResource("/img/start.png"));
 
-	protected JProgressBar batteryVoltBar = new JProgressBar(JProgressBar.HORIZONTAL);
-	protected JProgressBar batteryCurrBar = new JProgressBar(JProgressBar.HORIZONTAL);
+	protected final JProgressBar batteryVoltBar = new JProgressBar(JProgressBar.HORIZONTAL);
+	protected final JProgressBar batteryCurrBar = new JProgressBar(JProgressBar.HORIZONTAL);
 
-	protected JProgressBar wifiPowerBar = new JProgressBar(JProgressBar.HORIZONTAL);
+	protected final JProgressBar wifiPowerBar = new JProgressBar(JProgressBar.HORIZONTAL);
 
-	protected JCheckBox lightHigh = new JCheckBox("Head");
-	protected JCheckBox lightGripper = new JCheckBox("Gripper");
-	protected JCheckBox lightLow = new JCheckBox("Low");
-	protected JCheckBox lightCamera = new JCheckBox("Camera");
+	protected final JCheckBox lightHigh = new JCheckBox("Head");
+	protected final JCheckBox lightGripper = new JCheckBox("Gripper");
+	protected final JCheckBox lightLow = new JCheckBox("Low");
+	protected final JCheckBox lightCamera = new JCheckBox("Camera");
 
-	protected JRadioButton speedLimit5 = new JRadioButton("5     ");
-	protected JRadioButton speedLimit8 = new JRadioButton("8      ");
-	protected JRadioButton speedLimit12 = new JRadioButton("12");
+	protected final JRadioButton speedLimit5 = new JRadioButton("5     ");
+	protected final JRadioButton speedLimit8 = new JRadioButton("8      ");
+	protected final JRadioButton speedLimit12 = new JRadioButton("12");
 
-	protected ArmVisualizer armVis = new ArmVisualizer();
+	protected final ArmVisualizer armVis = new ArmVisualizer();
 
-	protected JProgressBar statSpeedLeft = new JProgressBar(JProgressBar.HORIZONTAL);
-	protected JProgressBar statSpeedRight = new JProgressBar(JProgressBar.HORIZONTAL);
-	protected JLabel statDirectionLeft = new JLabel();
-	protected JLabel statDirectionRight = new JLabel();
+	protected final JProgressBar statSpeedLeft = new JProgressBar(JProgressBar.HORIZONTAL);
+	protected final JProgressBar statSpeedRight = new JProgressBar(JProgressBar.HORIZONTAL);
+	protected final JLabel statDirectionLeft = new JLabel();
+	protected final JLabel statDirectionRight = new JLabel();
 
-	protected JProgressBar statArmGripperSpeed = new JProgressBar(JProgressBar.HORIZONTAL);
-	protected JProgressBar statArmShoulderSpeed = new JProgressBar(JProgressBar.HORIZONTAL);
-	protected JProgressBar statArmElbowSpeed = new JProgressBar(JProgressBar.HORIZONTAL);
+	protected final JProgressBar statArmGripperSpeed = new JProgressBar(JProgressBar.HORIZONTAL);
+	protected final JProgressBar statArmShoulderSpeed = new JProgressBar(JProgressBar.HORIZONTAL);
+	protected final JProgressBar statArmElbowSpeed = new JProgressBar(JProgressBar.HORIZONTAL);
 
-	protected JRadioButton cameraSelectHead = new JRadioButton("Head");
-	protected JRadioButton cameraSelectGripper = new JRadioButton("Gripper");
+	protected final JRadioButton cameraSelectHead = new JRadioButton("Head");
+	protected final JRadioButton cameraSelectGripper = new JRadioButton("Gripper");
 
-	protected JCheckBox cameraDisplayHud = new JCheckBox("Display HUD");
+	protected final JCheckBox cameraDisplayHud = new JCheckBox("Display HUD");
 
-	protected JSlider armShoulderSpeedLimiter = new JSlider(JSlider.HORIZONTAL, 0, 15, 0);
-	protected JSlider armElbowSpeedLimiter = new JSlider(JSlider.HORIZONTAL, 0, 15, 0);
-	protected JSlider armGripperSpeedLimiter = new JSlider(JSlider.HORIZONTAL, 0, 15, 0);
+	protected final JSlider armShoulderSpeedLimiter = new JSlider(JSlider.HORIZONTAL, 0, 15, 0);
+	protected final JSlider armElbowSpeedLimiter = new JSlider(JSlider.HORIZONTAL, 0, 15, 0);
+	protected final JSlider armGripperSpeedLimiter = new JSlider(JSlider.HORIZONTAL, 0, 15, 0);
 
-	protected JButton armCalibrateButton = new JButton("Calibrate joints");
+	protected final JButton armCalibrateButton = new JButton("Calibrate joints");
 
 	public MainWindowView() {
 		JPanel p; // temporary reference
@@ -89,13 +89,13 @@ public abstract class MainWindowView extends JFrame implements ActionListener, C
 		setLayout(new BorderLayout());
 
 		// MENU
-		final JMenuBar menubar = new JMenuBar();
-		setJMenuBar(menubar);
+		final JMenuBar menuBar = new JMenuBar();
+		setJMenuBar(menuBar);
 
 		// connection
 		final JMenu mConn = new JMenu("Connection");
 		mConn.add(mConnConnect);
-		menubar.add(mConn);
+		menuBar.add(mConn);
 
 		mConnConnect.addActionListener(this);
 
@@ -103,7 +103,7 @@ public abstract class MainWindowView extends JFrame implements ActionListener, C
 		final JMenu mWin = new JMenu("Windows");
 		mWin.add(mWinArmCtrl);
 		mWin.add(mWinMoveCtrl);
-		menubar.add(mWin);
+		menuBar.add(mWin);
 
 		mWinArmCtrl.addActionListener(this);
 		mWinMoveCtrl.addActionListener(this);
@@ -217,15 +217,15 @@ public abstract class MainWindowView extends JFrame implements ActionListener, C
 		p = new JPanel(new BorderLayout());
 		p.setBorder(new TitledBorder("Arm parameters & limiters:"));
 
-		final JPanel agauge = new JPanel(new GridLayout(3, 1, 1, 2));
-		agauge.add(statArmShoulderSpeed);
-		agauge.add(statArmElbowSpeed);
-		agauge.add(statArmGripperSpeed);
+		final JPanel jointGaugesPanel = new JPanel(new GridLayout(3, 1, 1, 2));
+		jointGaugesPanel.add(statArmShoulderSpeed);
+		jointGaugesPanel.add(statArmElbowSpeed);
+		jointGaugesPanel.add(statArmGripperSpeed);
 
-		final JPanel aslid = new JPanel(new GridLayout(3, 1, 1, 2));
-		aslid.add(armShoulderSpeedLimiter);
-		aslid.add(armElbowSpeedLimiter);
-		aslid.add(armGripperSpeedLimiter);
+		final JPanel jointSlidersPanel = new JPanel(new GridLayout(3, 1, 1, 2));
+		jointSlidersPanel.add(armShoulderSpeedLimiter);
+		jointSlidersPanel.add(armElbowSpeedLimiter);
+		jointSlidersPanel.add(armGripperSpeedLimiter);
 
 		statArmElbowSpeed.setStringPainted(true);
 		statArmGripperSpeed.setStringPainted(true);
@@ -235,8 +235,8 @@ public abstract class MainWindowView extends JFrame implements ActionListener, C
 		statArmGripperSpeed.setMaximum(15);
 		statArmShoulderSpeed.setMaximum(15);
 
-		p.add(agauge);
-		p.add(aslid, BorderLayout.EAST);
+		p.add(jointGaugesPanel);
+		p.add(jointSlidersPanel, BorderLayout.EAST);
 
 		lowerPanel.add(p);
 
@@ -325,10 +325,6 @@ public abstract class MainWindowView extends JFrame implements ActionListener, C
 
 	@Override
 	public abstract void actionPerformed(ActionEvent e);
-
-	public JLabel getCameraScreenshotJLabel() {
-		return cameraScreen;
-	}
 
 	@Override
 	public abstract void stateChanged(ChangeEvent arg0);

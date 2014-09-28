@@ -39,7 +39,7 @@ public class SzarkDataUpdater {
 			channel = DatagramChannel.open();
 			channel.connect(new InetSocketAddress(hostname, port));
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
+			// TODO coś sensownego jak błąd inicjacji
 			e.printStackTrace();
 		}
 
@@ -68,7 +68,7 @@ public class SzarkDataUpdater {
 			String receivedJson = new String(buff.array(), 0, length);
 			Status receivedStatus = gson.fromJson(receivedJson, Status.class);
 
-			if (status.isKillswitchEnable() == false &&
+			if (!status.isKillswitchEnable() &&
 					receivedStatus.getReceivedKillSwitchStatus() != KillSwitchStatus.INACTIVE) {
 
 				if (receivedStatus.getReceivedKillSwitchStatus() == KillSwitchStatus.ACTIVE_HARDWARE) {

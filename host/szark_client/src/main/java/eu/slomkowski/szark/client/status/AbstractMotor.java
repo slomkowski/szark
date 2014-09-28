@@ -51,11 +51,7 @@ abstract class AbstractMotor {
 			if (other instanceof AbstractParams) {
 				final AbstractParams o = (AbstractParams) other;
 
-				if ((direction == o.direction) && (speed == o.speed)) {
-					return true;
-				} else {
-					return false;
-				}
+				return (direction == o.direction) && (speed == o.speed);
 			} else {
 				return false;
 			}

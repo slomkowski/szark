@@ -1,5 +1,7 @@
 package eu.slomkowski.szark.client.utils;
 
+import com.sun.istack.internal.NotNull;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
@@ -12,6 +14,7 @@ public class ByteBufferBackedInputStream extends InputStream {
 		this.buf = buf;
 	}
 
+	@Override
 	public int read() throws IOException {
 		if (!buf.hasRemaining()) {
 			return -1;
@@ -19,7 +22,8 @@ public class ByteBufferBackedInputStream extends InputStream {
 		return buf.get() & 0xFF;
 	}
 
-	public int read(byte[] bytes, int off, int len)
+	@Override
+	public int read(@NotNull byte[] bytes, int off, int len)
 			throws IOException {
 		if (!buf.hasRemaining()) {
 			return -1;

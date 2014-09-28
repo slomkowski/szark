@@ -7,7 +7,7 @@ public class MotorParams {
 
 	public static enum Direction {
 		STOP, FORWARD, BACKWARD
-	};
+	}
 
 	public void setDirection(Direction dir) {
 		direction = dir;
@@ -57,11 +57,7 @@ public class MotorParams {
 		if (other instanceof MotorParams) {
 			final MotorParams o = (MotorParams) other;
 
-			if ((direction == o.direction) && (speed == o.speed)) {
-				return true;
-			} else {
-				return false;
-			}
+			return (direction == o.direction) && (speed == o.speed);
 		} else {
 			return false;
 		}
@@ -81,7 +77,6 @@ public class MotorParams {
 		default:
 			dir = "stopped";
 		}
-		;
 
 		return "direction: " + dir + ", speed: " + speed;
 	}

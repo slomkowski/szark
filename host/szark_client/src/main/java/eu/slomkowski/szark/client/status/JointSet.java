@@ -90,12 +90,8 @@ public class JointSet extends AbstractMotor {
 			if (other instanceof AbstractParams) {
 				final Joint o = (Joint) other;
 
-				if ((this.getDirection() == o.getDirection()) && (this.getSpeed() == o.getSpeed())
-						&& (this.getPosition() == o.getPosition())) {
-					return true;
-				} else {
-					return false;
-				}
+				return (this.getDirection() == o.getDirection()) && (this.getSpeed() == o.getSpeed())
+						&& (this.getPosition() == o.getPosition());
 			} else {
 				return false;
 			}

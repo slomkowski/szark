@@ -4,28 +4,27 @@ import eu.slomkowski.szark.client.joystick.JoystickBackend;
 import eu.slomkowski.szark.client.status.Direction;
 import eu.slomkowski.szark.client.status.Status;
 
-public class JoypadDataUpdater {
+public class JoystickDataUpdater {
 
-	public JoypadDataUpdater(Status status, JoystickBackend joystickBackend) {
-		joy = joystickBackend;
-		this.status = status;
-	}
+	private static float ROTATE_SPEED_FACTOR = 0.5f;
 
 	private final JoystickBackend joy;
 	private final Status status;
 
-	private static float ROTATE_SPEED_FACTOR = 0.5f;
+	public JoystickDataUpdater(Status status, JoystickBackend joystickBackend) {
+		this.joy = joystickBackend;
+		this.status = status;
+	}
 
 	public void update() {
 		// movement
 		joy.poll();
-		final float fowBack = joy.getForwBackVal();
+		final float fowBack = joy.getForwardBackwardVal();
 		final float leftRight = joy.getLeftRightVal();
 
 		// joints
 		final float armShoulder = joy.getShoulderVal();
 		final float armElbow = joy.getElbowVal();
-		final float armWrist = joy.getWristVal();
 		final float armGripper = joy.getGripperVal();
 
 		final byte motorSpeedLimit = status.motors.getSpeedLimit();

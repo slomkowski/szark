@@ -114,6 +114,7 @@ public class CameraImageUpdater extends JLabel {
 
 				} catch (IOException e) {
 					e.printStackTrace();
+					// TODO wywalanie błędów i wyłączanie trybu kamery albo co
 				}
 			}
 
