@@ -2,6 +2,7 @@ package eu.slomkowski.szark.client.gui;
 
 import eu.slomkowski.szark.client.HardcodedConfiguration;
 import eu.slomkowski.szark.client.gui.ArmVisualizer;
+import eu.slomkowski.szark.client.updaters.CameraImageUpdater;
 
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
@@ -26,7 +27,7 @@ public abstract class MainWindowView extends JFrame implements ActionListener, C
 	protected JMenuItem mWinMoveCtrl = new JMenuItem("Show move control window");
 	protected JMenuItem mWinArmCtrl = new JMenuItem("Show joints control window");
 
-	protected JLabel cameraScreenshot = new JLabel(new ImageIcon(getClass().getResource(HardcodedConfiguration.DEFAULT_LOGO)));
+	protected CameraImageUpdater cameraScreenshot = new CameraImageUpdater();
 
 	protected JComboBox<String> connectHostnameField = new JComboBox<String>(HardcodedConfiguration.DEFAULT_HOSTNAMES);
 	protected JButton connectButton = new JButton("CONNECT BUTTON");

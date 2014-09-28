@@ -1,96 +1,113 @@
 package eu.slomkowski.szark.client.updaters;
 
 import eu.slomkowski.szark.client.HardcodedConfiguration;
+import eu.slomkowski.szark.client.utils.ByteBufferBackedInputStream;
 
-import java.net.URL;
-import java.util.TimerTask;
+import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.nio.ByteBuffer;
+import java.nio.channels.DatagramChannel;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
-import javax.swing.ImageIcon;
-import javax.swing.JLabel;
+import javax.imageio.ImageIO;
+import javax.swing.*;
 
-/**
- * This is the TimerTask, which refreshes the image in the camera view panel.
- *
- * @author Michał Słomkowski
- */
-public class CameraImageUpdater extends TimerTask {
+public class CameraImageUpdater extends JLabel {
+
+	private UpdateTask updateTask = null;
+	private Camera choosenCamera;
+	private DatagramChannel channel;
+
+	public void setChoosenCamera(Camera choosenCamera) {
+		this.choosenCamera = choosenCamera;
+	}
+
+	public void enableCameraView(String hostname) {
+		setIcon(null);
+		try {
+			channel = DatagramChannel.open();
+			channel.connect(new InetSocketAddress(hostname, 10192));
+		} catch (final IOException e) {
+			e.printStackTrace();
+		}
+
+		updateTask = new UpdateTask();
+		updateTask.execute();
+	}
+
+	public void disableCameraView() {
+		if (updateTask != null) {
+			updateTask.stopThread();
+			updateTask = null;
+		}
+
+		setIcon(new ImageIcon(getClass().getResource(HardcodedConfiguration.DEFAULT_LOGO)));
+		repaint();
+	}
+
+	@Override
+	protected void paintComponent(Graphics g) {
+		super.paintComponent(g);
+
+		if (updateTask == null) {
+			return;
+		}
+
+		g.drawImage(updateTask.getBufferedImage(), 0, 0, this);
+	}
 
 	public static enum Camera {
 		HEAD, GRIPPER
 	}
 
-	public synchronized Camera getChoosenCamera() {
-		return choosenCamera;
-	}
+	private class UpdateTask extends SwingWorker<Void, BufferedImage> {
+		private final ByteBuffer buff = ByteBuffer.allocate(50000);
+		private AtomicBoolean needToStop = new AtomicBoolean(false);
+		private BufferedImage image = null;
 
-	Object synchronizator = new Object();
+		@Override
+		protected Void doInBackground() throws Exception {
+			while (needToStop.get() == false) {
+				try {
+					buff.clear();
+					buff.put((byte) 1);
 
-	public void setChoosenCamera(Camera choosenCamera) {
-		synchronized (synchronizator) {
-			this.choosenCamera = choosenCamera;
-		}
-	}
+					channel.write(buff);
 
-	/**
-	 * Constructor takes the reference
-	 *
-	 * @param displayJLabel the JLabel which has to display the image taken from the
-	 *                      webcam.
-	 * @param hostname      the host name or the IP address of the SZARK server
-	 */
-	public CameraImageUpdater(JLabel displayJLabel, String hostname) {
-		displayLabel = displayJLabel;
-		this.hostname = hostname;
+					buff.clear();
+					channel.read(buff);
 
-		setChoosenCamera(Camera.HEAD);
-	}
+					buff.flip();
 
-	/**
-	 * Constructor takes the reference
-	 *
-	 * @param displayJLabel the JLabel which has to display the image taken from the
-	 *                      webcam.
-	 * @param hostname      the host name or the IP address of the SZARK server
-	 * @param choosenCamera default camera to use
-	 */
-	public CameraImageUpdater(JLabel displayJLabel, String hostname, Camera choosenCamera) {
-		this(displayJLabel, hostname);
-		setChoosenCamera(choosenCamera);
-	}
+					if (needToStop.get()) {
+						break;
+					}
 
-	private final JLabel displayLabel;
-	private ImageIcon cameraImageIcon;
+					publish(ImageIO.read(new ByteBufferBackedInputStream(buff)));
 
-	private final String hostname;
-	private Camera choosenCamera;
-	private int frameCounter = 0;
-
-	/**
-	 * this function is performed by the Timer
-	 */
-	@Override
-	public void run() {
-		try {
-			int camStreamPort;
-
-			synchronized (synchronizator) {
-				if (choosenCamera == Camera.HEAD) {
-					camStreamPort = HardcodedConfiguration.HEAD_CAMERA_PORT;
-				} else {
-					camStreamPort = HardcodedConfiguration.GRIPPER_CAMERA_PORT;
+				} catch (IOException e) {
+					e.printStackTrace();
 				}
 			}
 
-			// getting an image from the CamStream server and loading it to
-			// JPanel
-			cameraImageIcon = new ImageIcon(new URL("http://" + hostname + ":" + Integer.toString(camStreamPort)
-					+ "/?action=snapshot&n=" + Long.toString(frameCounter)));
+			return null;
+		}
 
-			displayLabel.setIcon(cameraImageIcon);
-			frameCounter++;
-		} catch (final Exception e) {
-			// it doesn't show anything
-			e.printStackTrace();
+		@Override
+		protected void process(List<BufferedImage> chunks) {
+			image = chunks.get(chunks.size() - 1);
+			CameraImageUpdater.this.repaint();
+		}
+
+		public void stopThread() {
+			needToStop.set(true);
+		}
+
+		public BufferedImage getBufferedImage() {
+			return image;
 		}
 	}
 }

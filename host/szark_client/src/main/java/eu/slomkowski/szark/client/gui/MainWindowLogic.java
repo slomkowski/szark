@@ -116,8 +116,7 @@ public class MainWindowLogic extends MainWindowView {
 		szarkUpdater = new SzarkUpdater(this, connectHostnameField.getSelectedItem().toString());
 		szarkUpdaterTimer.schedule(szarkUpdater, 0, HardcodedConfiguration.SZARK_REFRESH_INTERVAL);
 
-		cameraUpdater = new CameraImageUpdater(cameraScreenshot, connectHostnameField.getSelectedItem().toString());
-		cameraImageUpdaterTimer.schedule(cameraUpdater, 0, HardcodedConfiguration.CAMERA_REFRESH_INTERVAL);
+		cameraScreenshot.enableCameraView(connectHostnameField.getSelectedItem().toString());
 
 		connected = true;
 
@@ -153,7 +152,7 @@ public class MainWindowLogic extends MainWindowView {
 		mConnConnect.setText("Connect");
 		connectHostnameField.setEnabled(true);
 		setControlsEnabled(false);
-		cameraScreenshot.setIcon(new ImageIcon(getClass().getResource(HardcodedConfiguration.DEFAULT_LOGO)));
+		cameraScreenshot.disableCameraView();
 	}
 
 	@Override

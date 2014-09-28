@@ -11,9 +11,8 @@ public interface HardcodedConfiguration {
 
 	String[] DEFAULT_HOSTNAMES = {"localhost", "szark.local"};
 
-	int GRIPPER_CAMERA_PORT = 8081;
-	int HEAD_CAMERA_PORT = 8080;
-	int CAMERA_REFRESH_INTERVAL = 50; // in milliseconds
+	int GRIPPER_CAMERA_PORT = 10192;
+	int HEAD_CAMERA_PORT = 10192;
 
 	int SZARK_SERVER_PORT = 10191;
 	int SZARK_REFRESH_INTERVAL = 50; // in milliseconds
