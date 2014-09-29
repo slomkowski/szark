@@ -10,25 +10,25 @@ class Axis {
 	 * @param name
 	 *             String name of specific axis, taken from
 	 *             Component.getName().
-	 * @param mFactor
+	 * @param moveFactor
 	 *             Scaling factor of the value read from the axis.
 	 *             Negative values invert the axis.
 	 */
-	public Axis(String name, float mFactor) {
+	public Axis(String name, float moveFactor) {
 		this.name = name;
-		this.mFactor = mFactor;
+		this.moveFactor = moveFactor;
 	}
 
 	private final String name;
-	private final float mFactor;
+	private final float moveFactor;
 
-	public float getMFactor() {
-		if (mFactor < -1.0f) {
+	public float getMoveFactor() {
+		if (moveFactor < -1.0f) {
 			return -1.0f;
-		} else if (mFactor > 1.0f) {
+		} else if (moveFactor > 1.0f) {
 			return 1.0f;
 		} else {
-			return mFactor;
+			return moveFactor;
 		}
 	}
 

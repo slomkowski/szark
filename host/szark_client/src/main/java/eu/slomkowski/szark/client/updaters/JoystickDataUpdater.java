@@ -6,7 +6,7 @@ import eu.slomkowski.szark.client.status.Status;
 
 public class JoystickDataUpdater {
 
-	private static float ROTATE_SPEED_FACTOR = 0.5f;
+	private static final float ROTATE_SPEED_FACTOR = 0.5f;
 
 	private final JoystickBackend joy;
 	private final Status status;
