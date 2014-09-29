@@ -92,8 +92,8 @@ public class ControlUpdater extends SwingWorker<Void, Status> {
 			}
 
 		} catch (final IOException e) {
-			mainWindow.performDisconnection(false);
-			// TODO disable only server
+			mainWindow.performControlServerDisconnection(false);
+
 			JOptionPane.showMessageDialog(mainWindow,
 					String.format("Control communication error: %s. Disabling control.",
 							e.getMessage() != null ? e.getMessage() : e.getClass().getName()),
@@ -101,6 +101,7 @@ public class ControlUpdater extends SwingWorker<Void, Status> {
 					JOptionPane.ERROR_MESSAGE);
 		} catch (final HardwareStoppedException e) {
 			mainWindow.performKillSwitchEnable();
+
 			JOptionPane.showMessageDialog(mainWindow,
 					"Kill switch: " + e.getMessage(),
 					"Kill switch activated",

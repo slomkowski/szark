@@ -33,7 +33,7 @@ public class MainWindowLogic extends MainWindowView {
 	private ControlUpdater controlUpdater;
 
 	public MainWindowLogic() {
-		performDisconnection(false);
+		performControlServerDisconnection(false);
 
 		if (HardcodedConfiguration.JOYSTICK_ENABLE) {
 			try {
@@ -50,6 +50,19 @@ public class MainWindowLogic extends MainWindowView {
 						JOptionPane.WARNING_MESSAGE);
 			}
 		}
+	}
+
+	public void performCameraServerConnection() {
+		cameraSelectHead.setSelected(true);
+		cameraDisplayHud.setSelected(true);
+		setCameraControlsEnabled(true);
+
+		cameraScreen.enableCameraView(connectHostnameField.getSelectedItem().toString());
+	}
+
+	public void performCameraServerDisconnection() {
+		setCameraControlsEnabled(false);
+		cameraScreen.disableCameraView();
 	}
 
 	public void performKillSwitchDisable() {
@@ -74,10 +87,6 @@ public class MainWindowLogic extends MainWindowView {
 		// enabling these, which has to be enabled
 		startStopButton.setEnabled(true);
 
-		cameraSelectGripper.setEnabled(true);
-		cameraSelectHead.setEnabled(true);
-		cameraDisplayHud.setEnabled(true);
-
 		batteryCurrBar.setEnabled(true);
 		batteryVoltBar.setEnabled(true);
 
@@ -99,7 +108,7 @@ public class MainWindowLogic extends MainWindowView {
 		mConWin.setEnabled(false);
 	}
 
-	private void performConnection() {
+	private void performControlServerConnection() {
 		performKillSwitchEnable();
 
 		controlUpdater = new ControlUpdater(this,
@@ -108,37 +117,41 @@ public class MainWindowLogic extends MainWindowView {
 				joystickBackend);
 		controlUpdater.execute();
 
-		cameraScreen.enableCameraView(connectHostnameField.getSelectedItem().toString());
+		batteryCurrBar.setEnabled(true);
+		batteryVoltBar.setEnabled(true);
+	}
+
+	public void connectToAll() {
+		performControlServerConnection();
+		performCameraServerConnection();
 
 		connected = true;
 
 		connectButton.setText("Disconnect");
 		mConnConnect.setText(connectButton.getText());
-
 		connectHostnameField.setEnabled(false);
-
-		cameraSelectHead.setSelected(true);
-		cameraDisplayHud.setSelected(true);
-		batteryCurrBar.setEnabled(true);
-		batteryVoltBar.setEnabled(true);
 	}
 
-	public void performDisconnection(boolean sendDisablingCommand) {
+	public void disconnectFromAll() {
+		performCameraServerDisconnection();
+		performControlServerDisconnection(true);
+
+		connected = false;
+
+		connectButton.setText("Connect");
+		mConnConnect.setText(connectButton.getText());
+		connectHostnameField.setEnabled(true);
+	}
+
+	public void performControlServerDisconnection(boolean sendDisablingCommand) {
+		performKillSwitchEnable();
+		setControlsEnabled(false);
 
 		status.setKillswitchEnable(true);
 		if (sendDisablingCommand && controlUpdater != null) {
 			controlUpdater.stopTask();
 		}
 		controlUpdater = null;
-
-		performKillSwitchEnable();
-
-		connected = false;
-		connectButton.setText("Connect");
-		mConnConnect.setText(connectButton.getText());
-		connectHostnameField.setEnabled(true);
-		setControlsEnabled(false);
-		cameraScreen.disableCameraView();
 	}
 
 	@Override
@@ -147,9 +160,9 @@ public class MainWindowLogic extends MainWindowView {
 
 		if ((obj == connectButton) || (obj == mConnConnect)) {
 			if (!connected) {
-				performConnection();
+				connectToAll();
 			} else {
-				performDisconnection(true);
+				disconnectFromAll();
 			}
 		} else if (obj == startStopButton) {
 			if (status.isKillswitchEnable()) {
@@ -205,7 +218,7 @@ public class MainWindowLogic extends MainWindowView {
 			}
 		} else if (obj == exitButton) {
 			if (connected) {
-				performDisconnection(true);
+				disconnectFromAll();
 			}
 			System.exit(0);
 		}

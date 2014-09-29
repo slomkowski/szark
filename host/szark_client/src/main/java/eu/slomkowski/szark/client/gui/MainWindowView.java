@@ -21,7 +21,7 @@ import java.awt.event.WindowEvent;
  */
 public abstract class MainWindowView extends JFrame implements ActionListener, ChangeListener {
 
-	protected final JMenuItem mConnConnect = new JMenuItem("CONNECT BUTTON");
+	protected final JMenuItem mConnConnect = new JMenuItem("Connect");
 
 	protected final JMenuItem mWinMoveCtrl = new JMenuItem("Show move control window");
 	private final JMenuItem mWinArmCtrl = new JMenuItem("Show joints control window");
@@ -29,7 +29,7 @@ public abstract class MainWindowView extends JFrame implements ActionListener, C
 	protected final CameraImageUpdater cameraScreen = new CameraImageUpdater();
 
 	protected final JComboBox<String> connectHostnameField = new JComboBox<>(HardcodedConfiguration.DEFAULT_HOST_NAMES);
-	protected final JButton connectButton = new JButton("CONNECT BUTTON");
+	protected final JButton connectButton = new JButton("Connect");
 	protected final JButton exitButton = new JButton("Exit");
 
 	protected final JButton startStopButton = new JButton();
@@ -309,11 +309,6 @@ public abstract class MainWindowView extends JFrame implements ActionListener, C
 		speedLimit8.setEnabled(enable);
 		speedLimit12.setEnabled(enable);
 
-		// camera selector
-		cameraSelectGripper.setEnabled(enable);
-		cameraSelectHead.setEnabled(enable);
-		cameraDisplayHud.setEnabled(enable);
-
 		// joints
 		statArmElbowSpeed.setEnabled(enable);
 		statArmGripperSpeed.setEnabled(enable);
@@ -322,6 +317,12 @@ public abstract class MainWindowView extends JFrame implements ActionListener, C
 		armShoulderSpeedLimiter.setEnabled(enable);
 		armElbowSpeedLimiter.setEnabled(enable);
 		armGripperSpeedLimiter.setEnabled(enable);
+	}
+
+	protected void setCameraControlsEnabled(boolean enable) {
+		cameraSelectGripper.setEnabled(enable);
+		cameraSelectHead.setEnabled(enable);
+		cameraDisplayHud.setEnabled(enable);
 	}
 
 	@Override
