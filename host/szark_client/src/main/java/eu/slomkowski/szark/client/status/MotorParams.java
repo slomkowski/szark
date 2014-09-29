@@ -1,5 +1,7 @@
 package eu.slomkowski.szark.client.status;
 
+import eu.slomkowski.szark.client.HardcodedConfiguration;
+
 public class MotorParams {
 
 	private Direction direction;
@@ -18,8 +20,8 @@ public class MotorParams {
 	}
 
 	public void setSpeed(byte sp) {
-		if (sp > 15) {
-			speed = 15;
+		if (sp > HardcodedConfiguration.MOTOR_SPEED_MAX) {
+			speed = HardcodedConfiguration.MOTOR_SPEED_MAX;
 		} else {
 			speed = sp;
 		}
@@ -68,14 +70,14 @@ public class MotorParams {
 		String dir;
 
 		switch (direction) {
-		case FORWARD:
-			dir = "forward";
-			break;
-		case BACKWARD:
-			dir = "backward";
-			break;
-		default:
-			dir = "stopped";
+			case FORWARD:
+				dir = "forward";
+				break;
+			case BACKWARD:
+				dir = "backward";
+				break;
+			default:
+				dir = "stopped";
 		}
 
 		return "direction: " + dir + ", speed: " + speed;

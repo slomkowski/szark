@@ -24,7 +24,6 @@ public class MainWindowLogic extends MainWindowView {
 
 	private final Status status = new Status();
 
-	// windows are initialized now, buttons only make them visible
 	private final MoveControlWindow mConWin = new MoveControlWindow(status);
 
 	private JoystickBackend joystickBackend = null;
@@ -34,9 +33,9 @@ public class MainWindowLogic extends MainWindowView {
 	private ControlUpdater controlUpdater;
 
 	public MainWindowLogic() {
-		thingsWhenDisconnect(false);
+		performDisconnection(false);
 
-		if (HardcodedConfiguration.ENABLE_JOYSTICK) {
+		if (HardcodedConfiguration.JOYSTICK_ENABLE) {
 			try {
 				joystickBackend = new JoystickBackend();
 
@@ -53,8 +52,8 @@ public class MainWindowLogic extends MainWindowView {
 		}
 	}
 
-	public void thingsWhenEnabling() {
-		thingsWhenDisabling();
+	public void performKillSwitchDisable() {
+		performKillSwitchEnable();
 
 		status.setKillswitchEnable(false);
 		startStopButton.setIcon(iconStop);
@@ -65,7 +64,7 @@ public class MainWindowLogic extends MainWindowView {
 		}
 	}
 
-	public void thingsWhenDisabling() {
+	public void performKillSwitchEnable() {
 		status.clean();
 
 		status.setKillswitchEnable(true);
@@ -91,17 +90,17 @@ public class MainWindowLogic extends MainWindowView {
 		status.motors.setSpeedLimit(5);
 
 		// joints initial speeds
-		armGripperSpeedLimiter.setValue(HardcodedConfiguration.GRIPPER_SPPED);
-		armElbowSpeedLimiter.setValue(HardcodedConfiguration.ELBOW_SPEED);
-		armShoulderSpeedLimiter.setValue(HardcodedConfiguration.SHOULDER_SPEED);
+		armGripperSpeedLimiter.setValue(HardcodedConfiguration.JOINT_SPEED_INIT_GRIPPER);
+		armElbowSpeedLimiter.setValue(HardcodedConfiguration.JOINT_SPEED_INIT_ELBOW);
+		armShoulderSpeedLimiter.setValue(HardcodedConfiguration.JOINT_SPEED_INIT_SHOULDER);
 		stateChanged(null); // write initial values from sliders to status
 
 		updateIndicators(status);
 		mConWin.setEnabled(false);
 	}
 
-	private void thingsWhenConnect() {
-		thingsWhenDisabling();
+	private void performConnection() {
+		performKillSwitchEnable();
 
 		controlUpdater = new ControlUpdater(this,
 				connectHostnameField.getSelectedItem().toString(),
@@ -124,7 +123,7 @@ public class MainWindowLogic extends MainWindowView {
 		batteryVoltBar.setEnabled(true);
 	}
 
-	public void thingsWhenDisconnect(boolean sendDisablingCommand) {
+	public void performDisconnection(boolean sendDisablingCommand) {
 
 		status.setKillswitchEnable(true);
 		if (sendDisablingCommand && controlUpdater != null) {
@@ -132,7 +131,7 @@ public class MainWindowLogic extends MainWindowView {
 		}
 		controlUpdater = null;
 
-		thingsWhenDisabling();
+		performKillSwitchEnable();
 
 		connected = false;
 		connectButton.setText("Connect");
@@ -148,15 +147,15 @@ public class MainWindowLogic extends MainWindowView {
 
 		if ((obj == connectButton) || (obj == mConnConnect)) {
 			if (!connected) {
-				thingsWhenConnect();
+				performConnection();
 			} else {
-				thingsWhenDisconnect(true);
+				performDisconnection(true);
 			}
 		} else if (obj == startStopButton) {
 			if (status.isKillswitchEnable()) {
-				thingsWhenEnabling();
+				performKillSwitchDisable();
 			} else {
-				thingsWhenDisabling();
+				performKillSwitchEnable();
 			}
 		} else if (obj == lightLow) {
 			if (lightLow.isSelected()) {
@@ -206,13 +205,12 @@ public class MainWindowLogic extends MainWindowView {
 			}
 		} else if (obj == exitButton) {
 			if (connected) {
-				thingsWhenDisconnect(true);
+				performDisconnection(true);
 			}
 			System.exit(0);
 		}
 	}
 
-	// timer task used to refresh battery, wifi status etc.
 	public void updateIndicators(Status receivedStatus) {
 		// battery
 		batteryVoltBar.setValue((int) (10 * receivedStatus.battery.getVoltage()));
@@ -226,10 +224,14 @@ public class MainWindowLogic extends MainWindowView {
 
 		// movement indicators
 		statSpeedLeft.setValue(receivedStatus.motors.left.getSpeed());
-		statSpeedLeft.setString("Left speed: " + receivedStatus.motors.left.getSpeed() + "/15");
+		statSpeedLeft.setString(String.format("Left: %d/%d",
+				receivedStatus.motors.left.getSpeed(),
+				HardcodedConfiguration.MOTOR_SPEED_MAX));
 
 		statSpeedRight.setValue(receivedStatus.motors.right.getSpeed());
-		statSpeedRight.setString("Right speed: " + receivedStatus.motors.right.getSpeed() + "/15");
+		statSpeedRight.setString(String.format("Right: %d/%d",
+				receivedStatus.motors.left.getSpeed(),
+				HardcodedConfiguration.MOTOR_SPEED_MAX));
 
 		if (receivedStatus.motors.left.getDirection() == Direction.FORWARD) {
 			statDirectionLeft.setText("<html>Left motor: <b>FORWARD");
@@ -251,11 +253,20 @@ public class MainWindowLogic extends MainWindowView {
 		statArmShoulderSpeed.setValue(receivedStatus.joints.shoulder.getSpeed());
 		statArmGripperSpeed.setValue(receivedStatus.joints.gripper.getSpeed());
 
-		statArmElbowSpeed.setString("Elbow " + receivedStatus.joints.elbow + ", speed: " + receivedStatus.joints.elbow.getSpeed() + "/15");
-		statArmShoulderSpeed.setString("Shoulder " + receivedStatus.joints.shoulder + ", speed: "
-				+ receivedStatus.joints.shoulder.getSpeed() + "/15");
-		statArmGripperSpeed.setString("Gripper " + receivedStatus.joints.gripper + ", speed: " + receivedStatus.joints.gripper.getSpeed()
-				+ "/15");
+		statArmElbowSpeed.setString(String.format("Elbow %s, speed: %d/%d",
+				receivedStatus.joints.elbow,
+				receivedStatus.joints.elbow.getSpeed(),
+				HardcodedConfiguration.JOINT_SPEED_MAX));
+
+		statArmShoulderSpeed.setString(String.format("Shoulder %s, speed: %d/%d",
+				receivedStatus.joints.shoulder,
+				receivedStatus.joints.shoulder.getSpeed(),
+				HardcodedConfiguration.JOINT_SPEED_MAX));
+
+		statArmGripperSpeed.setString(String.format("Gripper %s, speed: %d/%d",
+				receivedStatus.joints.gripper,
+				receivedStatus.joints.gripper.getSpeed(),
+				HardcodedConfiguration.JOINT_SPEED_MAX));
 
 		// visualizer
 		armVis.setUpdateStatus(receivedStatus);

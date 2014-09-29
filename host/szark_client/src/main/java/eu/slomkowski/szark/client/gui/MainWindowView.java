@@ -28,7 +28,7 @@ public abstract class MainWindowView extends JFrame implements ActionListener, C
 
 	protected final CameraImageUpdater cameraScreen = new CameraImageUpdater();
 
-	protected final JComboBox<String> connectHostnameField = new JComboBox<>(HardcodedConfiguration.DEFAULT_HOSTNAMES);
+	protected final JComboBox<String> connectHostnameField = new JComboBox<>(HardcodedConfiguration.DEFAULT_HOST_NAMES);
 	protected final JButton connectButton = new JButton("CONNECT BUTTON");
 	protected final JButton exitButton = new JButton("Exit");
 
@@ -66,16 +66,17 @@ public abstract class MainWindowView extends JFrame implements ActionListener, C
 
 	protected final JCheckBox cameraDisplayHud = new JCheckBox("Display HUD");
 
-	protected final JSlider armShoulderSpeedLimiter = new JSlider(JSlider.HORIZONTAL, 0, 15, 0);
-	protected final JSlider armElbowSpeedLimiter = new JSlider(JSlider.HORIZONTAL, 0, 15, 0);
-	protected final JSlider armGripperSpeedLimiter = new JSlider(JSlider.HORIZONTAL, 0, 15, 0);
+	protected final JSlider armShoulderSpeedLimiter = new JSlider(JSlider.HORIZONTAL, 0, HardcodedConfiguration.JOINT_SPEED_MAX, 0);
+	protected final JSlider armElbowSpeedLimiter = new JSlider(JSlider.HORIZONTAL, 0, HardcodedConfiguration.JOINT_SPEED_MAX, 0);
+	protected final JSlider armGripperSpeedLimiter = new JSlider(JSlider.HORIZONTAL, 0, HardcodedConfiguration.JOINT_SPEED_MAX, 0);
 
 	protected final JButton armCalibrateButton = new JButton("Calibrate joints");
 
 	public MainWindowView() {
 		JPanel p; // temporary reference
 
-		setTitle("SZARK - client v. " + HardcodedConfiguration.VERSION);
+		setTitle(String.format("SZARK client %s - Michał Słomkowski",
+				HardcodedConfiguration.PROGRAM_VERSION));
 
 		setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
 		addWindowListener(new WindowAdapter() {
@@ -143,7 +144,7 @@ public abstract class MainWindowView extends JFrame implements ActionListener, C
 
 		// EMERGENCY BUTTON
 		p = new JPanel(new BorderLayout());
-		p.setBorder(new TitledBorder("Emergency stop & start button:"));
+		p.setBorder(new TitledBorder("Kill switch button:"));
 		p.add(startStopButton);// , BorderLayout.WEST);
 		sidePanel.add(p);
 
@@ -170,7 +171,7 @@ public abstract class MainWindowView extends JFrame implements ActionListener, C
 
 		// ARM VISUALIZER
 		// p = new JPanel();
-		armVis.setBorder(new TitledBorder("Arm visualizer:"));
+		armVis.setBorder(new TitledBorder("Joints visualizer:"));
 		// p.add(armVis);
 		sidePanel.add(armVis);
 
@@ -189,8 +190,8 @@ public abstract class MainWindowView extends JFrame implements ActionListener, C
 		p.add(statSpeedLeft);
 		p.add(statDirectionRight);
 		p.add(statSpeedRight);
-		statSpeedLeft.setMaximum(15);
-		statSpeedRight.setMaximum(15);
+		statSpeedLeft.setMaximum(HardcodedConfiguration.MOTOR_SPEED_MAX);
+		statSpeedRight.setMaximum(HardcodedConfiguration.MOTOR_SPEED_MAX);
 		mot.add(p, BorderLayout.NORTH);
 
 		p = new JPanel();
@@ -215,7 +216,7 @@ public abstract class MainWindowView extends JFrame implements ActionListener, C
 
 		// ARM SPEED
 		p = new JPanel(new BorderLayout());
-		p.setBorder(new TitledBorder("Arm parameters & limiters:"));
+		p.setBorder(new TitledBorder("Joints parameters & limiters:"));
 
 		final JPanel jointGaugesPanel = new JPanel(new GridLayout(3, 1, 1, 2));
 		jointGaugesPanel.add(statArmShoulderSpeed);
@@ -231,9 +232,9 @@ public abstract class MainWindowView extends JFrame implements ActionListener, C
 		statArmGripperSpeed.setStringPainted(true);
 		statArmShoulderSpeed.setStringPainted(true);
 
-		statArmElbowSpeed.setMaximum(15);
-		statArmGripperSpeed.setMaximum(15);
-		statArmShoulderSpeed.setMaximum(15);
+		statArmElbowSpeed.setMaximum(HardcodedConfiguration.JOINT_SPEED_MAX);
+		statArmGripperSpeed.setMaximum(HardcodedConfiguration.JOINT_SPEED_MAX);
+		statArmShoulderSpeed.setMaximum(HardcodedConfiguration.JOINT_SPEED_MAX);
 
 		p.add(jointGaugesPanel);
 		p.add(jointSlidersPanel, BorderLayout.EAST);

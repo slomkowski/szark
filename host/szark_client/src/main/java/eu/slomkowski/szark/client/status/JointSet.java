@@ -2,6 +2,7 @@ package eu.slomkowski.szark.client.status;
 
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
+import eu.slomkowski.szark.client.HardcodedConfiguration;
 
 public class JointSet extends AbstractMotor {
 
@@ -46,8 +47,8 @@ public class JointSet extends AbstractMotor {
 	public void setSpeedLimit(byte speed) {
 		if (speed < 0) {
 			speedLimit = 0;
-		} else if (speed > 15) {
-			speedLimit = 15;
+		} else if (speed > HardcodedConfiguration.JOINT_SPEED_MAX) {
+			speedLimit = HardcodedConfiguration.JOINT_SPEED_MAX;
 		} else {
 			speedLimit = speed;
 		}

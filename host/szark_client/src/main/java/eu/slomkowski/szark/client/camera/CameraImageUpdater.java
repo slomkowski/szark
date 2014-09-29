@@ -48,8 +48,8 @@ public class CameraImageUpdater extends JLabel {
 			channel = DatagramChannel.open();
 
 			int port = chosenCameraType == CameraType.GRIPPER
-					? HardcodedConfiguration.GRIPPER_CAMERA_PORT
-					: HardcodedConfiguration.HEAD_CAMERA_PORT;
+					? HardcodedConfiguration.CAMERA_PORT_GRIPPER
+					: HardcodedConfiguration.CAMERA_PORT_HEAD;
 
 			channel.connect(new InetSocketAddress(hostname, port));
 		} catch (final IOException e) {

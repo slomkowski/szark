@@ -5,7 +5,7 @@ import com.google.gson.annotations.SerializedName;
 
 abstract class AbstractMotor {
 
-	protected byte speedLimit = 12;
+	protected byte speedLimit;
 
 	public synchronized byte getSpeedLimit() {
 		return speedLimit;
@@ -92,8 +92,6 @@ abstract class AbstractMotor {
 		public void setSpeedLimit(byte speed) {
 			if (speed < 0) {
 				speedLimit = 0;
-			} else if (speed > 15) {
-				speedLimit = 15;
 			} else {
 				speedLimit = speed;
 			}

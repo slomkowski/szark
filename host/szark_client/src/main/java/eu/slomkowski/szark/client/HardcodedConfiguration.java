@@ -1,29 +1,25 @@
 package eu.slomkowski.szark.client;
 
-/**
- * Stores the settings for the SZARK-client
- *
- * @author Michał Słomkowski
- */
 public interface HardcodedConfiguration {
 
-	String VERSION = "0.17";
+	String PROGRAM_VERSION = "0.17";
 
-	String[] DEFAULT_HOSTNAMES = {"localhost", "szark.local"};
+	String[] DEFAULT_HOST_NAMES = {"localhost", "szark.local"};
 
-	int GRIPPER_CAMERA_PORT = 10192;
-	int HEAD_CAMERA_PORT = 10192;
+	int CAMERA_PORT_GRIPPER = 10192;
+	int CAMERA_PORT_HEAD = 10192;
 
-	int SZARK_SERVER_PORT = 10191;
-	int SZARK_REFRESH_INTERVAL = 50; // in milliseconds
+	int CONTROL_SERVER_PORT = 10191;
+	int CONTROL_SERVER_REFRESH_INTERVAL = 50; // in milliseconds
 
-	boolean ENABLE_JOYSTICK = true;
+	boolean JOYSTICK_ENABLE = true;
 
 	String DEFAULT_LOGO = "/img/logo.jpg";
 
-	// joints initial speeds
-	int ELBOW_SPEED = 5;
-	int SHOULDER_SPEED = 5;
-	int WRIST_SPEED = 3;
-	int GRIPPER_SPPED = 7;
+	int JOINT_SPEED_INIT_ELBOW = 5;
+	int JOINT_SPEED_INIT_SHOULDER = 5;
+	int JOINT_SPEED_INIT_GRIPPER = 7;
+
+	int JOINT_SPEED_MAX = 15;
+	int MOTOR_SPEED_MAX = 12;
 }

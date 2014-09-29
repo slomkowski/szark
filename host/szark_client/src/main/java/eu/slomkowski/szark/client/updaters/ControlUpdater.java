@@ -39,7 +39,7 @@ public class ControlUpdater extends SwingWorker<Void, Status> {
 
 		try {
 			channel = DatagramChannel.open();
-			channel.connect(new InetSocketAddress(hostname, HardcodedConfiguration.SZARK_SERVER_PORT));
+			channel.connect(new InetSocketAddress(hostname, HardcodedConfiguration.CONTROL_SERVER_PORT));
 		} catch (IOException e) {
 			e.printStackTrace();
 			System.exit(2);
@@ -88,11 +88,11 @@ public class ControlUpdater extends SwingWorker<Void, Status> {
 				Status receivedStatus = updateCycle();
 				publish(receivedStatus);
 
-				Thread.sleep(HardcodedConfiguration.SZARK_REFRESH_INTERVAL, 0);
+				Thread.sleep(HardcodedConfiguration.CONTROL_SERVER_REFRESH_INTERVAL, 0);
 			}
 
 		} catch (final IOException e) {
-			mainWindow.thingsWhenDisconnect(false);
+			mainWindow.performDisconnection(false);
 			// TODO disable only server
 			JOptionPane.showMessageDialog(mainWindow,
 					String.format("Control communication error: %s. Disabling control.",
@@ -100,7 +100,7 @@ public class ControlUpdater extends SwingWorker<Void, Status> {
 					"Network error",
 					JOptionPane.ERROR_MESSAGE);
 		} catch (final HardwareStoppedException e) {
-			mainWindow.thingsWhenDisabling();
+			mainWindow.performKillSwitchEnable();
 			JOptionPane.showMessageDialog(mainWindow,
 					"Kill switch: " + e.getMessage(),
 					"Kill switch activated",

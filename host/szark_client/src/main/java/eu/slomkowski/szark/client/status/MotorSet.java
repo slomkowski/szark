@@ -1,6 +1,7 @@
 package eu.slomkowski.szark.client.status;
 
 import com.google.gson.annotations.Expose;
+import eu.slomkowski.szark.client.HardcodedConfiguration;
 
 public class MotorSet extends AbstractMotor {
 
@@ -33,8 +34,8 @@ public class MotorSet extends AbstractMotor {
 	public synchronized void setSpeedLimit(byte speed) {
 		if (speed < 0) {
 			speedLimit = 0;
-		} else if (speed > 15) {
-			speedLimit = 15;
+		} else if (speed > HardcodedConfiguration.MOTOR_SPEED_MAX) {
+			speedLimit = HardcodedConfiguration.MOTOR_SPEED_MAX;
 		} else {
 			speedLimit = speed;
 		}
