@@ -32,71 +32,82 @@
 
 namespace processing {
 
-typedef std::function<void(long, std::string, bool)> ResponseSender;
-typedef std::pair<long, Json::Value> Request;
+	typedef std::function<void(long, std::string, bool)> ResponseSender;
+	typedef std::function<void(long)> RejectedRequestRemover;
+	typedef std::pair<long, Json::Value> Request;
 
-constexpr long INVALID_MESSAGE = -1;
+	constexpr long INVALID_MESSAGE = -1;
 
-class IRequestQueuer {
-public:
-	/**
-	 * Adds the request to the queue.
-	 * @param request text of the request in JSON format
-	 * @return true if the request was added to the queue
-	 */
-	virtual long addRequest(std::string request) = 0;
+	class IRequestQueuer {
+	public:
+		/**
+		* Adds the request to the queue.
+		* @param request text of the request in JSON format
+		* @return true if the request was added to the queue
+		*/
+		virtual long addRequest(std::string request) = 0;
 
-	virtual int getNumOfMessagess() = 0;
+		virtual int getNumOfMessages() = 0;
 
-	virtual int getNumOfProcessors() = 0;
+		virtual int getNumOfProcessors() = 0;
 
-	virtual void setResponseSender(ResponseSender s) = 0;
+		virtual void setResponseSender(ResponseSender s) = 0;
 
-	virtual ~IRequestQueuer() = default;
-};
+		virtual void setRejectedRequestRemover(RejectedRequestRemover r) = 0;
 
-class RequestValueComparer {
-public:
-	bool operator()(const Request &r1, const Request &r2) const {
-		return r1.second["serial"].asInt() > r2.second["serial"].asInt();
-	}
-};
+		virtual ~IRequestQueuer() = default;
+	};
 
-class RequestQueuer: public wallaroo::Device, public IRequestQueuer {
-public:
-	RequestQueuer();
-	~RequestQueuer();
+	class RequestValueComparer {
+	public:
+		bool operator()(const Request &r1, const Request &r2) const {
+			return r1.second["serial"].asInt() > r2.second["serial"].asInt();
+		}
+	};
 
-	virtual long addRequest(std::string requestString);
-	virtual int getNumOfMessagess();
-	virtual int getNumOfProcessors();
+	class RequestQueuer : public wallaroo::Device, public IRequestQueuer {
+	public:
+		RequestQueuer();
 
-	void setResponseSender(ResponseSender s) {
-		responseSender = s;
-	}
+		~RequestQueuer();
 
-private:
-	log4cpp::Category& logger;
+		virtual long addRequest(std::string requestString);
 
-	wallaroo::Plug<IRequestProcessor, wallaroo::collection> requestProcessors;
+		virtual int getNumOfMessages();
 
-	std::mutex requestsMutex;
-	std::priority_queue<Request, std::vector<Request>, RequestValueComparer> requests;
-	volatile long lastSerial = 0;
+		virtual int getNumOfProcessors();
 
-	std::unique_ptr<std::thread> requestProcessorExecutorThread;
-	std::condition_variable cv;
-	volatile bool finishCycleThread = false;
+		void setResponseSender(ResponseSender s) {
+			responseSender = s;
+		}
 
-	Json::Reader jsonReader;
-	Json::FastWriter jsonWriter;
+		void setRejectedRequestRemover(RejectedRequestRemover r) {
+			rejectedRequestRemover = r;
+		}
 
-	ResponseSender responseSender;
+	private:
+		log4cpp::Category &logger;
 
-	void requestProcessorExecutorThreadFunction();
+		wallaroo::Plug<IRequestProcessor, wallaroo::collection> requestProcessors;
 
-	long nextId();
-};
+		std::mutex requestsMutex;
+		std::priority_queue<Request, std::vector<Request>, RequestValueComparer> requests;
+		volatile long lastSerial = 0;
+
+		std::unique_ptr<std::thread> requestProcessorExecutorThread;
+		std::condition_variable cv;
+		volatile bool finishCycleThread = false;
+
+		Json::Reader jsonReader;
+		Json::FastWriter jsonWriter;
+
+		ResponseSender responseSender;
+		RejectedRequestRemover rejectedRequestRemover;
+
+		void requestProcessorExecutorThreadFunction();
+
+		long nextId();
+	};
 
 } /* namespace processing */
 

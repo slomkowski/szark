@@ -70,6 +70,8 @@ private:
 	std::unique_ptr<char> buff;
 
 	void doReceive();
+
+	void removeFromRequestMap(long id);
 };
 
 } /* namespace processing */

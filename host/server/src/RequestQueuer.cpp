@@ -92,7 +92,19 @@ long RequestQueuer::addRequest(string requestString) {
 	if (requests.size() == REQUEST_QUEUE_MAX_SIZE) {
 		logger.warn(
 				(format("Requests queue is full (%d). removing the oldest one.") % REQUEST_QUEUE_MAX_SIZE).str());
+
+		long id;
+		Json::Value r;
+
+		tie(id, r) = requests.top();
+
 		requests.pop();
+
+		if(rejectedRequestRemover == nullptr) {
+			logger.error("Cannot remove rejected request. No RejectedRequestRemover set.");
+		} else {
+			rejectedRequestRemover(id);
+		}
 	}
 
 	if (serial == 0) {
@@ -112,7 +124,7 @@ long RequestQueuer::addRequest(string requestString) {
 	return id;
 }
 
-int RequestQueuer::getNumOfMessagess() {
+int RequestQueuer::getNumOfMessages() {
 	unique_lock<mutex> lk(requestsMutex);
 	return requests.size();
 }
