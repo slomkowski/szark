@@ -39,17 +39,12 @@ public class SzarkDataUpdater {
 			channel = DatagramChannel.open();
 			channel.connect(new InetSocketAddress(hostname, port));
 		} catch (IOException e) {
-			// TODO coś sensownego jak błąd inicjacji
 			e.printStackTrace();
+			System.exit(2);
 		}
 
 	}
 
-	/**
-	 * This function is performed by the Timer call.
-	 *
-	 * @throws HardwareStoppedException , ConnectException,
-	 */
 	public synchronized Status update()
 			throws HardwareStoppedException, ConnectionErrorException {
 

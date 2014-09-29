@@ -25,17 +25,15 @@ public class CameraImageUpdater extends JLabel {
 	private CameraMode cameraMode = CameraMode.HUD;
 
 	public void setChosenCameraType(CameraType chosenCameraType) {
-		if (chosenCameraType == this.chosenCameraType) {
+		if (chosenCameraType == this.chosenCameraType && enabled) {
 			return;
 		}
 
 		if (enabled) {
 			disableCameraView();
-			this.chosenCameraType = chosenCameraType;
-			enableCameraView(hostname);
-		} else {
-			this.chosenCameraType = chosenCameraType;
 		}
+		this.chosenCameraType = chosenCameraType;
+		enableCameraView(hostname);
 	}
 
 	public void setCameraMode(CameraMode cameraMode) {
@@ -56,6 +54,7 @@ public class CameraImageUpdater extends JLabel {
 			channel.connect(new InetSocketAddress(hostname, port));
 		} catch (final IOException e) {
 			e.printStackTrace();
+			System.exit(1);
 		}
 
 		enabled = true;
@@ -110,11 +109,24 @@ public class CameraImageUpdater extends JLabel {
 						break;
 					}
 
-					publish(ImageIO.read(new ByteBufferBackedInputStream(buff)));
+					BufferedImage img = ImageIO.read(new ByteBufferBackedInputStream(buff));
 
-				} catch (IOException e) {
+					if (img == null) {
+						throw new Exception("could not parse image. Probably malformed response.");
+					}
+
+					publish(img);
+
+				} catch (Exception e) {
 					e.printStackTrace();
-					// TODO wywalanie błędów i wyłączanie trybu kamery albo co
+
+					disableCameraView();
+
+					JOptionPane.showMessageDialog(CameraImageUpdater.this,
+							String.format("Camera communication error: %s. Disabling camera.",
+									e.getMessage() != null ? e.getMessage() : e.getClass().getName()),
+							"Network error",
+							JOptionPane.ERROR_MESSAGE);
 				}
 			}
 

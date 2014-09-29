@@ -306,8 +306,10 @@ public class MainWindowLogic extends MainWindowView {
 				updateIndicators(szdUpdater.update());
 			} catch (final SzarkDataUpdater.ConnectionErrorException e) {
 				mainWin.thingsWhenDisconnect(false);
+				// TODO disable only server
 				JOptionPane.showMessageDialog(mainWin,
-						"Network error: " + e.getMessage(),
+						String.format("Control communication error: %s. Disabling control.",
+								e.getMessage() != null ? e.getMessage() : e.getClass().getName()),
 						"Network error",
 						JOptionPane.ERROR_MESSAGE);
 			} catch (final SzarkDataUpdater.HardwareStoppedException e) {
