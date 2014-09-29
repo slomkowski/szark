@@ -65,7 +65,7 @@ public class CameraImageUpdater extends JLabel {
 
 	public void disableCameraView() {
 		if (updateTask != null) {
-			updateTask.stopThread();
+			updateTask.stopTask();
 			updateTask = null;
 		}
 
@@ -139,7 +139,7 @@ public class CameraImageUpdater extends JLabel {
 			CameraImageUpdater.this.repaint();
 		}
 
-		public void stopThread() {
+		public void stopTask() {
 			needToStop.set(true);
 		}
 

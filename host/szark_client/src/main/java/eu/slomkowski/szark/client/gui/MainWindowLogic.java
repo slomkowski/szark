@@ -8,14 +8,11 @@ import eu.slomkowski.szark.client.joystick.JoystickBackend;
 import eu.slomkowski.szark.client.status.CalibrationStatus;
 import eu.slomkowski.szark.client.status.Direction;
 import eu.slomkowski.szark.client.status.Status;
-import eu.slomkowski.szark.client.updaters.JoystickDataUpdater;
-import eu.slomkowski.szark.client.updaters.SzarkDataUpdater;
+import eu.slomkowski.szark.client.updaters.ControlUpdater;
 
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
 import java.awt.event.ActionEvent;
-import java.util.Timer;
-import java.util.TimerTask;
 
 /**
  * This class provides the logic for the main window. The appearance is moved to
@@ -30,32 +27,28 @@ public class MainWindowLogic extends MainWindowView {
 	// windows are initialized now, buttons only make them visible
 	private final MoveControlWindow mConWin = new MoveControlWindow(status);
 
-	private Timer szarkUpdaterTimer; // TODO zamienić na SwingWorker
-
-	private JoystickBackend jBackend;
-
-	private boolean enableJoystick = HardcodedConfiguration.ENABLE_JOYSTICK;
+	private JoystickBackend joystickBackend = null;
 
 	private boolean connected = false;
 
-	private SzarkUpdater szarkUpdater;
+	private ControlUpdater controlUpdater;
 
 	public MainWindowLogic() {
 		thingsWhenDisconnect(false);
-		// joystick setup
-		if (enableJoystick) {
+
+		if (HardcodedConfiguration.ENABLE_JOYSTICK) {
 			try {
-				jBackend = new JoystickBackend();
+				joystickBackend = new JoystickBackend();
 
 				mWinMoveCtrl.setEnabled(false);
 				mWinMoveCtrl.setText(mWinMoveCtrl.getText() + " (Disabled because of joystick)");
 			} catch (final InvalidJoystickException e) {
+				e.printStackTrace();
+
 				JOptionPane.showMessageDialog(this,
 						"Joystick error: " + e.getMessage() + ". Joystick won't be used.",
 						"Joystick error",
 						JOptionPane.WARNING_MESSAGE);
-				e.printStackTrace();
-				enableJoystick = false;
 			}
 		}
 	}
@@ -67,7 +60,7 @@ public class MainWindowLogic extends MainWindowView {
 		startStopButton.setIcon(iconStop);
 		setControlsEnabled(true);
 
-		if (!enableJoystick) {
+		if (joystickBackend == null) {
 			mConWin.setEnabled(true);
 		}
 	}
@@ -110,17 +103,18 @@ public class MainWindowLogic extends MainWindowView {
 	private void thingsWhenConnect() {
 		thingsWhenDisabling();
 
-		szarkUpdaterTimer = new Timer(true);
-
-		szarkUpdater = new SzarkUpdater(this, connectHostnameField.getSelectedItem().toString());
-		szarkUpdaterTimer.schedule(szarkUpdater, 0, HardcodedConfiguration.SZARK_REFRESH_INTERVAL);
+		controlUpdater = new ControlUpdater(this,
+				connectHostnameField.getSelectedItem().toString(),
+				status,
+				joystickBackend);
+		controlUpdater.execute();
 
 		cameraScreen.enableCameraView(connectHostnameField.getSelectedItem().toString());
 
 		connected = true;
 
 		connectButton.setText("Disconnect");
-		mConnConnect.setText("Disconnect");
+		mConnConnect.setText(connectButton.getText());
 
 		connectHostnameField.setEnabled(false);
 
@@ -131,22 +125,18 @@ public class MainWindowLogic extends MainWindowView {
 	}
 
 	public void thingsWhenDisconnect(boolean sendDisablingCommand) {
-		if (szarkUpdaterTimer != null) {
-			szarkUpdaterTimer.cancel();
-		}
 
-		// ensure sending any recent changes
 		status.setKillswitchEnable(true);
-
-		if (sendDisablingCommand && szarkUpdater != null) {
-			szarkUpdater.sendChanges();
+		if (sendDisablingCommand && controlUpdater != null) {
+			controlUpdater.stopTask();
 		}
+		controlUpdater = null;
 
 		thingsWhenDisabling();
 
 		connected = false;
 		connectButton.setText("Connect");
-		mConnConnect.setText("Connect");
+		mConnConnect.setText(connectButton.getText());
 		connectHostnameField.setEnabled(true);
 		setControlsEnabled(false);
 		cameraScreen.disableCameraView();
@@ -223,7 +213,7 @@ public class MainWindowLogic extends MainWindowView {
 	}
 
 	// timer task used to refresh battery, wifi status etc.
-	private void updateIndicators(Status receivedStatus) {
+	public void updateIndicators(Status receivedStatus) {
 		// battery
 		batteryVoltBar.setValue((int) (10 * receivedStatus.battery.getVoltage()));
 		batteryCurrBar.setValue((int) (10 * receivedStatus.battery.getCurrent()));
@@ -276,49 +266,5 @@ public class MainWindowLogic extends MainWindowView {
 		status.joints.elbow.setSpeedLimit(armElbowSpeedLimiter.getValue());
 		status.joints.shoulder.setSpeedLimit(armShoulderSpeedLimiter.getValue());
 		status.joints.gripper.setSpeedLimit(armGripperSpeedLimiter.getValue());
-	}
-
-	private class SzarkUpdater extends TimerTask {
-
-		private final SzarkDataUpdater szdUpdater;
-		private final MainWindowLogic mainWin;
-		private JoystickDataUpdater jUpdater;
-
-		public SzarkUpdater(MainWindowLogic win, String hostname) {
-			mainWin = win;
-			if (enableJoystick) {
-				jUpdater = new JoystickDataUpdater(status, jBackend);
-			}
-			szdUpdater = new SzarkDataUpdater(hostname, HardcodedConfiguration.SZARK_SERVER_PORT, status);
-			armVis.setUpdateStatus(status);
-		}
-
-		@Override
-		public void run() {
-			sendChanges();
-		}
-
-		public void sendChanges() {
-			if (enableJoystick) {
-				jUpdater.update();
-			}
-			try {
-				updateIndicators(szdUpdater.update());
-			} catch (final SzarkDataUpdater.ConnectionErrorException e) {
-				mainWin.thingsWhenDisconnect(false);
-				// TODO disable only server
-				JOptionPane.showMessageDialog(mainWin,
-						String.format("Control communication error: %s. Disabling control.",
-								e.getMessage() != null ? e.getMessage() : e.getClass().getName()),
-						"Network error",
-						JOptionPane.ERROR_MESSAGE);
-			} catch (final SzarkDataUpdater.HardwareStoppedException e) {
-				mainWin.thingsWhenDisabling();
-				JOptionPane.showMessageDialog(mainWin,
-						"Kill switch: " + e.getMessage(),
-						"Kill switch activated",
-						JOptionPane.WARNING_MESSAGE);
-			}
-		}
 	}
 }
