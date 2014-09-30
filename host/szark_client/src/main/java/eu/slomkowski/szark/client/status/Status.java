@@ -39,8 +39,6 @@ public class Status {
 	@Expose(serialize = true, deserialize = true)
 	private int serial = 0;
 
-	public Lock lock;
-
 	public Status() {
 		clean();
 	}

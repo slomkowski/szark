@@ -41,17 +41,15 @@ public class ControlUpdater extends SwingWorker<Void, Status> {
 		try {
 			channel = DatagramChannel.open();
 			channel.connect(new InetSocketAddress(hostname, HardcodedConfiguration.CONTROL_SERVER_PORT));
+			channel.socket().setSoTimeout(1000);
 		} catch (IOException e) {
 			e.printStackTrace();
 			System.exit(2);
 		}
-
 	}
 
 	private Status updateCycle() throws HardwareStoppedException, IOException {
-		status.lock.lock();
 		String output = gson.toJson(status);
-		status.lock.unlock();
 
 		buff.clear();
 		buff.put(output.getBytes());
@@ -64,15 +62,12 @@ public class ControlUpdater extends SwingWorker<Void, Status> {
 		String receivedJson = new String(buff.array(), 0, length);
 		Status receivedStatus = gson.fromJson(receivedJson, Status.class);
 
-		status.lock.lock();
-
 		if (status.getSerial() != receivedStatus.getSerial()) {
 			System.err.println(String.format("Sent(%d) and received(%d) serial numbers didn't match",
 					status.getSerial(), receivedStatus.getSerial()));
 
 			status.setSerial(Math.max(receivedStatus.getSerial(), status.getSerial()) + 2);
 
-			status.lock.unlock();
 			return null;
 		}
 
@@ -81,8 +76,6 @@ public class ControlUpdater extends SwingWorker<Void, Status> {
 		if (!status.isKillswitchEnable() &&
 				receivedStatus.getReceivedKillSwitchStatus() != KillSwitchStatus.INACTIVE) {
 
-			status.lock.unlock();
-
 			if (receivedStatus.getReceivedKillSwitchStatus() == KillSwitchStatus.ACTIVE_HARDWARE) {
 				throw new HardwareStoppedException("Kill switch has been pressed!");
 			} else {
@@ -90,7 +83,6 @@ public class ControlUpdater extends SwingWorker<Void, Status> {
 			}
 		}
 
-		status.lock.unlock();
 		return receivedStatus;
 	}
 

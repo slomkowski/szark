@@ -34,8 +34,6 @@ public class MainWindowLogic extends MainWindowView {
 	private ControlUpdater controlUpdater;
 
 	public MainWindowLogic() {
-		status.lock = new ReentrantLock();
-
 		performControlServerDisconnection(false);
 		performCameraServerDisconnection();
 
@@ -70,10 +68,8 @@ public class MainWindowLogic extends MainWindowView {
 	}
 
 	public synchronized void performKillSwitchDisable() {
-		status.lock.lock();
 		status.clean();
 		status.setKillswitchEnable(false);
-		status.lock.unlock();
 
 		startStopButton.setIcon(iconStop);
 		setDeviceControlsEnabled(true);
@@ -86,9 +82,7 @@ public class MainWindowLogic extends MainWindowView {
 	}
 
 	public synchronized void performKillSwitchEnable() {
-		status.lock.lock();
 		status.setKillswitchEnable(true);
-		status.lock.unlock();
 
 		startStopButton.setIcon(iconStart);
 
@@ -117,10 +111,8 @@ public class MainWindowLogic extends MainWindowView {
 		setDeviceControlsEnabled(false);
 
 		if (sendDisablingCommand && controlUpdater != null) {
-			status.lock.lock();
 			status.clean();
 			status.setKillswitchEnable(true);
-			status.lock.unlock();
 
 			controlUpdater.stopTask();
 		}
@@ -157,9 +149,7 @@ public class MainWindowLogic extends MainWindowView {
 
 		speedLimit5.setSelected(true);
 
-		status.lock.lock();
 		status.motors.setSpeedLimit(5);
-		status.lock.unlock();
 
 		// joints initial speeds
 		armGripperSpeedLimiter.setValue(HardcodedConfiguration.JOINT_SPEED_INIT_GRIPPER);
@@ -194,7 +184,6 @@ public class MainWindowLogic extends MainWindowView {
 			startStopButton.setEnabled(true);
 		}
 
-		status.lock.lock();
 		if (obj == lightLow) {
 			if (lightLow.isSelected()) {
 				status.lights.setLow(true);
@@ -222,7 +211,6 @@ public class MainWindowLogic extends MainWindowView {
 		} else if (obj == speedLimit12) {
 			status.motors.setSpeedLimit(12);
 		}
-		status.lock.unlock();
 
 		if (obj == mWinMoveCtrl) {
 			if (mConWin.isVisible()) {
@@ -317,10 +305,8 @@ public class MainWindowLogic extends MainWindowView {
 
 	@Override
 	public void stateChanged(ChangeEvent arg0) {
-		status.lock.lock();
 		status.joints.elbow.setSpeedLimit(armElbowSpeedLimiter.getValue());
 		status.joints.shoulder.setSpeedLimit(armShoulderSpeedLimiter.getValue());
 		status.joints.gripper.setSpeedLimit(armGripperSpeedLimiter.getValue());
-		status.lock.unlock();
 	}
 }

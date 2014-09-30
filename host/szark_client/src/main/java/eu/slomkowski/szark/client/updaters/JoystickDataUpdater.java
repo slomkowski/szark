@@ -31,7 +31,6 @@ public class JoystickDataUpdater {
 
 		// float v = Math.abs((float)( motorSpeedLimit * fowBack * (1.0f -
 		// Math.abs(leftRight)) ));
-		status.lock.lock();
 
 		if (fowBack == 0) // rotate or stop
 		{
@@ -119,7 +118,5 @@ public class JoystickDataUpdater {
 			status.joints.gripper.setDirection(Direction.BACKWARD);
 			status.joints.gripper.setSpeed((byte) (status.joints.gripper.getSpeedLimit() * Math.abs(armGripper)));
 		}
-
-		status.lock.unlock();
 	}
 }
