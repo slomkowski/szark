@@ -21,6 +21,7 @@ public class ControlUpdater extends SwingWorker<Void, Status> {
 	private final Status status;
 	private final AtomicBoolean needToStop = new AtomicBoolean(false);
 	private final MainWindowLogic mainWindow;
+	private final ByteBuffer buff = ByteBuffer.allocate(1024);
 	private DatagramChannel channel;
 	private JoystickDataUpdater joystickDataUpdater = null;
 
@@ -47,24 +48,40 @@ public class ControlUpdater extends SwingWorker<Void, Status> {
 
 	}
 
-	private synchronized Status updateCycle() throws HardwareStoppedException, IOException {
+	private Status updateCycle() throws HardwareStoppedException, IOException {
+		status.lock.lock();
 		String output = gson.toJson(status);
-		ByteBuffer buff = ByteBuffer.allocate(1024);
+		status.lock.unlock();
 
 		buff.clear();
 		buff.put(output.getBytes());
 		buff.flip();
 
 		channel.write(buff);
-		status.incrementSerial();
 
 		buff.clear();
 		int length = channel.read(buff);
 		String receivedJson = new String(buff.array(), 0, length);
 		Status receivedStatus = gson.fromJson(receivedJson, Status.class);
 
+		status.lock.lock();
+
+		if (status.getSerial() != receivedStatus.getSerial()) {
+			System.err.println(String.format("Sent(%d) and received(%d) serial numbers didn't match",
+					status.getSerial(), receivedStatus.getSerial()));
+
+			status.setSerial(Math.max(receivedStatus.getSerial(), status.getSerial()) + 2);
+
+			status.lock.unlock();
+			return null;
+		}
+
+		status.incrementSerial();
+
 		if (!status.isKillswitchEnable() &&
 				receivedStatus.getReceivedKillSwitchStatus() != KillSwitchStatus.INACTIVE) {
+
+			status.lock.unlock();
 
 			if (receivedStatus.getReceivedKillSwitchStatus() == KillSwitchStatus.ACTIVE_HARDWARE) {
 				throw new HardwareStoppedException("Kill switch has been pressed!");
@@ -73,39 +90,60 @@ public class ControlUpdater extends SwingWorker<Void, Status> {
 			}
 		}
 
+		status.lock.unlock();
 		return receivedStatus;
 	}
 
 	@Override
 	protected Void doInBackground() throws Exception {
-		try {
-			while (!needToStop.get()) {
+		while (!needToStop.get()) {
+			try {
+				while (!needToStop.get()) {
 
-				if (joystickDataUpdater != null) {
-					joystickDataUpdater.update();
+					if (joystickDataUpdater != null) {
+						joystickDataUpdater.update();
+					}
+
+					Status receivedStatus = updateCycle();
+
+					if (receivedStatus != null) {
+						publish(receivedStatus);
+					}
+
+					Thread.sleep(HardcodedConfiguration.CONTROL_SERVER_REFRESH_INTERVAL, 0);
 				}
 
-				Status receivedStatus = updateCycle();
-				publish(receivedStatus);
+			} catch (final IOException e) {
+				SwingUtilities.invokeAndWait(new Runnable() {
+					@Override
+					public void run() {
+						mainWindow.performControlServerDisconnection(false);
 
-				Thread.sleep(HardcodedConfiguration.CONTROL_SERVER_REFRESH_INTERVAL, 0);
+						JOptionPane.showMessageDialog(mainWindow,
+								String.format("Control communication error: %s. Disabling control.",
+										e.getMessage() != null ? e.getMessage() : e.getClass().getName()),
+								"Network error",
+								JOptionPane.ERROR_MESSAGE);
+					}
+				});
+
+				return null;
+			} catch (final HardwareStoppedException e) {
+				SwingUtilities.invokeAndWait(new Runnable() {
+					@Override
+					public void run() {
+						mainWindow.performKillSwitchEnable();
+
+						JOptionPane.showMessageDialog(mainWindow,
+								"Kill switch: " + e.getMessage(),
+								"Kill switch activated",
+								JOptionPane.WARNING_MESSAGE);
+					}
+				});
+			} catch (final Exception e) {
+				e.printStackTrace();
+				throw e;
 			}
-
-		} catch (final IOException e) {
-			mainWindow.performControlServerDisconnection(false);
-
-			JOptionPane.showMessageDialog(mainWindow,
-					String.format("Control communication error: %s. Disabling control.",
-							e.getMessage() != null ? e.getMessage() : e.getClass().getName()),
-					"Network error",
-					JOptionPane.ERROR_MESSAGE);
-		} catch (final HardwareStoppedException e) {
-			mainWindow.performKillSwitchEnable();
-
-			JOptionPane.showMessageDialog(mainWindow,
-					"Kill switch: " + e.getMessage(),
-					"Kill switch activated",
-					JOptionPane.WARNING_MESSAGE);
 		}
 		return null;
 	}
@@ -115,12 +153,23 @@ public class ControlUpdater extends SwingWorker<Void, Status> {
 		mainWindow.updateIndicators(chunks.get(chunks.size() - 1));
 	}
 
+	@Override
+	protected void done() {
+		try {
+			channel.disconnect();
+			channel.close();
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
 	public void stopTask() {
 		needToStop.set(true);
 
 		try {
-			updateCycle();
-		} catch (HardwareStoppedException | IOException e) {
+			this.get();
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}

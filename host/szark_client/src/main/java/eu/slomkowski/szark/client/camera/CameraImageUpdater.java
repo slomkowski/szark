@@ -10,6 +10,7 @@ import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.DatagramChannel;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.imageio.ImageIO;
@@ -66,11 +67,11 @@ public class CameraImageUpdater extends JLabel {
 	public void disableCameraView() {
 		if (updateTask != null) {
 			updateTask.stopTask();
+
 			updateTask = null;
 		}
 
 		enabled = false;
-
 		setIcon(new ImageIcon(getClass().getResource(HardcodedConfiguration.DEFAULT_LOGO)));
 		repaint();
 	}
@@ -117,20 +118,37 @@ public class CameraImageUpdater extends JLabel {
 
 					publish(img);
 
-				} catch (Exception e) {
+				} catch (final Exception e) {
 					e.printStackTrace();
 
-					disableCameraView();
+					SwingUtilities.invokeLater(new Runnable() {
+						@Override
+						public void run() {
+							disableCameraView();
 
-					JOptionPane.showMessageDialog(CameraImageUpdater.this,
-							String.format("Camera communication error: %s. Disabling camera.",
-									e.getMessage() != null ? e.getMessage() : e.getClass().getName()),
-							"Network error",
-							JOptionPane.ERROR_MESSAGE);
+							JOptionPane.showMessageDialog(CameraImageUpdater.this,
+									String.format("Camera communication error: %s. Disabling camera.",
+											e.getMessage() != null ? e.getMessage() : e.getClass().getName()),
+									"Network error",
+									JOptionPane.ERROR_MESSAGE);
+						}
+					});
+
+					return null;
 				}
 			}
 
 			return null;
+		}
+
+		@Override
+		protected void done() {
+			try {
+				channel.disconnect();
+				channel.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
 		}
 
 		@Override

@@ -284,14 +284,7 @@ public abstract class MainWindowView extends JFrame implements ActionListener, C
 		pack();
 	}
 
-	protected void setControlsEnabled(boolean enable) {
-		// battery
-		batteryVoltBar.setEnabled(enable);
-		batteryCurrBar.setEnabled(enable);
-		// wifi
-		wifiPowerBar.setEnabled(enable);
-		// software kill switch button
-		startStopButton.setEnabled(enable);
+	protected void setDeviceControlsEnabled(boolean enable) {
 		// light
 		lightGripper.setEnabled(enable);
 		lightHigh.setEnabled(enable);
@@ -317,6 +310,15 @@ public abstract class MainWindowView extends JFrame implements ActionListener, C
 		armShoulderSpeedLimiter.setEnabled(enable);
 		armElbowSpeedLimiter.setEnabled(enable);
 		armGripperSpeedLimiter.setEnabled(enable);
+	}
+
+	protected void setOverallControlsEnabled(boolean enable) {
+		batteryVoltBar.setEnabled(enable);
+		batteryCurrBar.setEnabled(enable);
+
+		wifiPowerBar.setEnabled(enable);
+
+		startStopButton.setEnabled(enable);
 	}
 
 	protected void setCameraControlsEnabled(boolean enable) {

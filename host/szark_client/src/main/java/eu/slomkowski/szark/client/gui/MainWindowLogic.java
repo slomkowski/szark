@@ -13,6 +13,7 @@ import eu.slomkowski.szark.client.updaters.ControlUpdater;
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
 import java.awt.event.ActionEvent;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * This class provides the logic for the main window. The appearance is moved to
@@ -33,7 +34,10 @@ public class MainWindowLogic extends MainWindowView {
 	private ControlUpdater controlUpdater;
 
 	public MainWindowLogic() {
+		status.lock = new ReentrantLock();
+
 		performControlServerDisconnection(false);
+		performCameraServerDisconnection();
 
 		if (HardcodedConfiguration.JOYSTICK_ENABLE) {
 			try {
@@ -65,48 +69,35 @@ public class MainWindowLogic extends MainWindowView {
 		cameraScreen.disableCameraView();
 	}
 
-	public void performKillSwitchDisable() {
-		performKillSwitchEnable();
-
+	public synchronized void performKillSwitchDisable() {
+		status.lock.lock();
+		status.clean();
 		status.setKillswitchEnable(false);
+		status.lock.unlock();
+
 		startStopButton.setIcon(iconStop);
-		setControlsEnabled(true);
+		setDeviceControlsEnabled(true);
 
 		if (joystickBackend == null) {
 			mConWin.setEnabled(true);
 		}
+
+		initializeControls();
 	}
 
-	public void performKillSwitchEnable() {
-		status.clean();
-
+	public synchronized void performKillSwitchEnable() {
+		status.lock.lock();
 		status.setKillswitchEnable(true);
+		status.lock.unlock();
+
 		startStopButton.setIcon(iconStart);
 
-		setControlsEnabled(false); // disabling all controls
-		// enabling these, which has to be enabled
-		startStopButton.setEnabled(true);
-
-		batteryCurrBar.setEnabled(true);
-		batteryVoltBar.setEnabled(true);
-
-		lightGripper.setSelected(false);
-		lightHigh.setSelected(false);
-		lightLow.setSelected(false);
-		lightCamera.setSelected(false);
-
-		speedLimit5.setSelected(true);
-		status.motors.setSpeedLimit(5);
-
-		// joints initial speeds
-		armGripperSpeedLimiter.setValue(HardcodedConfiguration.JOINT_SPEED_INIT_GRIPPER);
-		armElbowSpeedLimiter.setValue(HardcodedConfiguration.JOINT_SPEED_INIT_ELBOW);
-		armShoulderSpeedLimiter.setValue(HardcodedConfiguration.JOINT_SPEED_INIT_SHOULDER);
-		stateChanged(null); // write initial values from sliders to status
-
-		updateIndicators(status);
+		setDeviceControlsEnabled(false); // disabling all controls
 		mConWin.setEnabled(false);
+
+		initializeControls();
 	}
+
 
 	private void performControlServerConnection() {
 		performKillSwitchEnable();
@@ -117,8 +108,23 @@ public class MainWindowLogic extends MainWindowView {
 				joystickBackend);
 		controlUpdater.execute();
 
-		batteryCurrBar.setEnabled(true);
-		batteryVoltBar.setEnabled(true);
+		setOverallControlsEnabled(true);
+	}
+
+	public void performControlServerDisconnection(boolean sendDisablingCommand) {
+		performKillSwitchEnable();
+		setOverallControlsEnabled(false);
+		setDeviceControlsEnabled(false);
+
+		if (sendDisablingCommand && controlUpdater != null) {
+			status.lock.lock();
+			status.clean();
+			status.setKillswitchEnable(true);
+			status.lock.unlock();
+
+			controlUpdater.stopTask();
+		}
+		controlUpdater = null;
 	}
 
 	public void connectToAll() {
@@ -143,15 +149,25 @@ public class MainWindowLogic extends MainWindowView {
 		connectHostnameField.setEnabled(true);
 	}
 
-	public void performControlServerDisconnection(boolean sendDisablingCommand) {
-		performKillSwitchEnable();
-		setControlsEnabled(false);
+	private void initializeControls() {
+		lightGripper.setSelected(false);
+		lightHigh.setSelected(false);
+		lightLow.setSelected(false);
+		lightCamera.setSelected(false);
 
-		status.setKillswitchEnable(true);
-		if (sendDisablingCommand && controlUpdater != null) {
-			controlUpdater.stopTask();
-		}
-		controlUpdater = null;
+		speedLimit5.setSelected(true);
+
+		status.lock.lock();
+		status.motors.setSpeedLimit(5);
+		status.lock.unlock();
+
+		// joints initial speeds
+		armGripperSpeedLimiter.setValue(HardcodedConfiguration.JOINT_SPEED_INIT_GRIPPER);
+		armElbowSpeedLimiter.setValue(HardcodedConfiguration.JOINT_SPEED_INIT_ELBOW);
+		armShoulderSpeedLimiter.setValue(HardcodedConfiguration.JOINT_SPEED_INIT_SHOULDER);
+		stateChanged(null); // write initial values from sliders to status
+
+		updateIndicators(status);
 	}
 
 	@Override
@@ -159,18 +175,27 @@ public class MainWindowLogic extends MainWindowView {
 		final Object obj = e.getSource();
 
 		if ((obj == connectButton) || (obj == mConnConnect)) {
+			connectButton.setEnabled(false);
+			mConnConnect.setEnabled(false);
 			if (!connected) {
 				connectToAll();
 			} else {
 				disconnectFromAll();
 			}
+			connectButton.setEnabled(true);
+			mConnConnect.setEnabled(true);
 		} else if (obj == startStopButton) {
+			startStopButton.setEnabled(false);
 			if (status.isKillswitchEnable()) {
 				performKillSwitchDisable();
 			} else {
 				performKillSwitchEnable();
 			}
-		} else if (obj == lightLow) {
+			startStopButton.setEnabled(true);
+		}
+
+		status.lock.lock();
+		if (obj == lightLow) {
 			if (lightLow.isSelected()) {
 				status.lights.setLow(true);
 			} else {
@@ -190,6 +215,25 @@ public class MainWindowLogic extends MainWindowView {
 			}
 		} else if (obj == armCalibrateButton) {
 			status.joints.setCalStatus(CalibrationStatus.REQUESTED);
+		} else if (obj == speedLimit5) {
+			status.motors.setSpeedLimit(5);
+		} else if (obj == speedLimit8) {
+			status.motors.setSpeedLimit(8);
+		} else if (obj == speedLimit12) {
+			status.motors.setSpeedLimit(12);
+		}
+		status.lock.unlock();
+
+		if (obj == mWinMoveCtrl) {
+			if (mConWin.isVisible()) {
+				// hide
+				mConWin.setVisible(false);
+				mWinMoveCtrl.setText("Show move control window");
+			} else {
+				// show
+				mConWin.setVisible(true);
+				mWinMoveCtrl.setText("Hide move control window");
+			}
 		} else if (obj == cameraSelectHead) {
 			cameraScreen.setChosenCameraType(CameraType.HEAD);
 		} else if (obj == cameraSelectGripper) {
@@ -200,23 +244,9 @@ public class MainWindowLogic extends MainWindowView {
 			} else {
 				cameraScreen.setCameraMode(CameraMode.RAW);
 			}
-		} else if (obj == speedLimit5) {
-			status.motors.setSpeedLimit(5);
-		} else if (obj == speedLimit8) {
-			status.motors.setSpeedLimit(8);
-		} else if (obj == speedLimit12) {
-			status.motors.setSpeedLimit(12);
-		} else if (obj == mWinMoveCtrl) {
-			if (mConWin.isVisible()) {
-				// hide
-				mConWin.setVisible(false);
-				mWinMoveCtrl.setText("Show move control window");
-			} else {
-				// show
-				mConWin.setVisible(true);
-				mWinMoveCtrl.setText("Hide move control window");
-			}
-		} else if (obj == exitButton) {
+		}
+
+		if (obj == exitButton) {
 			if (connected) {
 				disconnectFromAll();
 			}
@@ -287,8 +317,10 @@ public class MainWindowLogic extends MainWindowView {
 
 	@Override
 	public void stateChanged(ChangeEvent arg0) {
+		status.lock.lock();
 		status.joints.elbow.setSpeedLimit(armElbowSpeedLimiter.getValue());
 		status.joints.shoulder.setSpeedLimit(armShoulderSpeedLimiter.getValue());
 		status.joints.gripper.setSpeedLimit(armGripperSpeedLimiter.getValue());
+		status.lock.unlock();
 	}
 }

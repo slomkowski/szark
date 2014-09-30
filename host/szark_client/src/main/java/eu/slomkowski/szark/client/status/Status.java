@@ -3,6 +3,9 @@ package eu.slomkowski.szark.client.status;
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+
 public class Status {
 
 	@Expose
@@ -33,9 +36,10 @@ public class Status {
 	@SerializedName("ks_stat")
 	private KillSwitchStatus receivedKillSwitchStatus;
 
-	@Expose(serialize = true, deserialize = false)
-	@SuppressWarnings("unused")
+	@Expose(serialize = true, deserialize = true)
 	private int serial = 0;
+
+	public Lock lock;
 
 	public Status() {
 		clean();
@@ -55,6 +59,14 @@ public class Status {
 
 	public void incrementSerial() {
 		serial++;
+	}
+
+	public int getSerial() {
+		return serial;
+	}
+
+	public void setSerial(int serial) {
+		this.serial = serial;
 	}
 
 	public int getWirelessPower() {
