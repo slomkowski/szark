@@ -1,6 +1,5 @@
-package eu.slomkowski.szark.client.updaters;
+package eu.slomkowski.szark.client.joystick;
 
-import eu.slomkowski.szark.client.joystick.JoystickBackend;
 import eu.slomkowski.szark.client.status.Direction;
 import eu.slomkowski.szark.client.status.Status;
 

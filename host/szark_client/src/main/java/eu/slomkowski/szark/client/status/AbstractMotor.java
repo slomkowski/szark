@@ -11,11 +11,11 @@ abstract class AbstractMotor {
 		return speedLimit;
 	}
 
+	public abstract void setSpeedLimit(byte speed);
+
 	public void setSpeedLimit(int speed) {
 		setSpeedLimit((byte) speed);
 	}
-
-	public abstract void setSpeedLimit(byte speed);
 
 	public abstract void stop();
 
@@ -69,18 +69,6 @@ abstract class AbstractMotor {
 			return speed;
 		}
 
-		public void setSpeed(int speed) {
-			setSpeed((byte) speed);
-		}
-
-		public byte getSpeedLimit() {
-			return speedLimit;
-		}
-
-		public void setSpeedLimit(int speed) {
-			setSpeedLimit((byte) speed);
-		}
-
 		public synchronized void setSpeed(byte sp) {
 			if (sp > speedLimit) {
 				speed = speedLimit;
@@ -89,12 +77,24 @@ abstract class AbstractMotor {
 			}
 		}
 
+		public void setSpeed(int speed) {
+			setSpeed((byte) speed);
+		}
+
+		public byte getSpeedLimit() {
+			return speedLimit;
+		}
+
 		public void setSpeedLimit(byte speed) {
 			if (speed < 0) {
 				speedLimit = 0;
 			} else {
 				speedLimit = speed;
 			}
+		}
+
+		public void setSpeedLimit(int speed) {
+			setSpeedLimit((byte) speed);
 		}
 
 		public synchronized void stop() {

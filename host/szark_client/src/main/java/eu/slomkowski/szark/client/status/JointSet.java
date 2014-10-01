@@ -24,9 +24,10 @@ public class JointSet extends AbstractMotor {
 			return true;
 		}
 
-		if (obj instanceof MotorSet) {
+		if (obj instanceof JointSet) {
 			final JointSet o = (JointSet) obj;
-			if (gripper.equals(o.gripper) && shoulder.equals(o.shoulder)
+			if (gripper.equals(o.gripper)
+					&& shoulder.equals(o.shoulder)
 					&& elbow.equals(o.elbow)) {
 				return true;
 			}

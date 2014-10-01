@@ -5,6 +5,7 @@ import com.google.gson.GsonBuilder;
 import eu.slomkowski.szark.client.HardcodedConfiguration;
 import eu.slomkowski.szark.client.gui.MainWindowLogic;
 import eu.slomkowski.szark.client.joystick.JoystickBackend;
+import eu.slomkowski.szark.client.joystick.JoystickDataUpdater;
 import eu.slomkowski.szark.client.status.KillSwitchStatus;
 import eu.slomkowski.szark.client.status.Status;
 
@@ -77,7 +78,7 @@ public class ControlUpdater extends SwingWorker<Void, Status> {
 
 		status.incrementSerial();
 
-		if (!status.isKillswitchEnable() &&
+		if (!status.isKillSwitchEnable() &&
 				receivedStatus.getReceivedKillSwitchStatus() != KillSwitchStatus.INACTIVE) {
 
 			if (receivedStatus.getReceivedKillSwitchStatus() == KillSwitchStatus.ACTIVE_HARDWARE) {

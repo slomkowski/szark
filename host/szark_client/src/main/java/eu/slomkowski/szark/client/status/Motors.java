@@ -1,6 +1,6 @@
 package eu.slomkowski.szark.client.status;
 
-public class Motors {
+class Motors {
 
 	public MotorParams left = new MotorParams();
 	public MotorParams right = new MotorParams();

@@ -1,8 +1,9 @@
 package eu.slomkowski.szark.client.camera;
 
 import eu.slomkowski.szark.client.HardcodedConfiguration;
-import eu.slomkowski.szark.client.utils.ByteBufferBackedInputStream;
 
+import javax.imageio.ImageIO;
+import javax.swing.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
@@ -11,14 +12,8 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetSocketAddress;
 import java.net.SocketTimeoutException;
-import java.nio.ByteBuffer;
-import java.nio.channels.DatagramChannel;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
-
-import javax.imageio.ImageIO;
-import javax.swing.*;
 
 public class CameraImageUpdater extends JLabel {
 

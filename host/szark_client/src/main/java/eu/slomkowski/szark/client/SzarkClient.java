@@ -2,10 +2,9 @@ package eu.slomkowski.szark.client;
 
 import eu.slomkowski.szark.client.gui.MainWindowLogic;
 
-import javax.swing.SwingUtilities;
-import javax.swing.UIManager;
+import javax.swing.*;
 
-public class SzarkClient implements Runnable {
+class SzarkClient implements Runnable {
 
 	@Override
 	public void run() {

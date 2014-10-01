@@ -19,12 +19,11 @@ import java.awt.event.WindowEvent;
  *
  * @author Michał Słomkowski
  */
-public abstract class MainWindowView extends JFrame implements ActionListener, ChangeListener {
+abstract class MainWindowView extends JFrame implements ActionListener, ChangeListener {
 
 	protected final JMenuItem mConnConnect = new JMenuItem("Connect");
 
 	protected final JMenuItem mWinMoveCtrl = new JMenuItem("Show move control window");
-	private final JMenuItem mWinArmCtrl = new JMenuItem("Show joints control window");
 
 	protected final CameraImageUpdater cameraScreen = new CameraImageUpdater();
 
@@ -102,11 +101,9 @@ public abstract class MainWindowView extends JFrame implements ActionListener, C
 
 		// windows
 		final JMenu mWin = new JMenu("Windows");
-		mWin.add(mWinArmCtrl);
 		mWin.add(mWinMoveCtrl);
 		menuBar.add(mWin);
 
-		mWinArmCtrl.addActionListener(this);
 		mWinMoveCtrl.addActionListener(this);
 
 		final JPanel sidePanel = new JPanel();

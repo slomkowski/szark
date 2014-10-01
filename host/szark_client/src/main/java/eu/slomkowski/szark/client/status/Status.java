@@ -3,9 +3,6 @@ package eu.slomkowski.szark.client.status;
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
-
 public class Status {
 
 	@Expose
@@ -30,7 +27,7 @@ public class Status {
 
 	@Expose(deserialize = false, serialize = true)
 	@SerializedName("ks_en")
-	private boolean killswitchEnable;
+	private boolean killSwitchEnable;
 
 	@Expose(deserialize = true, serialize = false)
 	@SerializedName("ks_stat")
@@ -50,7 +47,7 @@ public class Status {
 		joints = new JointSet();
 
 		wirelessPower = 0;
-		killswitchEnable = true;
+		killSwitchEnable = true;
 		receivedKillSwitchStatus = KillSwitchStatus.ACTIVE_SOFTWARE;
 		serial = 0;
 	}
@@ -71,12 +68,12 @@ public class Status {
 		return wirelessPower;
 	}
 
-	public synchronized boolean isKillswitchEnable() {
-		return killswitchEnable;
+	public synchronized boolean isKillSwitchEnable() {
+		return killSwitchEnable;
 	}
 
-	public synchronized void setKillswitchEnable(boolean killswitchEnable) {
-		this.killswitchEnable = killswitchEnable;
+	public synchronized void setKillSwitchEnable(boolean killSwitchEnable) {
+		this.killSwitchEnable = killSwitchEnable;
 	}
 
 	public KillSwitchStatus getReceivedKillSwitchStatus() {

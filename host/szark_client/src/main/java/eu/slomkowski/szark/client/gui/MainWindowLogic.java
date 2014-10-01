@@ -13,7 +13,6 @@ import eu.slomkowski.szark.client.updaters.ControlUpdater;
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
 import java.awt.event.ActionEvent;
-import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * This class provides the logic for the main window. The appearance is moved to
@@ -69,7 +68,7 @@ public class MainWindowLogic extends MainWindowView {
 
 	public synchronized void performKillSwitchDisable() {
 		status.clean();
-		status.setKillswitchEnable(false);
+		status.setKillSwitchEnable(false);
 
 		startStopButton.setIcon(iconStop);
 		setDeviceControlsEnabled(true);
@@ -82,7 +81,7 @@ public class MainWindowLogic extends MainWindowView {
 	}
 
 	public synchronized void performKillSwitchEnable() {
-		status.setKillswitchEnable(true);
+		status.setKillSwitchEnable(true);
 
 		startStopButton.setIcon(iconStart);
 
@@ -112,7 +111,7 @@ public class MainWindowLogic extends MainWindowView {
 
 		if (sendDisablingCommand && controlUpdater != null) {
 			status.clean();
-			status.setKillswitchEnable(true);
+			status.setKillSwitchEnable(true);
 
 			controlUpdater.stopTask();
 		}
@@ -174,7 +173,7 @@ public class MainWindowLogic extends MainWindowView {
 			mConnConnect.setEnabled(true);
 		} else if (obj == startStopButton) {
 			startStopButton.setEnabled(false);
-			if (status.isKillswitchEnable()) {
+			if (status.isKillSwitchEnable()) {
 				performKillSwitchDisable();
 			} else {
 				performKillSwitchEnable();
