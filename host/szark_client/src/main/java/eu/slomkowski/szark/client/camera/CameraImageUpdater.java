@@ -5,8 +5,12 @@ import eu.slomkowski.szark.client.utils.ByteBufferBackedInputStream;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
 import java.net.InetSocketAddress;
+import java.net.SocketTimeoutException;
 import java.nio.ByteBuffer;
 import java.nio.channels.DatagramChannel;
 import java.util.List;
@@ -20,8 +24,8 @@ public class CameraImageUpdater extends JLabel {
 
 	private UpdateTask updateTask = null;
 	private CameraType chosenCameraType = CameraType.HEAD;
-	private DatagramChannel channel;
-	private String hostname;
+	private InetSocketAddress address;
+	private DatagramSocket socket;
 	private boolean enabled = false;
 	private CameraMode cameraMode = CameraMode.HUD;
 
@@ -34,7 +38,7 @@ public class CameraImageUpdater extends JLabel {
 			disableCameraView();
 		}
 		this.chosenCameraType = chosenCameraType;
-		enableCameraView(hostname);
+		enableCameraView(address.getHostName());
 	}
 
 	public void setCameraMode(CameraMode cameraMode) {
@@ -42,17 +46,17 @@ public class CameraImageUpdater extends JLabel {
 	}
 
 	public void enableCameraView(String hostname) {
-		this.hostname = hostname;
 		setIcon(null);
 
 		try {
-			channel = DatagramChannel.open();
+			socket = new DatagramSocket();
+			socket.setSoTimeout(HardcodedConfiguration.CAMERA_TIMEOUT);
 
 			int port = chosenCameraType == CameraType.GRIPPER
 					? HardcodedConfiguration.CAMERA_PORT_GRIPPER
 					: HardcodedConfiguration.CAMERA_PORT_HEAD;
 
-			channel.connect(new InetSocketAddress(hostname, port));
+			this.address = new InetSocketAddress(hostname, port);
 		} catch (final IOException e) {
 			e.printStackTrace();
 			System.exit(1);
@@ -88,7 +92,7 @@ public class CameraImageUpdater extends JLabel {
 	}
 
 	private class UpdateTask extends SwingWorker<Void, BufferedImage> {
-		private final ByteBuffer buff = ByteBuffer.allocate(50000);
+		private byte[] inputBuffer = new byte[100000];
 		private AtomicBoolean needToStop = new AtomicBoolean(false);
 		private BufferedImage image = null;
 
@@ -96,21 +100,27 @@ public class CameraImageUpdater extends JLabel {
 		protected Void doInBackground() throws Exception {
 			while (!needToStop.get()) {
 				try {
-					buff.clear();
-					buff.put(cameraMode.getMnemonic().getBytes());
+					DatagramPacket sendPacket = new DatagramPacket(cameraMode.getMnemonic().getBytes(),
+							cameraMode.getMnemonic().length(), address);
 
-					channel.write(buff);
+					socket.send(sendPacket);
 
-					buff.clear();
-					channel.read(buff);
+					DatagramPacket receivedPacket = new DatagramPacket(inputBuffer, inputBuffer.length);
 
-					buff.flip();
+					try {
+						socket.receive(receivedPacket);
+					} catch (final SocketTimeoutException e) {
+						System.err.println("Camera receive timeout");
+						continue;
+					}
 
 					if (needToStop.get()) {
 						break;
 					}
 
-					BufferedImage img = ImageIO.read(new ByteBufferBackedInputStream(buff));
+					ByteArrayInputStream stream = new ByteArrayInputStream(inputBuffer, 0, receivedPacket.getLength());
+					BufferedImage img = ImageIO.read(stream);
+					stream.close();
 
 					if (img == null) {
 						throw new Exception("could not parse image. Probably malformed response.");
@@ -143,12 +153,7 @@ public class CameraImageUpdater extends JLabel {
 
 		@Override
 		protected void done() {
-			try {
-				channel.disconnect();
-				channel.close();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
+			socket.close();
 		}
 
 		@Override

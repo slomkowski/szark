@@ -6,11 +6,13 @@ public interface HardcodedConfiguration {
 
 	String[] DEFAULT_HOST_NAMES = {"localhost", "szark.local"};
 
+	int CAMERA_TIMEOUT = 500; // in milliseconds
 	int CAMERA_PORT_GRIPPER = 10192;
 	int CAMERA_PORT_HEAD = 10192;
 
 	int CONTROL_SERVER_PORT = 10191;
-	int CONTROL_SERVER_REFRESH_INTERVAL = 50; // in milliseconds
+	int CONTROL_SERVER_REFRESH_INTERVAL = 30; // in milliseconds
+	int CONTROL_SERVER_TIMEOUT = 100;
 
 	boolean JOYSTICK_ENABLE = true;
 

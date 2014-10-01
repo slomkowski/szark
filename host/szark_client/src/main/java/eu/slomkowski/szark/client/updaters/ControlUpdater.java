@@ -10,9 +10,10 @@ import eu.slomkowski.szark.client.status.Status;
 
 import javax.swing.*;
 import java.io.IOException;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
 import java.net.InetSocketAddress;
-import java.nio.ByteBuffer;
-import java.nio.channels.DatagramChannel;
+import java.net.SocketTimeoutException;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -21,9 +22,10 @@ public class ControlUpdater extends SwingWorker<Void, Status> {
 	private final Status status;
 	private final AtomicBoolean needToStop = new AtomicBoolean(false);
 	private final MainWindowLogic mainWindow;
-	private final ByteBuffer buff = ByteBuffer.allocate(1024);
-	private DatagramChannel channel;
 	private JoystickDataUpdater joystickDataUpdater = null;
+	private InetSocketAddress address;
+	private DatagramSocket socket;
+	private byte[] inputBuffer = new byte[1024];
 
 	public ControlUpdater(MainWindowLogic mainWindow,
 						  String hostname,
@@ -39,36 +41,38 @@ public class ControlUpdater extends SwingWorker<Void, Status> {
 		}
 
 		try {
-			channel = DatagramChannel.open();
-			channel.connect(new InetSocketAddress(hostname, HardcodedConfiguration.CONTROL_SERVER_PORT));
-			channel.socket().setSoTimeout(1000);
+			address = new InetSocketAddress(hostname, HardcodedConfiguration.CONTROL_SERVER_PORT);
+			socket = new DatagramSocket();
+			socket.setSoTimeout(HardcodedConfiguration.CONTROL_SERVER_TIMEOUT);
 		} catch (IOException e) {
 			e.printStackTrace();
 			System.exit(2);
 		}
 	}
 
-	private Status updateCycle() throws HardwareStoppedException, IOException {
+	private synchronized Status updateCycle() throws HardwareStoppedException, IOException {
 		String output = gson.toJson(status);
 
-		buff.clear();
-		buff.put(output.getBytes());
-		buff.flip();
+		DatagramPacket packet = new DatagramPacket(output.getBytes(), output.length(), address);
+		socket.send(packet);
 
-		channel.write(buff);
+		DatagramPacket receivedPacket = new DatagramPacket(inputBuffer, inputBuffer.length);
 
-		buff.clear();
-		int length = channel.read(buff);
-		String receivedJson = new String(buff.array(), 0, length);
+		try {
+			socket.receive(receivedPacket);
+		} catch (final SocketTimeoutException e) {
+			System.err.println("Control receive timeout");
+			status.incrementSerial();
+			return null;
+		}
+
+		String receivedJson = new String(receivedPacket.getData(), 0, receivedPacket.getLength());
 		Status receivedStatus = gson.fromJson(receivedJson, Status.class);
 
-		if (status.getSerial() != receivedStatus.getSerial()) {
-			System.err.println(String.format("Sent(%d) and received(%d) serial numbers didn't match",
-					status.getSerial(), receivedStatus.getSerial()));
+		boolean responseMatchesRequest = false;
 
-			status.setSerial(Math.max(receivedStatus.getSerial(), status.getSerial()) + 2);
-
-			return null;
+		if (status.getSerial() == receivedStatus.getSerial()) {
+			responseMatchesRequest = true;
 		}
 
 		status.incrementSerial();
@@ -78,7 +82,7 @@ public class ControlUpdater extends SwingWorker<Void, Status> {
 
 			if (receivedStatus.getReceivedKillSwitchStatus() == KillSwitchStatus.ACTIVE_HARDWARE) {
 				throw new HardwareStoppedException("Kill switch has been pressed!");
-			} else {
+			} else if (responseMatchesRequest) {
 				throw new HardwareStoppedException("Other client has disabled the device");
 			}
 		}
@@ -148,9 +152,7 @@ public class ControlUpdater extends SwingWorker<Void, Status> {
 	@Override
 	protected void done() {
 		try {
-			channel.disconnect();
-			channel.close();
-
+			socket.close();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -158,12 +160,6 @@ public class ControlUpdater extends SwingWorker<Void, Status> {
 
 	public void stopTask() {
 		needToStop.set(true);
-
-		try {
-			this.get();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
 	}
 
 	public class HardwareStoppedException extends Exception {

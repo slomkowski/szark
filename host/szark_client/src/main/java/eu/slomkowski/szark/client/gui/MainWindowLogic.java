@@ -156,8 +156,6 @@ public class MainWindowLogic extends MainWindowView {
 		armElbowSpeedLimiter.setValue(HardcodedConfiguration.JOINT_SPEED_INIT_ELBOW);
 		armShoulderSpeedLimiter.setValue(HardcodedConfiguration.JOINT_SPEED_INIT_SHOULDER);
 		stateChanged(null); // write initial values from sliders to status
-
-		updateIndicators(status);
 	}
 
 	@Override
