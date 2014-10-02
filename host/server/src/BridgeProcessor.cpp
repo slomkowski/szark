@@ -189,7 +189,7 @@ namespace bridge {
 			}
 		};
 
-		// TODO arm ogólne ustawienia
+		// TODO arm ogólne ustawienia kalibracja itd.
 
 		auto fillMotor = [&](string name, Motor m) {
 			tryAssign<int>(r["motor"][name]["speed"],
