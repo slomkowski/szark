@@ -6,6 +6,7 @@ import eu.slomkowski.szark.client.HardcodedConfiguration;
 import eu.slomkowski.szark.client.gui.MainWindowLogic;
 import eu.slomkowski.szark.client.joystick.JoystickBackend;
 import eu.slomkowski.szark.client.joystick.JoystickDataUpdater;
+import eu.slomkowski.szark.client.status.CalibrationStatus;
 import eu.slomkowski.szark.client.status.KillSwitchStatus;
 import eu.slomkowski.szark.client.status.Status;
 
@@ -43,6 +44,7 @@ public class ControlUpdater extends SwingWorker<Void, Status> {
 
 		try {
 			address = new InetSocketAddress(hostname, HardcodedConfiguration.CONTROL_SERVER_PORT);
+			//TODO sprawdzanie, czy resolved
 			socket = new DatagramSocket();
 			socket.setSoTimeout(HardcodedConfiguration.CONTROL_SERVER_TIMEOUT);
 		} catch (IOException e) {
@@ -74,6 +76,10 @@ public class ControlUpdater extends SwingWorker<Void, Status> {
 
 		if (status.getSerial() == receivedStatus.getSerial()) {
 			responseMatchesRequest = true;
+		}
+
+		if (receivedStatus.joints.getCalStatus() == CalibrationStatus.IN_PROGRESS) {
+			status.joints.setBeginCalibration(false);
 		}
 
 		status.incrementSerial();

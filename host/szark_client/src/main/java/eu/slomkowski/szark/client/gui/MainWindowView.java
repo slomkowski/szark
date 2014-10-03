@@ -307,6 +307,8 @@ abstract class MainWindowView extends JFrame implements ActionListener, ChangeLi
 		armShoulderSpeedLimiter.setEnabled(enable);
 		armElbowSpeedLimiter.setEnabled(enable);
 		armGripperSpeedLimiter.setEnabled(enable);
+
+		armCalibrateButton.setEnabled(enable);
 	}
 
 	protected void setOverallControlsEnabled(boolean enable) {

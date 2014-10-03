@@ -200,7 +200,8 @@ public class MainWindowLogic extends MainWindowView {
 				status.lights.setHigh(false);
 			}
 		} else if (obj == armCalibrateButton) {
-			status.joints.setCalStatus(CalibrationStatus.REQUESTED);
+			status.joints.setBeginCalibration(true);
+			armCalibrateButton.setText("Sending request...");
 		} else if (obj == speedLimit5) {
 			status.motors.setSpeedLimit(5);
 		} else if (obj == speedLimit8) {
@@ -295,6 +296,18 @@ public class MainWindowLogic extends MainWindowView {
 				receivedStatus.joints.gripper,
 				receivedStatus.joints.gripper.getSpeed(),
 				HardcodedConfiguration.JOINT_SPEED_MAX));
+
+		switch (receivedStatus.joints.getCalStatus()) {
+			case NONE:
+				armCalibrateButton.setText("Calibrate joints");
+				break;
+			case IN_PROGRESS:
+				armCalibrateButton.setText("Calibrating...");
+				break;
+			case DONE:
+				armCalibrateButton.setText("Calibrate joints [DONE]");
+				break;
+		}
 
 		// visualizer
 		armVis.setUpdateStatus(receivedStatus);

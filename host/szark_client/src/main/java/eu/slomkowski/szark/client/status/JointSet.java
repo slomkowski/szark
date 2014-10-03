@@ -13,7 +13,17 @@ public class JointSet extends AbstractMotor {
 	@Expose
 	public Joint shoulder = new Joint();
 
-	private CalibrationStatus calStatus = CalibrationStatus.READY;
+	@Expose(deserialize = false, serialize = true)
+	@SerializedName("b_cal")
+	private boolean beginCalibration = false;
+
+	@Expose(deserialize = true, serialize = false)
+	@SerializedName("cal_st")
+	private CalibrationStatus calStatus = CalibrationStatus.NONE;
+
+	@Expose(deserialize = true, serialize = false)
+	@SerializedName("mode")
+	private ArmDriverMode armDriverMode = ArmDriverMode.DIRECTIONAL;
 
 	@Override
 	public boolean equals(Object obj) {
@@ -34,14 +44,6 @@ public class JointSet extends AbstractMotor {
 		}
 
 		return false;
-	}
-
-	public CalibrationStatus getCalStatus() {
-		return calStatus;
-	}
-
-	public void setCalStatus(CalibrationStatus calStatus) {
-		this.calStatus = calStatus;
 	}
 
 	@Override
@@ -70,6 +72,31 @@ public class JointSet extends AbstractMotor {
 		gripper.stop();
 		elbow.stop();
 		shoulder.stop();
+	}
+
+	public CalibrationStatus getCalStatus() {
+		return calStatus;
+	}
+
+	public void setCalStatus(CalibrationStatus calStatus) {
+		this.calStatus = calStatus;
+	}
+
+
+	public boolean isBeginCalibration() {
+		return beginCalibration;
+	}
+
+	public void setBeginCalibration(boolean beginCalibration) {
+		this.beginCalibration = beginCalibration;
+	}
+
+	public ArmDriverMode getArmDriverMode() {
+		return armDriverMode;
+	}
+
+	public void setArmDriverMode(ArmDriverMode armDriverMode) {
+		this.armDriverMode = armDriverMode;
 	}
 
 	public class Joint extends AbstractParams {
