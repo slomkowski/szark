@@ -311,6 +311,11 @@ abstract class MainWindowView extends JFrame implements ActionListener, ChangeLi
 		armCalibrateButton.setEnabled(enable);
 	}
 
+	protected void setConnectButtonsText(String text) {
+		connectButton.setText(text);
+		mConnConnect.setText(text);
+	}
+
 	protected void setOverallControlsEnabled(boolean enable) {
 		batteryVoltBar.setEnabled(enable);
 		batteryCurrBar.setEnabled(enable);

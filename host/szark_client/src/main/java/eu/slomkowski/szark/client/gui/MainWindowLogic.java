@@ -118,24 +118,46 @@ public class MainWindowLogic extends MainWindowView {
 	}
 
 	public void connectToAll() {
-		String hostName = connectHostnameField.getSelectedItem().toString();
+		final String hostName = connectHostnameField.getSelectedItem().toString();
 
-		try {
-			InetAddress address = InetAddress.getByName(hostName);
-			performControlServerConnection(address);
-			performCameraServerConnection(address);
+		setConnectButtonsText("Connecting...");
+		connectHostnameField.setEnabled(false);
 
-			connected = true;
+		new SwingWorker<Void, Void>() {
 
-			connectButton.setText("Disconnect");
-			mConnConnect.setText(connectButton.getText());
-			connectHostnameField.setEnabled(false);
-		} catch (UnknownHostException e) {
-			JOptionPane.showMessageDialog(this,
-					String.format("Unknown host: %s\n%s", hostName, e.getMessage()),
-					"Address resolve error",
-					JOptionPane.ERROR_MESSAGE);
-		}
+			private InetAddress address = null;
+			private Exception exception = null;
+
+			@Override
+			protected Void doInBackground() throws Exception {
+				try {
+					address = InetAddress.getByName(hostName);
+				} catch (final UnknownHostException e) {
+					exception = e;
+				}
+				return null;
+			}
+
+			@Override
+			protected void done() {
+				if (exception != null) {
+					JOptionPane.showMessageDialog(MainWindowLogic.this,
+							String.format("Unknown host: %s\n%s", hostName, exception.getMessage()),
+							"Address resolve error",
+							JOptionPane.ERROR_MESSAGE);
+					setConnectButtonsText("Connect");
+					connectHostnameField.setEnabled(true);
+				} else {
+					performControlServerConnection(address);
+					performCameraServerConnection(address);
+
+					connected = true;
+
+					setConnectButtonsText("Disconnect");
+					connectHostnameField.setEnabled(false);
+				}
+			}
+		}.execute();
 	}
 
 	public void disconnectFromAll() {
@@ -144,8 +166,7 @@ public class MainWindowLogic extends MainWindowView {
 
 		connected = false;
 
-		connectButton.setText("Connect");
-		mConnConnect.setText(connectButton.getText());
+		setConnectButtonsText("Connect");
 		connectHostnameField.setEnabled(true);
 	}
 

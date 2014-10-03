@@ -152,17 +152,15 @@ public class ControlUpdater extends SwingWorker<Void, Status> {
 		mainWindow.updateIndicators(chunks.get(chunks.size() - 1));
 	}
 
-	@Override
-	protected void done() {
+	public void stopTask() {
+		needToStop.set(true);
+
 		try {
+			updateCycle();
 			socket.close();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-	}
-
-	public void stopTask() {
-		needToStop.set(true);
 	}
 
 	public class HardwareStoppedException extends Exception {
