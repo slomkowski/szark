@@ -13,6 +13,8 @@ import eu.slomkowski.szark.client.updaters.ControlUpdater;
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
 import java.awt.event.ActionEvent;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 
 /**
  * This class provides the logic for the main window. The appearance is moved to
@@ -53,12 +55,12 @@ public class MainWindowLogic extends MainWindowView {
 		}
 	}
 
-	public void performCameraServerConnection() {
+	public void performCameraServerConnection(InetAddress address) {
 		cameraSelectHead.setSelected(true);
 		cameraDisplayHud.setSelected(true);
 		setCameraControlsEnabled(true);
 
-		cameraScreen.enableCameraView(connectHostnameField.getSelectedItem().toString());
+		cameraScreen.enableCameraView(address);
 	}
 
 	public void performCameraServerDisconnection() {
@@ -92,13 +94,10 @@ public class MainWindowLogic extends MainWindowView {
 	}
 
 
-	private void performControlServerConnection() {
+	private void performControlServerConnection(InetAddress address) {
 		performKillSwitchEnable();
 
-		controlUpdater = new ControlUpdater(this,
-				connectHostnameField.getSelectedItem().toString(),
-				status,
-				joystickBackend);
+		controlUpdater = new ControlUpdater(this, address, status, joystickBackend);
 		controlUpdater.execute();
 
 		setOverallControlsEnabled(true);
@@ -119,14 +118,24 @@ public class MainWindowLogic extends MainWindowView {
 	}
 
 	public void connectToAll() {
-		performControlServerConnection();
-		performCameraServerConnection();
+		String hostName = connectHostnameField.getSelectedItem().toString();
 
-		connected = true;
+		try {
+			InetAddress address = InetAddress.getByName(hostName);
+			performControlServerConnection(address);
+			performCameraServerConnection(address);
 
-		connectButton.setText("Disconnect");
-		mConnConnect.setText(connectButton.getText());
-		connectHostnameField.setEnabled(false);
+			connected = true;
+
+			connectButton.setText("Disconnect");
+			mConnConnect.setText(connectButton.getText());
+			connectHostnameField.setEnabled(false);
+		} catch (UnknownHostException e) {
+			JOptionPane.showMessageDialog(this,
+					String.format("Unknown host: %s\n%s", hostName, e.getMessage()),
+					"Address resolve error",
+					JOptionPane.ERROR_MESSAGE);
+		}
 	}
 
 	public void disconnectFromAll() {

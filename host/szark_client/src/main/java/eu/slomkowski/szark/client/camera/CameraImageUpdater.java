@@ -8,10 +8,7 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.InetSocketAddress;
-import java.net.SocketTimeoutException;
+import java.net.*;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -33,14 +30,14 @@ public class CameraImageUpdater extends JLabel {
 			disableCameraView();
 		}
 		this.chosenCameraType = chosenCameraType;
-		enableCameraView(address.getHostName());
+		enableCameraView(address.getAddress());
 	}
 
 	public void setCameraMode(CameraMode cameraMode) {
 		this.cameraMode = cameraMode;
 	}
 
-	public void enableCameraView(String hostname) {
+	public void enableCameraView(InetAddress host) {
 		setIcon(null);
 
 		try {
@@ -51,7 +48,7 @@ public class CameraImageUpdater extends JLabel {
 					? HardcodedConfiguration.CAMERA_PORT_GRIPPER
 					: HardcodedConfiguration.CAMERA_PORT_HEAD;
 
-			this.address = new InetSocketAddress(hostname, port);
+			this.address = new InetSocketAddress(host, port);
 		} catch (final IOException e) {
 			e.printStackTrace();
 			System.exit(1);

@@ -12,10 +12,7 @@ import eu.slomkowski.szark.client.status.Status;
 
 import javax.swing.*;
 import java.io.IOException;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.InetSocketAddress;
-import java.net.SocketTimeoutException;
+import java.net.*;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -30,7 +27,7 @@ public class ControlUpdater extends SwingWorker<Void, Status> {
 	private byte[] inputBuffer = new byte[1024];
 
 	public ControlUpdater(MainWindowLogic mainWindow,
-						  String hostname,
+						  InetAddress host,
 						  Status status,
 						  JoystickBackend joystickBackend) {
 		this.mainWindow = mainWindow;
@@ -43,8 +40,7 @@ public class ControlUpdater extends SwingWorker<Void, Status> {
 		}
 
 		try {
-			address = new InetSocketAddress(hostname, HardcodedConfiguration.CONTROL_SERVER_PORT);
-			//TODO sprawdzanie, czy resolved
+			address = new InetSocketAddress(host, HardcodedConfiguration.CONTROL_SERVER_PORT);
 			socket = new DatagramSocket();
 			socket.setSoTimeout(HardcodedConfiguration.CONTROL_SERVER_TIMEOUT);
 		} catch (IOException e) {
