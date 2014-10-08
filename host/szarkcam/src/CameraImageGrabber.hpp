@@ -13,6 +13,13 @@
 #include <utility>
 
 namespace camera {
+	class ImageGrabberException : std::runtime_error {
+	public:
+		ImageGrabberException(const std::string &message)
+				: std::runtime_error(message) {
+		}
+	};
+
 	class IImageGrabber : boost::noncopyable {
 	public:
 		virtual ~IImageGrabber() = default;
@@ -31,10 +38,16 @@ namespace camera {
 	private:
 		log4cpp::Category &logger;
 
+		std::unique_ptr<cv::VideoCapture> videoCapture;
+
 		std::unique_ptr<std::thread> grabberThread;
 
 		std::mutex mutex;
 		std::condition_variable cond;
+
+		cv::Mat currentFrame;
+		int currentFrameNo;
+
 		volatile bool finishThread = false;
 
 		void grabberThreadFunction();

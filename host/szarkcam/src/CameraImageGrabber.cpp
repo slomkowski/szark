@@ -10,9 +10,15 @@ using namespace boost;
 WALLAROO_REGISTER(ImageGrabber, std::string);
 
 camera::ImageGrabber::ImageGrabber(const std::string &prefix) :
-		logger(log4cpp::Category::getInstance("ImageGrabber")) {
+		logger(log4cpp::Category::getInstance("ImageGrabber")),
+		currentFrameNo(1) {
 
-	std::string videoDevice = config::getString("szark.server.camera.ImageGrabber." + prefix + ".device");
+	int videoDevice = config::getInt("szark.server.camera.ImageGrabber." + prefix + ".device");
+
+	videoCapture.reset(new cv::VideoCapture(videoDevice));
+
+	videoCapture->set(CV_CAP_PROP_FRAME_WIDTH, 352);
+	videoCapture->set(CV_CAP_PROP_FRAME_HEIGHT, 288);
 
 	grabberThread.reset(new std::thread(&ImageGrabber::grabberThreadFunction, this));
 
@@ -29,10 +35,7 @@ std::pair<long, cv::Mat> camera::ImageGrabber::getFrame(bool wait) {
 		logger.info("Got frame without waiting.");
 	}
 
-	long no = 1;
-	auto img = cv::imread("k.png", CV_LOAD_IMAGE_COLOR);
-
-	return std::make_pair(no, img);
+	return std::make_pair(currentFrameNo, currentFrame);
 }
 
 camera::ImageGrabber::~ImageGrabber() {
@@ -45,21 +48,19 @@ camera::ImageGrabber::~ImageGrabber() {
 }
 
 void ImageGrabber::grabberThreadFunction() {
-	long frameNo = 1;
-
 	while (!finishThread) {
+		cv::Mat frame;
 		auto elapsedTime = utils::measureTime<std::chrono::milliseconds>([&]() {
-			std::this_thread::sleep_for(std::chrono::milliseconds(50));
+			videoCapture->read(frame);
 		});
 
-		logger.info((format("Captured frame no %d in %d ms.") % frameNo % elapsedTime).str());
+		logger.info((format("Captured frame no %d in %d ms.") % currentFrameNo % elapsedTime).str());
 
 		mutex.lock();
-		// TODO załadować do zmiennej
+		this->currentFrame = frame;
+		this->currentFrameNo++;
 		mutex.unlock();
 
 		cond.notify_all();
-
-		frameNo++;
 	}
 }
