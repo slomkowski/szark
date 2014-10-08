@@ -71,6 +71,14 @@ namespace bridge {
 		DIRECTIONAL, POSITIONAL, CALIBRATING
 	};
 
+	std::string armDriverModeToString(const ArmDriverMode mode);
+
+	enum class ArmCalibrationStatus {
+		NONE, IN_PROGRESS, DONE
+	};
+
+	std::string armCalibrationStatusToString(const ArmCalibrationStatus status);
+
 	/**
 	* Devices connected to the I2C expander. The enum numbers must match the bit number of the pin the device
 	* is connected.
@@ -381,8 +389,8 @@ namespace bridge {
 
 			void calibrate();
 
-			bool isCalibrated() {
-				return calibrated;
+			ArmCalibrationStatus getCalibrationStatus() {
+				return calibrationStatus;
 			}
 
 			ArmDriverMode getMode() {
@@ -397,7 +405,7 @@ namespace bridge {
 				}
 
 				mode = ArmDriverMode::DIRECTIONAL;
-				calibrated = false;
+				calibrationStatus = ArmCalibrationStatus::NONE;
 			}
 
 			unsigned int updateFields(USBCommands::Request request, uint8_t *data);
@@ -409,7 +417,7 @@ namespace bridge {
 
 			ArmDriverMode mode;
 
-			bool calibrated;
+			ArmCalibrationStatus calibrationStatus;
 
 			friend class Interface;
 		};

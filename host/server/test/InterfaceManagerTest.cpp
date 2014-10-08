@@ -39,6 +39,8 @@ BOOST_AUTO_TEST_CASE(InterfaceManager_Operation) {
 	i.setLCDText("hello world");
 	i.arm.calibrate();
 
+	BOOST_CHECK_EQUAL(i.arm.getCalibrationStatus(), bridge::ArmCalibrationStatus::IN_PROGRESS);
+
 	std::vector<double> timings;
 
 	for (int t = 0; t < 500; t++) {
@@ -60,7 +62,6 @@ BOOST_AUTO_TEST_CASE(InterfaceManager_Operation) {
 			//i.arm[bridge::Joint::ELBOW].setSpeed(3);
 			i.arm[bridge::Joint::GRIPPER].setDirection(bridge::Direction::STOP);
 			i.arm[bridge::Joint::GRIPPER].setSpeed(3);
-			i.arm[bridge::Joint::WRIST].setSpeed(5);
 			i.motor[bridge::Motor::LEFT].setSpeed(3);
 			i.motor[bridge::Motor::RIGHT].setSpeed(4);
 			i.expander[bridge::ExpanderDevice::LIGHT_CAMERA].setEnabled(true);

@@ -66,6 +66,7 @@ namespace bridge {
 			case Joint::GRIPPER:
 				return "gripper";
 			case Joint::SHOULDER:
+			default:
 				return "shoulder";
 		};
 	}
@@ -308,6 +309,8 @@ namespace bridge {
 	void Interface::ArmClass::SingleJoint::setDirection(Direction direction) {
 		this->direction = direction;
 		this->settingPosition = false;
+		//TODO ustawianie armDriverMode
+		//mode = ArmDriverMode::DIRECTIONAL;
 
 		createJointState();
 
@@ -327,6 +330,8 @@ namespace bridge {
 
 		this->programmedPosition = effectivePos;
 		this->settingPosition = true;
+		//TODO ustawianie armDriverMode
+		//mode = ArmDriverMode::POSITIONAL;
 
 		createJointState();
 
@@ -337,13 +342,20 @@ namespace bridge {
 		requests["arm_addon"] = DataHolder::create(USBCommands::ARM_DRIVER_SET, PRIORITY_ARM_GENERAL_SET, true,
 				USBCommands::arm::BRAKE);
 
-		logger.info("Braking all joints.");
+		logger.notice("Braking all joints.");
 	}
 
 	void Interface::ArmClass::calibrate() {
-		requests["arm_addon"] = DataHolder::create(USBCommands::ARM_DRIVER_SET, PRIORITY_ARM_GENERAL_SET, true,
-				USBCommands::arm::CALIBRATE);
-		logger.info("Calibrating arm.");
+		//TODO z tym coś zrobić, bo wysyła komendę za każdym razem
+		if (calibrationStatus == ArmCalibrationStatus::NONE ||
+				calibrationStatus == ArmCalibrationStatus::DONE) {
+			requests["arm_addon"] = DataHolder::create(USBCommands::ARM_DRIVER_SET, PRIORITY_ARM_GENERAL_SET, true,
+					USBCommands::arm::CALIBRATE);
+
+			calibrationStatus = ArmCalibrationStatus::IN_PROGRESS;
+			mode = ArmDriverMode::CALIBRATING;
+			logger.notice("Begining calibrating arm driver.");
+		}
 	}
 
 	void Interface::ExpanderClass::Device::setEnabled(bool enabled) {
@@ -413,7 +425,9 @@ namespace bridge {
 
 		auto state = reinterpret_cast<USBCommands::arm::GeneralState *>(data);
 
-		calibrated = state->isCalibrated;
+		if (state->isCalibrated) {
+			calibrationStatus = ArmCalibrationStatus::DONE;
+		}
 
 		switch (state->mode) {
 			case arm::DIR:
@@ -568,15 +582,14 @@ namespace bridge {
 
 	std::string directionToString(const Direction dir) {
 		switch (dir) {
-			case Direction::STOP:
-				return "stop";
 			case Direction::FORWARD:
 				return "forward";
 			case Direction::BACKWARD:
 				return "backward";
+			case Direction::STOP:
+			default:
+				return "stop";
 		}
-
-		return "";
 	}
 
 	Direction stringToDirection(std::string dir) {
@@ -593,6 +606,30 @@ namespace bridge {
 		}
 
 		return Direction::STOP;
+	}
+
+	std::string armDriverModeToString(const ArmDriverMode mode) {
+		switch (mode) {
+			case ArmDriverMode::CALIBRATING:
+				return "calibrating";
+			case ArmDriverMode::POSITIONAL:
+				return "positional";
+			case ArmDriverMode::DIRECTIONAL:
+			default:
+				return "directional";
+		}
+	}
+
+	std::string armCalibrationStatusToString(const ArmCalibrationStatus status) {
+		switch (status) {
+			case ArmCalibrationStatus::DONE:
+				return "done";
+			case ArmCalibrationStatus::IN_PROGRESS:
+				return "prog";
+			case ArmCalibrationStatus::NONE:
+			default:
+				return "none";
+		}
 	}
 
 } /* namespace bridge */

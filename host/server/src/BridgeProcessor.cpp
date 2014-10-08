@@ -204,6 +204,12 @@ namespace bridge {
 					bind(&Interface::ExpanderClass::Device::setEnabled, &iface.expander[d], _1));
 		};
 
+		tryAssign<bool>(r["arm"]["b_cal"], [&](bool startCalibration) {
+			if (startCalibration) {
+				iface.arm.calibrate();
+			}
+		});
+
 		fillAllDevices(fillArm, fillMotor, fillExpander);
 	}
 
@@ -229,6 +235,9 @@ namespace bridge {
 			r["arm"][name]["pos"] = iface.arm[j].getPosition();
 			r["arm"][name]["dir"] = directionToString(iface.arm[j].getDirection());
 		};
+
+		r["arm"]["cal_st"] = armCalibrationStatusToString(iface.arm.getCalibrationStatus());
+		r["arm"]["mode"] = armDriverModeToString(iface.arm.getMode());
 
 		fillAllDevices(fillArm, fillMotor, fillExpander);
 
