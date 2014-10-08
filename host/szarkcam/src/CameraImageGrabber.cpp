@@ -1,4 +1,4 @@
-#include <vips/vips>
+#include <opencv2/opencv.hpp>
 #include <boost/format.hpp>
 #include "CameraImageGrabber.hpp"
 #include "utils.hpp"
@@ -19,7 +19,7 @@ camera::ImageGrabber::ImageGrabber(const std::string &prefix) :
 	logger.notice("Instance created.");
 }
 
-std::pair<long, vips::VImage> camera::ImageGrabber::getFrame(bool wait) {
+std::pair<long, cv::Mat> camera::ImageGrabber::getFrame(bool wait) {
 	std::unique_lock<std::mutex> lock(mutex);
 
 	if (not wait) {
@@ -30,7 +30,7 @@ std::pair<long, vips::VImage> camera::ImageGrabber::getFrame(bool wait) {
 	}
 
 	long no = 1;
-	auto img = vips::VImage("k.png");
+	auto img = cv::imread("k.png", CV_LOAD_IMAGE_COLOR);
 
 	return std::make_pair(no, img);
 }

@@ -64,7 +64,7 @@ void camera::NetworkServer::doReceive() {
 				}
 				logger.info("Received request."); // TODO hud or not
 
-				imageSource->getEncodedImage(false, [this](void *buff, int length) {
+				imageSource->getEncodedImage(false, [this](void *buff, size_t length) {
 					auto sentBytes = udpSocket.send_to(asio::buffer(buff, length), endpoint);
 					if (sentBytes != length) {
 						throw NetworkException((format("not whole file sent (%u < %u)") % sentBytes % length).str());

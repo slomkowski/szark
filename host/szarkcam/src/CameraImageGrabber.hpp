@@ -2,7 +2,7 @@
 #define _CAMERAIMAGEGRABBER_HPP_
 
 #include <boost/noncopyable.hpp>
-#include <vips/vips>
+#include <opencv2/opencv.hpp>
 #include <log4cpp/Category.hh>
 #include <wallaroo/device.h>
 #include <wallaroo/registered.h>
@@ -17,7 +17,7 @@ namespace camera {
 	public:
 		virtual ~IImageGrabber() = default;
 
-		virtual std::pair<long, vips::VImage> getFrame(bool wait) = 0;
+		virtual std::pair<long, cv::Mat> getFrame(bool wait) = 0;
 	};
 
 	class ImageGrabber : public IImageGrabber, public wallaroo::Device {
@@ -26,7 +26,7 @@ namespace camera {
 
 		virtual ~ImageGrabber();
 
-		virtual std::pair<long, vips::VImage> getFrame(bool wait);
+		virtual std::pair<long, cv::Mat> getFrame(bool wait);
 
 	private:
 		log4cpp::Category &logger;

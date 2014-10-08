@@ -2,28 +2,25 @@
 #include <wallaroo/catalog.h>
 #include <thread>
 #include "NetworkServer.hpp"
-#include <vips/vips.h>
+#include <opencv2/opencv.hpp>
 
 using namespace std;
 using namespace camera;
 
 class DummyImageSource : public camera::IImageCombiner, public wallaroo::Device {
 public:
-	vips::VImage getCombinedImage(bool drawHud) {
+	cv::Mat getCombinedImage(bool drawHud) {
 		this_thread::sleep_for(chrono::milliseconds(100));
-		return vips::VImage("test.jpg");
+		return cv::imread("test.jpg", CV_LOAD_IMAGE_COLOR);
 	}
 
 	void getEncodedImage(bool drawHud, EncodedImageProcessor processor) {
 		auto img = getCombinedImage(drawHud);
 
-		void *bufferPointer;
-		size_t length;
-		vips_jpegsave_buffer(img.image(), &bufferPointer, &length, nullptr);
+		cv::vector<unsigned char> buffer;
+		cv::imencode(".jpg", img, buffer);
 
-		processor(bufferPointer, length);
-
-		g_free(bufferPointer);
+		processor(&buffer[0], buffer.size());
 	}
 };
 

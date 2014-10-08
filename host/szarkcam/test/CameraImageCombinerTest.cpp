@@ -23,7 +23,7 @@ BOOST_AUTO_TEST_CASE(CameraImageCombinerTest_Run) {
 	for (int i = 0; i < 10; i++) {
 		string fileName = "out.jpg";
 		auto result = imageGrabber->getCombinedImage(false);
-		result.write(fileName.c_str());
+		cv::imwrite(fileName, result);
 		BOOST_MESSAGE("Frame combined and saved to " << fileName);
 	}
 

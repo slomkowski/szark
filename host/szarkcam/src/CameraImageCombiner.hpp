@@ -2,7 +2,7 @@
 #define _CAMERAIMAGECOMBINER_HPP_
 
 #include <boost/noncopyable.hpp>
-#include <vips/vips>
+#include <opencv2/opencv.hpp>
 #include <wallaroo/device.h>
 #include <log4cpp/Category.hh>
 #include <functional>
@@ -17,13 +17,13 @@ namespace camera {
 		}
 	};
 
-	typedef std::function<void(void *, int)> EncodedImageProcessor;
+	typedef std::function<void(void *, size_t)> EncodedImageProcessor;
 
 	class IImageCombiner : boost::noncopyable {
 	public:
 		virtual ~IImageCombiner() = default;
 
-		virtual vips::VImage getCombinedImage(bool drawHud) = 0;
+		virtual cv::Mat getCombinedImage(bool drawHud) = 0;
 
 		virtual void getEncodedImage(bool drawHud, EncodedImageProcessor processor) = 0;
 	};
@@ -34,12 +34,14 @@ namespace camera {
 
 		virtual ~ImageCombiner();
 
-		virtual vips::VImage getCombinedImage(bool drawHud);
+		virtual cv::Mat getCombinedImage(bool drawHud);
 
 		virtual void getEncodedImage(bool drawHud, EncodedImageProcessor processor);
 
 	private:
 		log4cpp::Category &logger;
+
+		std::vector<int> jpegEncoderParameters;
 
 		wallaroo::Plug<IImageGrabber> leftCameraGrabber;
 		wallaroo::Plug<IImageGrabber> rightCameraGrabber;
