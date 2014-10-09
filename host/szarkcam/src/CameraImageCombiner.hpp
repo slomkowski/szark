@@ -10,7 +10,7 @@
 #include "CameraImageGrabber.hpp"
 
 namespace camera {
-	class ImageCombinerException : std::runtime_error {
+	class ImageCombinerException : public std::runtime_error {
 	public:
 		ImageCombinerException(const std::string &message)
 				: std::runtime_error(message) {

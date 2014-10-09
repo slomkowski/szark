@@ -5,7 +5,6 @@
 
 const int JPEG_QUALITY = 45;
 
-
 using namespace camera;
 
 WALLAROO_REGISTER(ImageCombiner);
@@ -25,7 +24,6 @@ camera::ImageCombiner::~ImageCombiner() {
 	logger.notice("Instance destroyed.");
 }
 
-//TODO pewnie osobny wątek
 cv::Mat camera::ImageCombiner::getCombinedImage(bool drawHud) {
 	long leftFrameNo, rightFrameNo;
 	double leftFps, rightFps;
@@ -34,7 +32,13 @@ cv::Mat camera::ImageCombiner::getCombinedImage(bool drawHud) {
 	std::tie(leftFrameNo, leftFps, leftFrame) = leftCameraGrabber->getFrame(leftCameraIsFaster);
 	std::tie(rightFrameNo, rightFps, rightFrame) = rightCameraGrabber->getFrame(not leftCameraIsFaster);
 
-	leftCameraIsFaster = leftFps > rightFps;
+	bool newLeftIsFaster = leftFps > rightFps;
+
+	if (newLeftIsFaster != leftCameraIsFaster) {
+		logger.debug((boost::format("Set %s camera as faster.") % (newLeftIsFaster ? "left" : "right")).str());
+	}
+
+	leftCameraIsFaster = newLeftIsFaster;
 
 	cv::Mat result;
 
@@ -50,7 +54,7 @@ cv::Mat camera::ImageCombiner::getCombinedImage(bool drawHud) {
 		Size sizeLeft = leftFrame.size();
 		Size sizeRight = rightFrame.size();
 
-		Mat im3(sizeLeft.height, sizeLeft.width + sizeRight.width, CV_8UC3);
+		Mat im3(sizeLeft.height, sizeLeft.width + sizeRight.width, leftFrame.type());
 
 		Mat left(im3, Rect(0, 0, sizeLeft.width, sizeLeft.height));
 		leftFrame.copyTo(left);
@@ -70,7 +74,7 @@ void ImageCombiner::getEncodedImage(bool drawHud, EncodedImageProcessor processo
 
 	auto img = getCombinedImage(drawHud);
 
-	cv::vector<unsigned char> buffer;
+	cv::vector<unsigned char> buffer(30000);
 
 	int us = utils::measureTime<std::chrono::microseconds>([&]() {
 		cv::imencode(".jpg", img, buffer, jpegEncoderParameters);

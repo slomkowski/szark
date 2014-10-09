@@ -14,7 +14,7 @@
 #include <utility>
 
 namespace camera {
-	class ImageGrabberException : std::runtime_error {
+	class ImageGrabberException : public std::runtime_error {
 	public:
 		ImageGrabberException(const std::string &message)
 				: std::runtime_error(message) {
@@ -38,6 +38,8 @@ namespace camera {
 		virtual std::tuple<long, double, cv::Mat> getFrame(bool wait);
 
 	private:
+		std::string prefix;
+
 		log4cpp::Category &logger;
 
 		boost::circular_buffer<double> captureTimesAvgBuffer;
@@ -46,7 +48,7 @@ namespace camera {
 
 		std::unique_ptr<std::thread> grabberThread;
 
-		std::mutex mutex;
+		std::mutex dataMutex;
 		std::condition_variable cond;
 
 		cv::Mat currentFrame;
@@ -56,6 +58,10 @@ namespace camera {
 		volatile bool finishThread = false;
 
 		void grabberThreadFunction();
+
+		std::string getFullConfigPath(std::string property);
+
+		void setVideoCaptureProperty(int prop, std::string confName);
 	};
 }
 

@@ -3,40 +3,52 @@
 #include "CameraImageGrabber.hpp"
 #include "utils.hpp"
 #include "Configuration.hpp"
+#include <pthread.h>
+#include <cstring>
 
-using namespace camera;
+using namespace std;
 using namespace boost;
+using namespace camera;
 
 const int FRAMERATE_AVG_FRAMES = 5;
 
-WALLAROO_REGISTER(ImageGrabber, std::string);
+WALLAROO_REGISTER(ImageGrabber, string);
 
 camera::ImageGrabber::ImageGrabber(const std::string &prefix) :
+		prefix(prefix),
 		logger(log4cpp::Category::getInstance("ImageGrabber")),
 		captureTimesAvgBuffer(FRAMERATE_AVG_FRAMES),
 		currentFrameNo(1) {
 
-	int videoDevice = config::getInt("szark.server.camera.ImageGrabber." + prefix + ".device");
+	int videoDevice = config::getInt(getFullConfigPath("device"));
 
 	videoCapture.reset(new cv::VideoCapture(videoDevice));
 
 	if (not videoCapture->isOpened()) {
-		throw ImageGrabberException((boost::format("cannot open device %d.") % videoDevice).str());
+		throw ImageGrabberException((format("cannot open device %d.") % videoDevice).str());
 	}
 
-	videoCapture->set(CV_CAP_PROP_FRAME_WIDTH, 352);
-	videoCapture->set(CV_CAP_PROP_FRAME_HEIGHT, 288);
+	setVideoCaptureProperty(CV_CAP_PROP_FRAME_WIDTH, "width");
+	setVideoCaptureProperty(CV_CAP_PROP_FRAME_HEIGHT, "height");
+
+	logger.notice((format("Set '%s' frame size to %dx%d.") % prefix
+			% videoCapture->get(CV_CAP_PROP_FRAME_WIDTH)
+			% videoCapture->get(CV_CAP_PROP_FRAME_HEIGHT)).str());
 
 	grabberThread.reset(new std::thread(&ImageGrabber::grabberThreadFunction, this));
+	int result = pthread_setname_np(grabberThread->native_handle(), (prefix + "ImgGrab").c_str());
+	if (result != 0) {
+		logger.error((format("Cannot set thread name: %s.") % strerror(result)).str());
+	}
 
 	logger.notice("Instance created.");
 }
 
 std::tuple<long, double, cv::Mat>  camera::ImageGrabber::getFrame(bool wait) {
-	std::unique_lock<std::mutex> lock(mutex);
+	std::unique_lock<std::mutex> lk(dataMutex);
 
 	if (not wait) {
-		cond.wait(lock);
+		cond.wait(lk);
 		logger.info("Got frame.");
 	} else {
 		logger.info("Got frame without waiting.");
@@ -46,11 +58,14 @@ std::tuple<long, double, cv::Mat>  camera::ImageGrabber::getFrame(bool wait) {
 }
 
 camera::ImageGrabber::~ImageGrabber() {
-	mutex.lock();
+	dataMutex.lock();
 	finishThread = true;
-	mutex.unlock();
+	dataMutex.unlock();
 
 	grabberThread->join();
+
+	videoCapture->release();
+
 	logger.notice("Instance destroyed.");
 }
 
@@ -72,13 +87,36 @@ void ImageGrabber::grabberThreadFunction() {
 
 		logger.info((format("Captured frame no %d in %d ms (%2.1f fps).") % currentFrameNo % elapsedTime % fps).str());
 
-		mutex.lock();
+		dataMutex.lock();
 		this->currentFrame = frame;
 		this->currentFrameNo++;
 		this->currentFps = fps;
-		mutex.unlock();
+		dataMutex.unlock();
 
 		cond.notify_all();
 	}
 }
 
+std::string ImageGrabber::getFullConfigPath(std::string property) {
+	return "szark.server.camera.ImageGrabber." + prefix + "." + property;
+}
+
+void ImageGrabber::setVideoCaptureProperty(int prop, std::string confName) {
+	auto path = getFullConfigPath(confName);
+	int val;
+
+	try {
+		val = config::getInt(path);
+	} catch (config::ConfigException &e) {
+		throw ImageGrabberException((format("failed to set property: %s") % e.what()).str());
+	}
+
+	videoCapture->set(prop, val);
+
+//	if (readVal != val) {
+//		throw ImageGrabberException((format("failed to set property '%s' to value %d, previous value: %d")
+//				% path % val % readVal).str());
+//	}
+
+	logger.info((format("Set property '%s' to value %d.") % path % val).str());
+}
