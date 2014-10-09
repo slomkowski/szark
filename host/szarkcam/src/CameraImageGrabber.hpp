@@ -2,6 +2,7 @@
 #define _CAMERAIMAGEGRABBER_HPP_
 
 #include <boost/noncopyable.hpp>
+#include <boost/circular_buffer.hpp>
 #include <opencv2/opencv.hpp>
 #include <log4cpp/Category.hh>
 #include <wallaroo/device.h>
@@ -37,6 +38,8 @@ namespace camera {
 
 	private:
 		log4cpp::Category &logger;
+
+		boost::circular_buffer<double> captureTimesAvgBuffer;
 
 		std::unique_ptr<cv::VideoCapture> videoCapture;
 
