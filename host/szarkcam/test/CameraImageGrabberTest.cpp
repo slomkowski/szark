@@ -1,6 +1,6 @@
 #include <boost/test/unit_test.hpp>
 #include <wallaroo/catalog.h>
-
+#include <tuple>
 #include "CameraImageGrabber.hpp"
 
 using namespace std;
@@ -15,11 +15,13 @@ BOOST_AUTO_TEST_CASE(CameraImageGrabberTest_Run) {
 	shared_ptr<IImageGrabber> imageGrabber = catalog["imgGrabber"];
 
 	for (int i = 0; i < 10; i++) {
-		auto result = imageGrabber->getFrame(true);
-		BOOST_MESSAGE("Frame wait no. " << result.first);
+		long frameNo;
 
-		result = imageGrabber->getFrame(false);
-		BOOST_MESSAGE("Frame nowait no. " << result.first);
+		tie(frameNo, ignore, ignore) = imageGrabber->getFrame(true);
+		BOOST_MESSAGE("Frame wait no. " << frameNo);
+
+		tie(frameNo, ignore, ignore) = imageGrabber->getFrame(false);
+		BOOST_MESSAGE("Frame nowait no. " << frameNo);
 	}
 
 	BOOST_CHECK_EQUAL(1, 1);

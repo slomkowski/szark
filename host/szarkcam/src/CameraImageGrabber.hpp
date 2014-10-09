@@ -25,7 +25,8 @@ namespace camera {
 	public:
 		virtual ~IImageGrabber() = default;
 
-		virtual std::pair<long, cv::Mat> getFrame(bool wait) = 0;
+		// tuple: frame no, fps, image data
+		virtual std::tuple<long, double, cv::Mat> getFrame(bool wait) = 0;
 	};
 
 	class ImageGrabber : public IImageGrabber, public wallaroo::Device {
@@ -34,7 +35,7 @@ namespace camera {
 
 		virtual ~ImageGrabber();
 
-		virtual std::pair<long, cv::Mat> getFrame(bool wait);
+		virtual std::tuple<long, double, cv::Mat> getFrame(bool wait);
 
 	private:
 		log4cpp::Category &logger;
@@ -50,6 +51,7 @@ namespace camera {
 
 		cv::Mat currentFrame;
 		int currentFrameNo;
+		double currentFps;
 
 		volatile bool finishThread = false;
 

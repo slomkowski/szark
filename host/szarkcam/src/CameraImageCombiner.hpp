@@ -41,6 +41,8 @@ namespace camera {
 	private:
 		log4cpp::Category &logger;
 
+		bool leftCameraIsFaster;
+
 		std::vector<int> jpegEncoderParameters;
 
 		wallaroo::Plug<IImageGrabber> leftCameraGrabber;

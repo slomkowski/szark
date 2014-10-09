@@ -32,7 +32,7 @@ camera::ImageGrabber::ImageGrabber(const std::string &prefix) :
 	logger.notice("Instance created.");
 }
 
-std::pair<long, cv::Mat> camera::ImageGrabber::getFrame(bool wait) {
+std::tuple<long, double, cv::Mat>  camera::ImageGrabber::getFrame(bool wait) {
 	std::unique_lock<std::mutex> lock(mutex);
 
 	if (not wait) {
@@ -42,7 +42,7 @@ std::pair<long, cv::Mat> camera::ImageGrabber::getFrame(bool wait) {
 		logger.info("Got frame without waiting.");
 	}
 
-	return std::make_pair(currentFrameNo, currentFrame);
+	return std::tuple<long, double, cv::Mat>(currentFrameNo, currentFps, currentFrame);
 }
 
 camera::ImageGrabber::~ImageGrabber() {
@@ -68,16 +68,17 @@ void ImageGrabber::grabberThreadFunction() {
 
 		captureTimesAvgBuffer.push_back(elapsedTime);
 
-		double fps = FRAMERATE_AVG_FRAMES * 1000.0 /
-				(std::accumulate(captureTimesAvgBuffer.begin(), captureTimesAvgBuffer.end(), 0));
+		double fps = captureTimesAvgBuffer.size() * 1000.0 / (std::accumulate(captureTimesAvgBuffer.begin(), captureTimesAvgBuffer.end(), 0));
 
 		logger.info((format("Captured frame no %d in %d ms (%2.1f fps).") % currentFrameNo % elapsedTime % fps).str());
 
 		mutex.lock();
 		this->currentFrame = frame;
 		this->currentFrameNo++;
+		this->currentFps = fps;
 		mutex.unlock();
 
 		cond.notify_all();
 	}
 }
+

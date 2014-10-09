@@ -27,8 +27,14 @@ camera::ImageCombiner::~ImageCombiner() {
 
 //TODO pewnie osobny wątek
 cv::Mat camera::ImageCombiner::getCombinedImage(bool drawHud) {
-	auto leftFrame = leftCameraGrabber->getFrame(true).second;
-	auto rightFrame = rightCameraGrabber->getFrame(false).second;
+	long leftFrameNo, rightFrameNo;
+	double leftFps, rightFps;
+	cv::Mat leftFrame, rightFrame;
+
+	std::tie(leftFrameNo, leftFps, leftFrame) = leftCameraGrabber->getFrame(leftCameraIsFaster);
+	std::tie(rightFrameNo, rightFps, rightFrame) = rightCameraGrabber->getFrame(not leftCameraIsFaster);
+
+	leftCameraIsFaster = leftFps > rightFps;
 
 	cv::Mat result;
 
