@@ -1,3 +1,5 @@
+#include  <utility>
+
 #include <opencv2/opencv.hpp>
 #include <boost/format.hpp>
 
@@ -13,7 +15,8 @@ WALLAROO_REGISTER(GripperImageSource);
 camera::GripperImageSource::GripperImageSource()
 		: logger(log4cpp::Category::getInstance("GripperImageSource")),
 		  leftCameraGrabber("leftCameraGrabber", RegistrationToken()),
-		  rightCameraGrabber("rightCameraGrabber", RegistrationToken()) {
+		  rightCameraGrabber("rightCameraGrabber", RegistrationToken()),
+		  hudPainter("hudPainter", RegistrationToken()) {
 
 	jpegEncoderParameters.push_back(CV_IMWRITE_JPEG_QUALITY);
 	jpegEncoderParameters.push_back(JPEG_QUALITY);
@@ -68,6 +71,10 @@ cv::Mat camera::GripperImageSource::getImage(bool drawHud) {
 	});
 
 	logger.info((boost::format("Combined image in %u us.") % us).str());
+
+	if (drawHud) {
+		result = hudPainter->drawContent(result, std::make_pair(leftFrameNo, rightFrameNo));
+	}
 
 	return result;
 }

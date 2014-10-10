@@ -6,6 +6,7 @@
 #include <log4cpp/Category.hh>
 
 #include "ImageSource.hpp"
+#include "Painter.hpp"
 #include "CameraImageGrabber.hpp"
 
 namespace camera {
@@ -29,6 +30,8 @@ namespace camera {
 
 		wallaroo::Plug<IImageGrabber> leftCameraGrabber;
 		wallaroo::Plug<IImageGrabber> rightCameraGrabber;
+
+		wallaroo::Plug<IPainter> hudPainter;
 	};
 }
 

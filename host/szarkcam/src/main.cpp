@@ -18,9 +18,11 @@ int main() {
 	catalog.Create("imgGrabberLeft", "ImageGrabber", string("left"));
 	catalog.Create("imgGrabberRight", "ImageGrabber", string("right"));
 	catalog.Create("imgCombiner", "GripperImageSource");
+	catalog.Create("hudPainter", "GripperHudPainter");
 
 	wallaroo::use(catalog["imgGrabberLeft"]).as("leftCameraGrabber").of(catalog["imgCombiner"]);
 	wallaroo::use(catalog["imgGrabberRight"]).as("rightCameraGrabber").of(catalog["imgCombiner"]);
+	wallaroo::use(catalog["hudPainter"]).as("hudPainter").of(catalog["imgCombiner"]);
 
 	catalog.Create("srv", "NetworkServer");
 	wallaroo::use(catalog["imgCombiner"]).as("imageSource").of(catalog["srv"]);
