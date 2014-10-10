@@ -1,14 +1,15 @@
 #ifndef _NETWORKSERVER_HPP_
 #define _NETWORKSERVER_HPP_
 
-#include <boost/noncopyable.hpp>
-#include <wallaroo/device.h>
-#include <log4cpp/Category.hh>
-#include <boost/asio.hpp>
 #include <stdexcept>
 #include <memory>
 
-#include "CameraImageCombiner.hpp"
+#include <boost/noncopyable.hpp>
+#include <boost/asio.hpp>
+#include <log4cpp/Category.hh>
+#include <wallaroo/device.h>
+
+#include "GripperImageSource.hpp"
 
 namespace camera {
 
@@ -39,7 +40,7 @@ namespace camera {
 	private:
 		log4cpp::Category &logger;
 
-		wallaroo::Plug<camera::IImageCombiner> imageSource;
+		wallaroo::Plug<camera::IImageSource> imageSource;
 
 		boost::asio::io_service ioService;
 		boost::asio::ip::udp::socket udpSocket;

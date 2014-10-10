@@ -1,12 +1,11 @@
-#include <iostream>
 #include <chrono>
-
 #include <future>
-#include <wallaroo/catalog.h>
-#include "NetworkServer.hpp"
-#include "Configuration.hpp"
 
 #include <log4cpp/PropertyConfigurator.hh>
+#include <wallaroo/catalog.h>
+
+#include "NetworkServer.hpp"
+#include "Configuration.hpp"
 
 using namespace std;
 
@@ -18,7 +17,7 @@ int main() {
 	wallaroo::Catalog catalog;
 	catalog.Create("imgGrabberLeft", "ImageGrabber", string("left"));
 	catalog.Create("imgGrabberRight", "ImageGrabber", string("right"));
-	catalog.Create("imgCombiner", "ImageCombiner");
+	catalog.Create("imgCombiner", "GripperImageSource");
 
 	wallaroo::use(catalog["imgGrabberLeft"]).as("leftCameraGrabber").of(catalog["imgCombiner"]);
 	wallaroo::use(catalog["imgGrabberRight"]).as("rightCameraGrabber").of(catalog["imgCombiner"]);

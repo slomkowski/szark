@@ -7,15 +7,15 @@
 using namespace std;
 using namespace camera;
 
-class DummyImageSource : public camera::IImageCombiner, public wallaroo::Device {
+class DummyImageSource : public camera::IImageSource, public wallaroo::Device {
 public:
-	cv::Mat getCombinedImage(bool drawHud) {
+	cv::Mat getImage(bool drawHud) {
 		this_thread::sleep_for(chrono::milliseconds(100));
 		return cv::imread("test.jpg", CV_LOAD_IMAGE_COLOR);
 	}
 
 	void getEncodedImage(bool drawHud, EncodedImageProcessor processor) {
-		auto img = getCombinedImage(drawHud);
+		auto img = getImage(drawHud);
 
 		cv::vector<unsigned char> buffer;
 		cv::imencode(".jpg", img, buffer);

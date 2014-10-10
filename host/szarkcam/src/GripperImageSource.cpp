@@ -1,16 +1,17 @@
-#include "CameraImageCombiner.hpp"
-#include "utils.hpp"
 #include <opencv2/opencv.hpp>
 #include <boost/format.hpp>
+
+#include "utils.hpp"
+#include "GripperImageSource.hpp"
 
 const int JPEG_QUALITY = 45;
 
 using namespace camera;
 
-WALLAROO_REGISTER(ImageCombiner);
+WALLAROO_REGISTER(GripperImageSource);
 
-camera::ImageCombiner::ImageCombiner()
-		: logger(log4cpp::Category::getInstance("ImageCombiner")),
+camera::GripperImageSource::GripperImageSource()
+		: logger(log4cpp::Category::getInstance("GripperImageSource")),
 		  leftCameraGrabber("leftCameraGrabber", RegistrationToken()),
 		  rightCameraGrabber("rightCameraGrabber", RegistrationToken()) {
 
@@ -20,11 +21,11 @@ camera::ImageCombiner::ImageCombiner()
 	logger.notice("Instance created.");
 }
 
-camera::ImageCombiner::~ImageCombiner() {
+camera::GripperImageSource::~GripperImageSource() {
 	logger.notice("Instance destroyed.");
 }
 
-cv::Mat camera::ImageCombiner::getCombinedImage(bool drawHud) {
+cv::Mat camera::GripperImageSource::getImage(bool drawHud) {
 	long leftFrameNo, rightFrameNo;
 	double leftFps, rightFps;
 	cv::Mat leftFrame, rightFrame;
@@ -45,10 +46,11 @@ cv::Mat camera::ImageCombiner::getCombinedImage(bool drawHud) {
 	int us = utils::measureTime<std::chrono::microseconds>([&]() {
 		using namespace cv;
 
-		flip(leftFrame, leftFrame, 0);
+		//TODO obracanie
+		//flip(leftFrame, leftFrame, 0);
 		transpose(leftFrame, leftFrame);
+		//flip(leftFrame, leftFrame, 0);
 
-		flip(leftFrame, leftFrame, 0);
 		transpose(rightFrame, rightFrame);
 
 		Size sizeLeft = leftFrame.size();
@@ -70,9 +72,9 @@ cv::Mat camera::ImageCombiner::getCombinedImage(bool drawHud) {
 	return result;
 }
 
-void ImageCombiner::getEncodedImage(bool drawHud, EncodedImageProcessor processor) {
+void GripperImageSource::getEncodedImage(bool drawHud, EncodedImageProcessor processor) {
 
-	auto img = getCombinedImage(drawHud);
+	auto img = getImage(drawHud);
 
 	cv::vector<unsigned char> buffer(30000);
 
