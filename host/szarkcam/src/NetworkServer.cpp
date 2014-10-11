@@ -58,13 +58,16 @@ void camera::NetworkServer::run() {
 
 void camera::NetworkServer::doReceive() {
 	udpSocket.async_receive_from(asio::buffer(recvBuffer.get(), RECEIVED_DATA_MAX_LENGTH), endpoint,
-			[this](boost::system::error_code ec, std::size_t bytes_received) {
-				if (!ec && bytes_received > 0) {
-
+			[this](boost::system::error_code ec, std::size_t bytesReceived) {
+				if (ec) {
+					throw NetworkException((format("error at receiving request: %s") % ec.message()).str());
 				}
-				logger.info("Received request."); // TODO hud or not
 
-				imageSource->getEncodedImage(false, [this](void *buff, size_t length) {
+				bool drawHud = string(recvBuffer.get(), bytesReceived) == "HUD";
+
+				logger.info((format("Received request %s HUD.") % (drawHud ? "with" : "without")).str());
+
+				imageSource->getEncodedImage(drawHud, [this](void *buff, size_t length) {
 					auto sentBytes = udpSocket.send_to(asio::buffer(buff, length), endpoint);
 					if (sentBytes != length) {
 						throw NetworkException((format("not whole file sent (%u < %u)") % sentBytes % length).str());
