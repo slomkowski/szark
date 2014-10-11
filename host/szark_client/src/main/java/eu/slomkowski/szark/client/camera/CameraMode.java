@@ -2,7 +2,7 @@ package eu.slomkowski.szark.client.camera;
 
 public enum CameraMode {
 	RAW("RAW"),
-	HUD("RAW");
+	HUD("HUD");
 
 	private String mnemonic;
 

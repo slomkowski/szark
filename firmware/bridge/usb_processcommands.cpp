@@ -83,8 +83,8 @@ void usb::executeCommandsFromUSB() {
 			break;
 		case USBCommands::ARM_DRIVER_GET_GENERAL_STATE: {
 			USBCommands::arm::GeneralState general;
-			general.isCalibrated = 66; //arm::isCalibrated();
-			general.mode = (arm::Mode) 66; //arm::getMode();
+			general.isCalibrated = arm::isCalibrated();
+			general.mode = (arm::Mode) arm::getMode();
 			OutputBuff.push(&general, sizeof(USBCommands::arm::GeneralState));
 		}
 			break;
