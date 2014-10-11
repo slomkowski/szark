@@ -5,7 +5,6 @@ import eu.slomkowski.szark.client.camera.CameraMode;
 import eu.slomkowski.szark.client.camera.CameraType;
 import eu.slomkowski.szark.client.joystick.InvalidJoystickException;
 import eu.slomkowski.szark.client.joystick.JoystickBackend;
-import eu.slomkowski.szark.client.status.CalibrationStatus;
 import eu.slomkowski.szark.client.status.Direction;
 import eu.slomkowski.szark.client.status.Status;
 import eu.slomkowski.szark.client.updaters.ControlUpdater;
@@ -69,7 +68,9 @@ public class MainWindowLogic extends MainWindowView {
 	}
 
 	public synchronized void performKillSwitchDisable() {
+		int currentSerial = status.getSerial();
 		status.clean();
+		status.setSerial(currentSerial);
 		status.setKillSwitchEnable(false);
 
 		startStopButton.setIcon(iconStop);
@@ -120,7 +121,9 @@ public class MainWindowLogic extends MainWindowView {
 	public void connectToAll() {
 		final String hostName = connectHostnameField.getSelectedItem().toString();
 
+		setConnectButtonsEnabled(false);
 		setConnectButtonsText("Connecting...");
+
 		connectHostnameField.setEnabled(false);
 
 		new SwingWorker<Void, Void>() {
@@ -146,6 +149,7 @@ public class MainWindowLogic extends MainWindowView {
 							"Address resolve error",
 							JOptionPane.ERROR_MESSAGE);
 					setConnectButtonsText("Connect");
+					setConnectButtonsEnabled(true);
 					connectHostnameField.setEnabled(true);
 				} else {
 					performControlServerConnection(address);
@@ -154,6 +158,7 @@ public class MainWindowLogic extends MainWindowView {
 					connected = true;
 
 					setConnectButtonsText("Disconnect");
+					setConnectButtonsEnabled(true);
 					connectHostnameField.setEnabled(false);
 				}
 			}
@@ -161,13 +166,29 @@ public class MainWindowLogic extends MainWindowView {
 	}
 
 	public void disconnectFromAll() {
-		performCameraServerDisconnection();
-		performControlServerDisconnection(true);
+		setConnectButtonsEnabled(false);
+		setConnectButtonsText("Disconnecting...");
 
-		connected = false;
+		new SwingWorker<Void, Void>() {
 
-		setConnectButtonsText("Connect");
-		connectHostnameField.setEnabled(true);
+			@Override
+			protected Void doInBackground() throws Exception {
+				performCameraServerDisconnection();
+				performControlServerDisconnection(true);
+
+				return null;
+			}
+
+			@Override
+			protected void done() {
+				connected = false;
+
+				setConnectButtonsText("Connect");
+				setConnectButtonsEnabled(true);
+
+				connectHostnameField.setEnabled(true);
+			}
+		}.execute();
 	}
 
 	private void initializeControls() {

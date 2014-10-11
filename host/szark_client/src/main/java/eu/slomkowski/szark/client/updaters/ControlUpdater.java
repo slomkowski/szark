@@ -61,7 +61,7 @@ public class ControlUpdater extends SwingWorker<Void, Status> {
 			socket.receive(receivedPacket);
 		} catch (final SocketTimeoutException e) {
 			System.err.println("Control receive timeout");
-			status.incrementSerial();
+			status.setSerial(0);
 			return null;
 		}
 
