@@ -15,7 +15,7 @@ udpPort = int(sys.argv[2])
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
 while True:
-    sock.sendto('RAW'.encode('utf-8'), (udpAddress, udpPort))
+    sock.sendto('HUD'.encode('utf-8'), (udpAddress, udpPort))
     (data, addr) = sock.recvfrom(50000)
 
     img = cv2.imdecode(numpy.fromstring(data, dtype='uint8'), 1)

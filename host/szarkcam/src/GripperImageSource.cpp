@@ -49,23 +49,24 @@ cv::Mat camera::GripperImageSource::getImage(bool drawHud) {
 	int us = utils::measureTime<std::chrono::microseconds>([&]() {
 		using namespace cv;
 
-		//TODO obracanie
-		//flip(leftFrame, leftFrame, 0);
-		transpose(leftFrame, leftFrame);
-		//flip(leftFrame, leftFrame, 0);
+		Mat transLeft;
+		transpose(leftFrame, transLeft);
+		flip(transLeft, transLeft, 0);
 
-		transpose(rightFrame, rightFrame);
+		Mat transRight;
+		transpose(rightFrame, transRight);
+		flip(transRight, transRight, 1);
 
-		Size sizeLeft = leftFrame.size();
-		Size sizeRight = rightFrame.size();
+		Size sizeLeft = transLeft.size();
+		Size sizeRight = transRight.size();
 
 		Mat im3(sizeLeft.height, sizeLeft.width + sizeRight.width, leftFrame.type());
 
 		Mat left(im3, Rect(0, 0, sizeLeft.width, sizeLeft.height));
-		leftFrame.copyTo(left);
+		transLeft.copyTo(left);
 
 		Mat right(im3, Rect(sizeLeft.width, 0, sizeRight.width, sizeRight.height));
-		rightFrame.copyTo(right);
+		transRight.copyTo(right);
 
 		result = im3;
 	});
