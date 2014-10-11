@@ -21,32 +21,31 @@
 
 using namespace std;
 using namespace boost;
-
-namespace processing {
-
-/**
- * Defines the maximum requests queue size.
- */
-const int REQUEST_QUEUE_MAX_SIZE = 100;
+using namespace processing;
 
 /**
- * If true, new requests will be skipped. If false, new requests will replace older ones.
- */
-const bool REQUEST_QUEUE_OVERFLOW_BEHAVIOR = false;
+* Defines the maximum requests queue size.
+*/
+constexpr int REQUEST_QUEUE_MAX_SIZE = 100;
+
+/**
+* If true, new requests will be skipped. If false, new requests will replace older ones.
+*/
+constexpr bool REQUEST_QUEUE_OVERFLOW_BEHAVIOR = false;
 
 WALLAROO_REGISTER(RequestQueuer);
 
-RequestQueuer::RequestQueuer()
+processing::RequestQueuer::RequestQueuer()
 		: logger(log4cpp::Category::getInstance("RequestQueuer")),
-				requestProcessors("requestProcessors", RegistrationToken()),
-				jsonReader(Json::Reader(Json::Features::strictMode())) {
+		  requestProcessors("requestProcessors", RegistrationToken()),
+		  jsonReader(Json::Reader(Json::Features::strictMode())) {
 
 	requestProcessorExecutorThread.reset(new thread(&RequestQueuer::requestProcessorExecutorThreadFunction, this));
 
 	logger.notice("Instance created.");
 }
 
-RequestQueuer::~RequestQueuer() {
+processing::RequestQueuer::~RequestQueuer() {
 	requestsMutex.lock();
 	finishCycleThread = true;
 	requestsMutex.unlock();
@@ -58,7 +57,7 @@ RequestQueuer::~RequestQueuer() {
 	logger.notice("Instance destroyed.");
 }
 
-long RequestQueuer::addRequest(string requestString) {
+long processing::RequestQueuer::addRequest(string requestString) {
 	unique_lock<mutex> lk(requestsMutex);
 
 	logger.debug((format("Received request with the size of %d bytes.") % requestString.length()).str());
@@ -94,13 +93,12 @@ long RequestQueuer::addRequest(string requestString) {
 				(format("Requests queue is full (%d). removing the oldest one.") % REQUEST_QUEUE_MAX_SIZE).str());
 
 		long id;
-		Json::Value r;
 
-		tie(id, r) = requests.top();
+		tie(id, ignore) = requests.top();
 
 		requests.pop();
 
-		if(rejectedRequestRemover == nullptr) {
+		if (rejectedRequestRemover == nullptr) {
 			logger.error("Cannot remove rejected request. No RejectedRequestRemover set.");
 		} else {
 			rejectedRequestRemover(id);
@@ -124,22 +122,22 @@ long RequestQueuer::addRequest(string requestString) {
 	return id;
 }
 
-int RequestQueuer::getNumOfMessages() {
+int processing::RequestQueuer::getNumOfMessages() {
 	unique_lock<mutex> lk(requestsMutex);
 	return requests.size();
 }
 
-int RequestQueuer::getNumOfProcessors() {
+int processing::RequestQueuer::getNumOfProcessors() {
 	return requestProcessors.size();
 }
 
-long RequestQueuer::nextId() {
+long processing::RequestQueuer::nextId() {
 	static long id = 1;
 	id++;
 	return id;
 }
 
-void RequestQueuer::requestProcessorExecutorThreadFunction() {
+void processing::RequestQueuer::requestProcessorExecutorThreadFunction() {
 	while (true) {
 		unique_lock<mutex> lk(requestsMutex);
 
@@ -202,4 +200,3 @@ void RequestQueuer::requestProcessorExecutorThreadFunction() {
 	}
 }
 
-} /* namespace processing */

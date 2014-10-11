@@ -426,6 +426,10 @@ namespace bridge {
 		auto state = reinterpret_cast<USBCommands::arm::GeneralState *>(data);
 
 		if (state->isCalibrated) {
+			if (calibrationStatus == ArmCalibrationStatus::IN_PROGRESS) {
+				requests.erase("arm_addon");
+				logger.notice("Calibration finished.");
+			}
 			calibrationStatus = ArmCalibrationStatus::DONE;
 		}
 
@@ -565,6 +569,7 @@ namespace bridge {
 
 	void Interface::ArmClass::onKillSwitchActivated() {
 		mode = ArmDriverMode::DIRECTIONAL;
+		requests.erase("arm_addon");
 	}
 
 	void Interface::ExpanderClass::onKillSwitchActivated() {
