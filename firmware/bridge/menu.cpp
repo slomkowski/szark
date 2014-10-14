@@ -22,17 +22,13 @@
 #include "i2c.hpp"
 #include "MenuClass.hpp"
 
-using namespace menu;
+#include "usb-commands.hpp"
 
-constexpr double BATTERY_VOLTAGE_FACTOR2(double R_up, double R_down, double V_ref, double factor = 1.0) {
-	return (V_ref / 1023.0 * (R_up + R_down) / R_down) * factor;
-}
+using namespace menu;
 
 /*
  * Hardware settings
  */
-const double BATTERY_VOLTAGE_FACTOR = BATTERY_VOLTAGE_FACTOR2(8200, 1000, 2.56);
-
 const uint8_t MOTOR_SPEED = 3;
 
 const uint8_t ARM_SPEED = 5;
@@ -60,7 +56,7 @@ static void batteryDisplayHeaderFunction() {
 	static char text[] = "Batt: xx.xV\n";
 
 	uint8_t index;
-	uint16_t volt = analog::getRawVoltage() * 100.0 * BATTERY_VOLTAGE_FACTOR;
+	uint16_t volt = analog::getRawVoltage() * 100.0 * USBCommands::bridge::VOLTAGE_FACTOR;
 
 	if (volt % 10 >= 5) {
 		volt = volt / 10 + 1;

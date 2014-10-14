@@ -25,9 +25,6 @@ using namespace boost;
 
 namespace bridge {
 
-	const double VOLTAGE_FACTOR = .01981590757978723404;
-	const double CURRENT_FACTOR = 34.0;
-
 	const int VOLTAGE_ARRAY_SIZE = 5;
 	const int CURRENT_ARRAY_SIZE = 5;
 
@@ -113,12 +110,12 @@ namespace bridge {
 	}
 
 	double Interface::getVoltage() {
-		return round(10.0 * VOLTAGE_FACTOR * accumulate(rawVoltage->begin(), rawVoltage->end(), 0) / rawVoltage->size())
+		return round(10.0 * USBCommands::bridge::VOLTAGE_FACTOR * accumulate(rawVoltage->begin(), rawVoltage->end(), 0) / rawVoltage->size())
 				/ 10.0;
 	}
 
 	double Interface::getCurrent() {
-		return round(10.0 * CURRENT_FACTOR * accumulate(rawCurrent->begin(), rawCurrent->end(), 0) / rawCurrent->size())
+		return round(10.0 * USBCommands::bridge::CURRENT_FACTOR * accumulate(rawCurrent->begin(), rawCurrent->end(), 0) / rawCurrent->size())
 				/ 10.0;
 	}
 
@@ -557,8 +554,13 @@ namespace bridge {
 		buttons[Button::DOWN] = state->buttonDown;
 		buttons[Button::ENTER] = state->buttonEnter;
 
-		rawCurrent->push_back(state->rawCurrent);
-		rawVoltage->push_back(state->rawVoltage);
+		unsigned int curr = state->rawCurrent;
+		unsigned int volt = state->rawVoltage;
+
+		rawCurrent->push_back(curr);
+		rawVoltage->push_back(volt);
+
+		logger.debug((format("Raw voltage: %u, raw current: %u.") % volt % curr).str());
 
 		logger.info(
 				(format("Updating state: kill switch: %d (by hardware: %d), battery: %.1fV, %.1fA") % killSwitchActive

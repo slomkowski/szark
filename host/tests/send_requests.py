@@ -15,7 +15,7 @@ else:
 
 #request = { "killswitch": False, "serial" : 0, "motor" : { "left" : { "dir" : sys.argv[2], "speed":int(sys.argv[3])}}}
 #request = { "killswitch": False, "serial" : 0, "arm" : { "elbow" : { "dir" : sys.argv[2], "speed":int(sys.argv[3])}}}
-request = { "killswitch": False, "serial" : 0, "light" : { "left" : val}}
+request = { "ks_en": False, "serial" : 0, "light" : { "right" : val}}
 #request = { "killswitch": False, "serial" : 0, "lcd" : "hello world xfdsfs" }
 
 
