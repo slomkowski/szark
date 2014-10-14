@@ -571,6 +571,11 @@ namespace bridge {
 
 	void Interface::ArmClass::onKillSwitchActivated() {
 		mode = ArmDriverMode::DIRECTIONAL;
+
+		if (calibrationStatus == ArmCalibrationStatus::IN_PROGRESS) {
+			calibrationStatus = ArmCalibrationStatus::NONE;
+		}
+
 		requests.erase("arm_addon");
 	}
 
