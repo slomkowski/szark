@@ -18,8 +18,8 @@ public interface HardcodedConfiguration {
 
 	String DEFAULT_LOGO = "/img/logo.jpg";
 
+	int JOINT_SPEED_INIT_SHOULDER = 7;
 	int JOINT_SPEED_INIT_ELBOW = 5;
-	int JOINT_SPEED_INIT_SHOULDER = 5;
 	int JOINT_SPEED_INIT_GRIPPER = 7;
 
 	int JOINT_SPEED_MAX = 15;

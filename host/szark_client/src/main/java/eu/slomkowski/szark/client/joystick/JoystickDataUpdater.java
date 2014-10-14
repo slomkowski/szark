@@ -88,10 +88,10 @@ public class JoystickDataUpdater {
 		if (armShoulder == 0) {
 			status.joints.shoulder.setDirection(Direction.STOP);
 			status.joints.shoulder.setSpeed(0);
-		} else if (armShoulder > 0) {
+		} else if (armShoulder < 0) {
 			status.joints.shoulder.setDirection(Direction.FORWARD);
 			status.joints.shoulder.setSpeed((byte) (status.joints.shoulder.getSpeedLimit() * Math.abs(armShoulder)));
-		} else if (armShoulder < 0) {
+		} else if (armShoulder > 0) {
 			status.joints.shoulder.setDirection(Direction.BACKWARD);
 			status.joints.shoulder.setSpeed((byte) (status.joints.shoulder.getSpeedLimit() * Math.abs(armShoulder)));
 		}
