@@ -2,10 +2,10 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>eu.slomkowski.szark.client</groupId>
-    <artifactId>szark_client</artifactId>
+    <artifactId>SZARK_desktop_client</artifactId>
     <packaging>jar</packaging>
-    <version>0.16</version>
-    <name>szark_client</name>
+    <version>0.17</version>
+    <name>SZARK_desktop_client</name>
     <url>www.slomkowski.eu</url>
     <description>Java client for SZARK robot.</description>
     <dependencies>

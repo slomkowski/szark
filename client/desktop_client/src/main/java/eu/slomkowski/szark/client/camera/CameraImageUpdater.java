@@ -145,7 +145,11 @@ public class CameraImageUpdater extends JLabel {
 
 		@Override
 		protected void done() {
-			socket.close();
+			try {
+				socket.close();
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
 		}
 
 		@Override
@@ -156,6 +160,12 @@ public class CameraImageUpdater extends JLabel {
 
 		public void stopTask() {
 			needToStop.set(true);
+
+			try {
+				this.get();
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
 		}
 
 		public BufferedImage getBufferedImage() {

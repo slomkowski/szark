@@ -152,12 +152,20 @@ public class ControlUpdater extends SwingWorker<Void, Status> {
 		mainWindow.updateIndicators(chunks.get(chunks.size() - 1));
 	}
 
+	@Override
+	protected void done() {
+		try {
+			socket.close();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
 	public void stopTask() {
 		needToStop.set(true);
 
 		try {
-			updateCycle();
-			socket.close();
+			this.get();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
