@@ -458,8 +458,11 @@ void joint::calibrate() {
     joints[S_WRIST].currPos = joints[S_WRIST].maxPos / 2;
 #endif
 
-	for (uint8_t i = 0; i < 4; i++)
+	for (uint8_t i = 0; i < 4; i++) {
 		joints[i].mode = DIR;
+	}
+
+	brake();
 
 	calibrated = true;
 }
