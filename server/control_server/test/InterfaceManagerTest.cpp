@@ -39,8 +39,6 @@ BOOST_AUTO_TEST_CASE(InterfaceManager_Operation) {
 	i.setLCDText("hello world");
 	i.arm.calibrate();
 
-	BOOST_CHECK_EQUAL(i.arm.getCalibrationStatus(), bridge::ArmCalibrationStatus::IN_PROGRESS);
-
 	std::vector<double> timings;
 
 	for (int t = 0; t < 500; t++) {

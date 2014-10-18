@@ -1,15 +1,3 @@
-/*
- * NetServerTest.cpp
- *
- *  Project: server
- *  Created on: 8 maj 2014
- *
- *  Copyright 2014 Michał Słomkowski m.slomkowski@gmail.com
- *
- *	This program is free software; you can redistribute it and/or modify it
- *	under the terms of the GNU General Public License version 3 as
- *	published by the Free Software Foundation.
- */
 #include <memory>
 #include <thread>
 #include <boost/test/unit_test.hpp>
@@ -20,7 +8,7 @@
 using namespace std;
 using namespace processing;
 
-class RequestQueuerMock: public wallaroo::Device, public processing::IRequestQueuer {
+class RequestQueuerMock : public wallaroo::Device, public processing::IRequestQueuer {
 public:
 	virtual long addRequest(std::string request) {
 		id++;
@@ -28,7 +16,7 @@ public:
 		return id;
 	}
 
-	virtual int getNumOfMessagess() {
+	virtual int getNumOfMessages() {
 		return 1;
 	}
 
@@ -40,11 +28,16 @@ public:
 		callback = s;
 	}
 
+	virtual void setRejectedRequestRemover(RejectedRequestRemover r) {
+
+	}
+
 	~RequestQueuerMock() {
 		if (respThread.get() != nullptr) {
 			respThread->join();
 		}
 	}
+
 private:
 	ResponseSender callback;
 	long id = 1;

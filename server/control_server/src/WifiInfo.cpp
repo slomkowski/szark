@@ -27,6 +27,7 @@ namespace os {
 			: logger(log4cpp::Category::getInstance("WifiInfo")),
 			  config("config", RegistrationToken()),
 			  iwName(iwName) {
+		Init();
 	}
 
 	WifiInfo::WifiInfo()

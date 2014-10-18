@@ -40,6 +40,7 @@ processing::NetServer::NetServer(unsigned int port)
 		  ioService(),
 		  udpSocket(ioService),
 		  udpPort(port) {
+	Init();
 }
 
 void processing::NetServer::Init() {

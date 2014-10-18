@@ -1,6 +1,6 @@
 set(EXTERNAL_LIBS_DIR "../../external-libs/")
 
-list(APPEND CMAKE_CXX_FLAGS "-std=c++11 -Wall -Og -g ${CMAKE_CXX_FLAGS}")
+list(APPEND CMAKE_CXX_FLAGS "-std=c++11 -Wall -g ${CMAKE_CXX_FLAGS}")
 
 INCLUDE(FindPkgConfig)
 

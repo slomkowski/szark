@@ -1,17 +1,3 @@
-/*
-
- * WifiInfoTest.cpp
- *
- *  Project: server
- *  Created on: 24 kwi 2014
- *
- *  Copyright 2014 Michał Słomkowski m.slomkowski@gmail.com
- *
- *	This program is free software; you can redistribute it and/or modify it
- *	under the terms of the GNU General Public License version 3 as
- *	published by the Free Software Foundation.
- */
-
 #include <chrono>
 #include <thread>
 
@@ -28,7 +14,7 @@ BOOST_AUTO_TEST_CASE(WifiInfoTest_Run) {
 
 	BOOST_CHECK_EQUAL(INTERFACE_NAME, wifi.getInterfaceName());
 
-	for (int i = 0; i < 30; i++) {
+	for (int i = 0; i < 15; i++) {
 		auto bitrate = wifi.getBitrate();
 		auto sigLevel = wifi.getSignalLevel();
 
