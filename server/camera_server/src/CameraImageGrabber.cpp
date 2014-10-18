@@ -17,10 +17,13 @@ WALLAROO_REGISTER(ImageGrabber, string);
 camera::ImageGrabber::ImageGrabber(const std::string &prefix) :
 		prefix(prefix),
 		logger(log4cpp::Category::getInstance("ImageGrabber")),
+		config("config", RegistrationToken()),
 		captureTimesAvgBuffer(FRAMERATE_AVG_FRAMES),
 		currentFrameNo(1) {
+}
 
-	int videoDevice = config::getInt(getFullConfigPath("device"));
+void ImageGrabber::Init() {
+	int videoDevice = config->getInt(getFullConfigPath("device"));
 
 	videoCapture.reset(new cv::VideoCapture(videoDevice));
 
@@ -73,7 +76,7 @@ void ImageGrabber::grabberThreadFunction() {
 	while (!finishThread) {
 		cv::Mat frame;
 		bool validFrame;
-		int elapsedTime = utils::measureTime<std::chrono::milliseconds>([&]() {
+		int elapsedTime = common::utils::measureTime<std::chrono::milliseconds>([&]() {
 			validFrame = videoCapture->read(frame);
 		});
 
@@ -106,8 +109,8 @@ void ImageGrabber::setVideoCaptureProperty(int prop, std::string confName) {
 	int val;
 
 	try {
-		val = config::getInt(path);
-	} catch (config::ConfigException &e) {
+		val = config->getInt(path);
+	} catch (common::config::ConfigException &e) {
 		throw ImageGrabberException((format("failed to set property: %s") % e.what()).str());
 	}
 
@@ -120,3 +123,5 @@ void ImageGrabber::setVideoCaptureProperty(int prop, std::string confName) {
 
 	logger.info((format("Set property '%s' to value %d.") % path % val).str());
 }
+
+

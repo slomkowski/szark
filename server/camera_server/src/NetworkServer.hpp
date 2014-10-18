@@ -9,6 +9,7 @@
 #include <log4cpp/Category.hh>
 #include <wallaroo/device.h>
 
+#include "Configuration.hpp"
 #include "GripperImageSource.hpp"
 
 namespace camera {
@@ -40,13 +41,17 @@ namespace camera {
 	private:
 		log4cpp::Category &logger;
 
+		wallaroo::Plug<common::config::Configuration> config;
 		wallaroo::Plug<camera::IImageSource> imageSource;
 
 		boost::asio::io_service ioService;
+		int port;
 		boost::asio::ip::udp::socket udpSocket;
 		boost::asio::ip::udp::endpoint endpoint;
 
 		std::unique_ptr<char> recvBuffer;
+
+		void Init();
 
 		void doReceive();
 

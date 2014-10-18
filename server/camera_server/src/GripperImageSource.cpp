@@ -14,6 +14,7 @@ WALLAROO_REGISTER(GripperImageSource);
 
 camera::GripperImageSource::GripperImageSource()
 		: logger(log4cpp::Category::getInstance("GripperImageSource")),
+		  config("config", RegistrationToken()),
 		  leftCameraGrabber("leftCameraGrabber", RegistrationToken()),
 		  rightCameraGrabber("rightCameraGrabber", RegistrationToken()),
 		  hudPainter("hudPainter", RegistrationToken()) {
@@ -46,7 +47,7 @@ cv::Mat camera::GripperImageSource::getImage(bool drawHud) {
 
 	cv::Mat result;
 
-	int us = utils::measureTime<std::chrono::microseconds>([&]() {
+	int us = common::utils::measureTime<std::chrono::microseconds>([&]() {
 		using namespace cv;
 
 		Mat transLeft;
@@ -86,7 +87,7 @@ void GripperImageSource::getEncodedImage(bool drawHud, EncodedImageProcessor pro
 
 	cv::vector<unsigned char> buffer(30000);
 
-	int us = utils::measureTime<std::chrono::microseconds>([&]() {
+	int us = common::utils::measureTime<std::chrono::microseconds>([&]() {
 		cv::imencode(".jpg", img, buffer, jpegEncoderParameters);
 	});
 

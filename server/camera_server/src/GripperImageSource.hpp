@@ -4,6 +4,7 @@
 #include <opencv2/opencv.hpp>
 #include <wallaroo/device.h>
 #include <log4cpp/Category.hh>
+#include <Configuration.hpp>
 
 #include "ImageSource.hpp"
 #include "Painter.hpp"
@@ -28,6 +29,7 @@ namespace camera {
 
 		std::vector<int> jpegEncoderParameters;
 
+		wallaroo::Plug<common::config::Configuration> config;
 		wallaroo::Plug<IImageGrabber> leftCameraGrabber;
 		wallaroo::Plug<IImageGrabber> rightCameraGrabber;
 

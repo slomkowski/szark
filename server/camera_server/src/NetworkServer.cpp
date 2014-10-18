@@ -14,22 +14,28 @@ WALLAROO_REGISTER(NetworkServer);
 
 camera::NetworkServer::NetworkServer()
 		: logger(log4cpp::Category::getInstance("NetworkServer")),
+		  config("config", RegistrationToken()),
 		  imageSource("imageSource", RegistrationToken()),
 		  ioService(),
+		  port(0),
 		  udpSocket(ioService) {
-	initializeServer(config::getInt("szark.server.camera.NetworkServer.port"));
 }
 
 camera::NetworkServer::NetworkServer(int port)
 		: logger(log4cpp::Category::getInstance("NetworkServer")),
+		  config("config", RegistrationToken()),
 		  imageSource("imageSource", RegistrationToken()),
 		  ioService(),
+		  port(port),
 		  udpSocket(ioService) {
-	initializeServer(port);
 }
 
-void NetworkServer::initializeServer(int port) {
+void NetworkServer::Init() {
 	using boost::asio::ip::udp;
+
+	if (port == 0) {
+		port = config->getInt("szark.server.camera.NetworkServer.port");
+	}
 
 	recvBuffer.reset(new char[RECEIVED_DATA_MAX_LENGTH]);
 

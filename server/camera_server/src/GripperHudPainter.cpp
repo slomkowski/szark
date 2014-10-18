@@ -10,7 +10,8 @@ using namespace camera;
 WALLAROO_REGISTER(GripperHudPainter)
 
 camera::GripperHudPainter::GripperHudPainter()
-		: logger(log4cpp::Category::getInstance("ImageGrabber")) {
+		: logger(log4cpp::Category::getInstance("ImageGrabber")),
+		  config("config", RegistrationToken()) {
 	logger.notice("Instance created.");
 }
 

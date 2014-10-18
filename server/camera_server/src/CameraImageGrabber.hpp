@@ -13,6 +13,8 @@
 #include <memory>
 #include <utility>
 
+#include "Configuration.hpp"
+
 namespace camera {
 	class ImageGrabberException : public std::runtime_error {
 	public:
@@ -42,6 +44,8 @@ namespace camera {
 
 		log4cpp::Category &logger;
 
+		wallaroo::Plug<common::config::Configuration> config;
+
 		boost::circular_buffer<double> captureTimesAvgBuffer;
 
 		std::unique_ptr<cv::VideoCapture> videoCapture;
@@ -56,6 +60,8 @@ namespace camera {
 		double currentFps;
 
 		volatile bool finishThread = false;
+
+		virtual void Init();
 
 		void grabberThreadFunction();
 
