@@ -39,9 +39,10 @@ processing::RequestQueuer::RequestQueuer()
 		: logger(log4cpp::Category::getInstance("RequestQueuer")),
 		  requestProcessors("requestProcessors", RegistrationToken()),
 		  jsonReader(Json::Reader(Json::Features::strictMode())) {
+}
 
+void processing::RequestQueuer::Init() {
 	requestProcessorExecutorThread.reset(new thread(&RequestQueuer::requestProcessorExecutorThreadFunction, this));
-
 	logger.notice("Instance created.");
 }
 
@@ -174,13 +175,13 @@ void processing::RequestQueuer::requestProcessorExecutorThreadFunction() {
 
 		response["serial"] = serial;
 
-		auto execTimeMicroseconds = utils::measureTime([&]() {
+		auto execTimeMicroseconds = common::utils::measureTime<chrono::microseconds>([&]() {
 			for (auto proc : requestProcessors) {
 				std::shared_ptr<IRequestProcessor>(proc)->process(req, response);
 			}
-		}).count();
+		});
 
-		response["timestamp"] = utils::getTimestamp();
+		response["timestamp"] = common::utils::getTimestamp();
 
 		logger.info((format("Request %d executed in %d us.") % serial % execTimeMicroseconds).str());
 

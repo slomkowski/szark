@@ -28,19 +28,18 @@
 
 using namespace std;
 using namespace boost;
+using namespace bridge;
 
-namespace bridge {
-
-InterfaceManager::InterfaceManager()
+bridge::InterfaceManager::InterfaceManager()
 		: logger(log4cpp::Category::getInstance("InterfaceManager")) {
 	logger.notice("Instance created.");
 }
 
-InterfaceManager::~InterfaceManager() {
+bridge::InterfaceManager::~InterfaceManager() {
 	logger.notice("Instance destroyed.");
 }
 
-pair<vector<uint8_t>, vector<USBCommands::Request>> InterfaceManager::generateGetRequests(bool killSwitchActive) {
+pair<vector<uint8_t>, vector<USBCommands::Request>> bridge::InterfaceManager::generateGetRequests(bool killSwitchActive) {
 	static long counter = 0;
 
 	vector<uint8_t> commands;
@@ -66,21 +65,21 @@ pair<vector<uint8_t>, vector<USBCommands::Request>> InterfaceManager::generateGe
 	responseOrder.push_back(USBCommands::Request::ARM_DRIVER_GET);
 
 	switch (counter % 4) {
-	case 0:
-		commands.push_back(arm::ELBOW);
-		break;
-	case 1:
-		commands.push_back(arm::GRIPPER);
-		break;
-	case 2:
-		commands.push_back(arm::SHOULDER);
-		break;
-	case 3:
-		commands.pop_back();
-		commands.push_back(USBCommands::Request::ARM_DRIVER_GET_GENERAL_STATE);
-		responseOrder.pop_back();
-		responseOrder.push_back(USBCommands::Request::ARM_DRIVER_GET_GENERAL_STATE);
-		break;
+		case 0:
+			commands.push_back(arm::ELBOW);
+			break;
+		case 1:
+			commands.push_back(arm::GRIPPER);
+			break;
+		case 2:
+			commands.push_back(arm::SHOULDER);
+			break;
+		case 3:
+			commands.pop_back();
+			commands.push_back(USBCommands::Request::ARM_DRIVER_GET_GENERAL_STATE);
+			responseOrder.pop_back();
+			responseOrder.push_back(USBCommands::Request::ARM_DRIVER_GET_GENERAL_STATE);
+			break;
 	};
 
 	counter++;
@@ -88,14 +87,14 @@ pair<vector<uint8_t>, vector<USBCommands::Request>> InterfaceManager::generateGe
 	return make_pair(commands, responseOrder);
 }
 
-void InterfaceManager::syncWithDevice(std::function<std::vector<uint8_t>(std::vector<uint8_t>)> syncFunction) {
+void bridge::InterfaceManager::syncWithDevice(std::function<std::vector<uint8_t>(std::vector<uint8_t>)> syncFunction) {
 
 	vector<uint8_t> concatenated;
 	std::priority_queue<std::shared_ptr<DataHolder>, vector<std::shared_ptr<DataHolder>>, DataHolderComparer> sortedRequests;
 
 	auto diff = generateDifferentialRequests(isKillSwitchActive());
 
-	for (auto& r : diff) {
+	for (auto &r : diff) {
 		sortedRequests.push(r.second);
 	}
 
@@ -111,20 +110,20 @@ void InterfaceManager::syncWithDevice(std::function<std::vector<uint8_t>(std::ve
 
 	logger.debug(
 			(format("Sending request to the device (%d bytes): %s.") % concatenated.size()
-					% utils::toString<uint8_t>(concatenated)).str());
+					% common::utils::toString<uint8_t>(concatenated)).str());
 
 	auto response = syncFunction(concatenated);
 
 	logger.debug(
-			(format("Got response from device (%d bytes): %s.") % response.size() % utils::toString<uint8_t>(response)).str());
+			(format("Got response from device (%d bytes): %s.") % response.size() % common::utils::toString<uint8_t>(response)).str());
 
 	updateDataStructures(getterReqs.second, response);
 }
 
-RequestMap InterfaceManager::generateDifferentialRequests(bool killSwitchActive) {
+RequestMap bridge::InterfaceManager::generateDifferentialRequests(bool killSwitchActive) {
 	RequestMap diff;
 
-	for (auto& newRequest : requests) {
+	for (auto &newRequest : requests) {
 		if (previousRequests.find(newRequest.first) == previousRequests.end()) {
 			logger.debug((format("Key '%s' not in the previous state. Adding.") % newRequest.first).str());
 			diff[newRequest.first] = newRequest.second;
@@ -141,7 +140,7 @@ RequestMap InterfaceManager::generateDifferentialRequests(bool killSwitchActive)
 
 	previousRequests = requests;
 	if (killSwitchActive) {
-		for (auto& r : requests) {
+		for (auto &r : requests) {
 			if (r.second->isKillSwitchDependent()) {
 				logger.debug((format("Removing key '%s' because kill switch is active.") % r.first).str());
 				diff.erase(r.first);
@@ -152,4 +151,3 @@ RequestMap InterfaceManager::generateDifferentialRequests(bool killSwitchActive)
 	return diff;
 }
 
-} /* namespace bridge */

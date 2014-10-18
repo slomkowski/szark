@@ -104,6 +104,8 @@ namespace processing {
 		ResponseSender responseSender;
 		RejectedRequestRemover rejectedRequestRemover;
 
+		void Init();
+
 		void requestProcessorExecutorThreadFunction();
 
 		long nextId();
