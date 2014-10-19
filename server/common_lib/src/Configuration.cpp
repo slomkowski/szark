@@ -1,12 +1,10 @@
 #include <fstream>
 
-#include "wallaroo/dynamic_lib.h"
-
 #include "Configuration.hpp"
 
 using namespace common::config;
 
-WALLAROO_REGISTER(Configuration, std::string);
+WALLAROO_REGISTER(Configuration, std::vector<std::string>);
 
 common::config::Configuration::Configuration(const std::string fileName) {
 	std::ifstream conf;
@@ -14,6 +12,16 @@ common::config::Configuration::Configuration(const std::string fileName) {
 	conf.open(fileName);
 	prop.load(conf);
 	conf.close();
+}
+
+common::config::Configuration::Configuration(std::vector<std::string> const fileNames) {
+	for (auto &name : fileNames) {
+		std::ifstream conf;
+		//TODO wyjątki itd.
+		conf.open(name);
+		prop.load(conf);
+		conf.close();
+	}
 }
 
 int common::config::Configuration::getInt(const std::string &property) {
@@ -36,3 +44,4 @@ void common::config::Configuration::checkKey(const std::string &property) {
 		throw ConfigException(std::string("key \'") + property + "\' not found");
 	}
 }
+

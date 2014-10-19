@@ -8,7 +8,7 @@ INCLUDE("../common.cmake")
 
 INCLUDE(FindPkgConfig)
 
-find_package(Boost COMPONENTS system unit_test_framework REQUIRED)
+find_package(Boost COMPONENTS system unit_test_framework program_options filesystem REQUIRED)
 find_package(PkgConfig REQUIRED)
 
 pkg_check_modules(LOG4CPP "log4cpp")

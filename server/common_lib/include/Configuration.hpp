@@ -1,15 +1,3 @@
-/*
- * Configuration.hpp
- *
- *  Project: server
- *  Created on: 24 kwi 2014
- *
- *  Copyright 2014 Michał Słomkowski m.slomkowski@gmail.com
- *
- *	This program is free software; you can redistribute it and/or modify it
- *	under the terms of the GNU General Public License version 3 as
- *	published by the Free Software Foundation.
- */
 #ifndef CONFIGURATION_HPP_
 #define CONFIGURATION_HPP_
 
@@ -64,6 +52,8 @@ namespace common {
 		class Configuration : boost::noncopyable, public wallaroo::Device {
 		public:
 			Configuration(const std::string fileName);
+
+			Configuration(const std::vector<std::string> fileNames);
 
 			int getInt(const std::string &property);
 
