@@ -1,16 +1,3 @@
-/*
- * InterfaceManager.hpp
- *
- *  Project: server
- *  Created on: 24-08-2013
- *
- *  Copyright 2013 Michał Słomkowski m.slomkowski@gmail.com
- *
- *	This program is free software; you can redistribute it and/or modify it
- *	under the terms of the GNU General Public License version 3 as
- *	published by the Free Software Foundation.
- */
-
 #ifndef INTERFACEMANAGER_HPP_
 #define INTERFACEMANAGER_HPP_
 
@@ -23,22 +10,23 @@
 
 namespace bridge {
 
-class InterfaceManager: public bridge::Interface {
-public:
-	InterfaceManager();
-	virtual ~InterfaceManager();
+	class InterfaceManager : public bridge::Interface {
+	public:
+		InterfaceManager();
 
-	void syncWithDevice(std::function<std::vector<uint8_t>(std::vector<uint8_t>)> syncFunction);
+		virtual ~InterfaceManager();
 
-private:
-	log4cpp::Category& logger;
+		void syncWithDevice(std::function<std::vector<uint8_t>(std::vector<uint8_t>)> syncFunction);
 
-	std::pair<std::vector<uint8_t>, std::vector<USBCommands::Request>> generateGetRequests(bool killSwitchActive);
+	private:
+		log4cpp::Category &logger;
 
-	RequestMap previousRequests;
+		std::pair<std::vector<uint8_t>, std::vector<USBCommands::Request>> generateGetRequests(bool killSwitchActive);
 
-	RequestMap generateDifferentialRequests(bool killSwitchActive);
-};
+		RequestMap previousRequests;
+
+		RequestMap generateDifferentialRequests(bool killSwitchActive);
+	};
 
 } /* namespace bridge */
 #endif /* INTERFACEMANAGER_HPP_ */

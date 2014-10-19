@@ -1,10 +1,3 @@
-/*
- * Interface.hpp
- *
- *  Created on: 19-08-2013
- *      Author: michal
- */
-
 #ifndef INTERFACE_HPP_
 #define INTERFACE_HPP_
 

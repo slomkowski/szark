@@ -12,10 +12,10 @@
 #include <algorithm>
 #include <stdexcept>
 
-#include <log4cpp/PropertyConfigurator.hh>
 #include <wallaroo/catalog.h>
 
 #include "Configuration.hpp"
+#include "logging.hpp"
 #include "NetServer.hpp"
 
 using namespace std;
@@ -23,7 +23,8 @@ using namespace wallaroo;
 
 int main(int argc, char *argv[]) {
 	std::string initFileName = "logger.properties";
-	log4cpp::PropertyConfigurator::configure(initFileName);
+
+	common::logger::configureLogger(initFileName, log4cpp::Priority::DEBUG, true);
 
 	Catalog c;
 	c.Create("conf", "Configuration", initFileName);
@@ -32,11 +33,13 @@ int main(int argc, char *argv[]) {
 	c.Create("reqQueuer", "RequestQueuer");
 	c.Create("bridgeProc", "BridgeProcessor");
 
-	wallaroo::use(c["conf"]).as("config").of(c["netServer"]);
-
-	use(c["comm"]).as("communicator").of(c["bridgeProc"]);
-	use(c["reqQueuer"]).as("requestQueuer").of(c["netServer"]);
-	use(c["bridgeProc"]).as("requestProcessors").of(c["reqQueuer"]);
+	wallaroo_within(c) {
+		use("conf").as("config").of("netServer");
+		use("comm").as("communicator").of("bridgeProc");
+		use("reqQueuer").as("requestQueuer").of("netServer");
+		use("bridgeProc").as("requestProcessors").of("reqQueuer");
+		// TODO napisać i dodać os processor - min. wifi
+	}
 
 	c.CheckWiring();
 	c.Init();

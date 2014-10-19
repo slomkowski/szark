@@ -1,15 +1,3 @@
-/*
- * BridgeProcessor.hpp
- *
- *  Project: server
- *  Created on: 26 kwi 2014
- *
- *  Copyright 2014 Michał Słomkowski m.slomkowski@gmail.com
- *
- *	This program is free software; you can redistribute it and/or modify it
- *	under the terms of the GNU General Public License version 3 as
- *	published by the Free Software Foundation.
- */
 #ifndef BRIDGEPROCESSOR_HPP_
 #define BRIDGEPROCESSOR_HPP_
 
@@ -29,41 +17,47 @@
 
 namespace bridge {
 
-class BridgeProcessor: public processing::IRequestProcessor, public wallaroo::Device {
-public:
-	BridgeProcessor();
-	~BridgeProcessor();
+	class BridgeProcessor : public processing::IRequestProcessor, public wallaroo::Device {
+	public:
+		BridgeProcessor();
 
-	virtual void process(Json::Value& request, Json::Value& response) override;
+		~BridgeProcessor();
 
-private:
-	log4cpp::Category& logger;
+		virtual void process(Json::Value &request, Json::Value &response) override;
 
-	// shared data
-	wallaroo::Plug<ICommunicator> usbComm;
-	InterfaceManager iface;
+	private:
+		log4cpp::Category &logger;
 
-	std::unique_ptr<std::thread> maintenanceThread;
-	std::mutex maintenanceMutex;
+		// shared data
+		wallaroo::Plug<ICommunicator> usbComm;
+		InterfaceManager iface;
 
-	std::chrono::time_point<std::chrono::high_resolution_clock> lastProcessFunctionExecution;
+		std::unique_ptr<std::thread> maintenanceThread;
+		std::mutex maintenanceMutex;
 
-	volatile bool finishCycleThread = false;
-	volatile bool firstMaintenanceTask = true;
+		std::chrono::time_point<std::chrono::high_resolution_clock> lastProcessFunctionExecution;
 
-	void maintenanceThreadFunction();
+		volatile bool finishCycleThread = false;
+		volatile bool firstMaintenanceTask = true;
 
-	void createReport(Json::Value& r);
-	void parseRequest(Json::Value& r);
+		void Init();
 
-	template<typename T> void tryAssign(const Json::Value& key, std::function<void(T)> setter);
-	void tryAssignDirection(const Json::Value& key, std::function<void(Direction)> setter);
+		void maintenanceThreadFunction();
 
-	void fillAllDevices(
-			std::function<void(std::string name, Joint j)> fillArm,
-			std::function<void(std::string name, Motor m)> fillMotor,
-			std::function<void(std::string name, ExpanderDevice d)> fillExpander);
-};
+		void createReport(Json::Value &r);
+
+		void parseRequest(Json::Value &r);
+
+		template<typename T>
+		void tryAssign(const Json::Value &key, std::function<void(T)> setter);
+
+		void tryAssignDirection(const Json::Value &key, std::function<void(Direction)> setter);
+
+		void fillAllDevices(
+				std::function<void(std::string name, Joint j)> fillArm,
+				std::function<void(std::string name, Motor m)> fillMotor,
+				std::function<void(std::string name, ExpanderDevice d)> fillExpander);
+	};
 
 } /* namespace bridge */
 

@@ -1,16 +1,3 @@
-/*
- * BridgeProcessor.cpp
- *
- *  Project: server
- *  Created on: 26 kwi 2014
- *
- *  Copyright 2014 Michał Słomkowski m.slomkowski@gmail.com
- *
- *	This program is free software; you can redistribute it and/or modify it
- *	under the terms of the GNU General Public License version 3 as
- *	published by the Free Software Foundation.
- */
-
 #include <chrono>
 #include <functional>
 
@@ -21,259 +8,258 @@
 #include "Interface.hpp"
 
 using namespace std;
+using namespace bridge;
 using boost::format;
 using std::chrono::high_resolution_clock;
-
-namespace bridge {
 
 /**
 * If the process() function in the given timeout, the maintainance thread starts operation.
 * It prevents the device from going to stopped state, queries for battery etc.
 */
-	const chrono::milliseconds TIMEOUT(25);
-	const chrono::milliseconds MAINTENANCE_TASK_INTERVAL(25);
-	const bool MAINTENANCE_TASK_ENABLED = true;
+constexpr chrono::milliseconds TIMEOUT(25);
+constexpr chrono::milliseconds MAINTENANCE_TASK_INTERVAL(25);
+constexpr bool MAINTENANCE_TASK_ENABLED = true;
 
-	WALLAROO_REGISTER(BridgeProcessor);
+WALLAROO_REGISTER(BridgeProcessor);
 
-	BridgeProcessor::BridgeProcessor()
-			: logger(log4cpp::Category::getInstance("BridgeProcessor")),
-			  usbComm("communicator", RegistrationToken()),
-			  lastProcessFunctionExecution(high_resolution_clock::now()) {
+bridge::BridgeProcessor::BridgeProcessor()
+		: logger(log4cpp::Category::getInstance("BridgeProcessor")),
+		  usbComm("communicator", RegistrationToken()),
+		  lastProcessFunctionExecution(high_resolution_clock::now()) {
+}
 
-		if (MAINTENANCE_TASK_ENABLED) {
-			maintenanceThread.reset(new thread(&BridgeProcessor::maintenanceThreadFunction, this));
-		}
-
-		logger.notice("Instance created.");
+void bridge::BridgeProcessor::Init() {
+	if (MAINTENANCE_TASK_ENABLED) {
+		maintenanceThread.reset(new thread(&BridgeProcessor::maintenanceThreadFunction, this));
 	}
 
-	BridgeProcessor::~BridgeProcessor() {
-		maintenanceMutex.lock();
-		finishCycleThread = true;
-		maintenanceMutex.unlock();
+	logger.notice("Instance created.");
+}
 
-		logger.notice("Waiting for maintenance task to stop.");
+bridge::BridgeProcessor::~BridgeProcessor() {
+	maintenanceMutex.lock();
+	finishCycleThread = true;
+	maintenanceMutex.unlock();
 
-		maintenanceThread->join();
+	logger.notice("Waiting for maintenance task to stop.");
 
-		logger.notice("Instance destroyed.");
-	}
+	maintenanceThread->join();
 
-	void BridgeProcessor::process(Json::Value &request, Json::Value &response) {
+	logger.notice("Instance destroyed.");
+}
+
+void bridge::BridgeProcessor::process(Json::Value &request, Json::Value &response) {
+	unique_lock<mutex> lk(maintenanceMutex);
+
+	firstMaintenanceTask = true;
+
+	logger.info("Processing request.");
+
+	parseRequest(request);
+
+	iface.syncWithDevice([&](vector<uint8_t> r) {
+		usbComm->sendData(r);
+		return usbComm->receiveData();
+	});
+
+	createReport(response);
+
+	lastProcessFunctionExecution = high_resolution_clock::now();
+}
+
+void bridge::BridgeProcessor::maintenanceThreadFunction() {
+	while (true) {
+		this_thread::sleep_for(MAINTENANCE_TASK_INTERVAL);
+
 		unique_lock<mutex> lk(maintenanceMutex);
 
-		firstMaintenanceTask = true;
+		if (finishCycleThread) {
+			break;
+		}
 
-		logger.info("Processing request.");
+		if ((not usbComm.WiringOk()) or ((high_resolution_clock::now() - lastProcessFunctionExecution) < TIMEOUT)) {
+			lk.unlock();
+			this_thread::yield();
+			continue;
+		}
 
-		parseRequest(request);
+		if (firstMaintenanceTask) {
+			logger.notice("No requests, starting performing maintenance task.");
+			firstMaintenanceTask = false;
+		}
+
+		logger.info("Performing maintenance task.");
+		// TODO dodać - jeżeli przez 2s nie ma sygnału, to zatrzymaj wszystko
 
 		iface.syncWithDevice([&](vector<uint8_t> r) {
 			usbComm->sendData(r);
 			return usbComm->receiveData();
 		});
+	}
+}
 
-		createReport(response);
+using bridge::ExpanderDevice;
+using bridge::Motor;
+using bridge::Joint;
+using bridge::Button;
 
-		lastProcessFunctionExecution = high_resolution_clock::now();
+template<typename T>
+struct jsonType {
+	static const Json::ValueType value = Json::stringValue;
+
+	static void execute(const Json::Value &key, function<void(T)> &setter) {
+		setter(key.asString());
+	}
+};
+
+template<>
+struct jsonType<bool> {
+	static const Json::ValueType value = Json::booleanValue;
+
+	static void execute(const Json::Value &key, function<void(bool)> &setter) {
+		setter(key.asBool());
+	}
+};
+
+template<>
+struct jsonType<int> {
+	static const Json::ValueType value = Json::intValue;
+
+	static void execute(const Json::Value &key, function<void(int)> &setter) {
+		setter(key.asInt());
+	}
+};
+
+template<typename T>
+void bridge::BridgeProcessor::tryAssign(const Json::Value &key, function<void(T)> setter) {
+	if (key.empty()) {
+		return;
 	}
 
-	void BridgeProcessor::maintenanceThreadFunction() {
-		while (true) {
-			this_thread::sleep_for(MAINTENANCE_TASK_INTERVAL);
-
-			unique_lock<mutex> lk(maintenanceMutex);
-
-			if (finishCycleThread) {
-				break;
-			}
-
-			if ((not usbComm.WiringOk()) or ((high_resolution_clock::now() - lastProcessFunctionExecution) < TIMEOUT)) {
-				lk.unlock();
-				this_thread::yield();
-				continue;
-			}
-
-			if (firstMaintenanceTask) {
-				logger.notice("No requests, starting performing maintenance task.");
-				firstMaintenanceTask = false;
-			}
-
-			logger.info("Performing maintenance task.");
-			// TODO dodać - jeżeli przez 2s nie ma sygnału, to zatrzymaj wszystko
-
-			iface.syncWithDevice([&](vector<uint8_t> r) {
-				usbComm->sendData(r);
-				return usbComm->receiveData();
-			});
-		}
+	if (not key.isConvertibleTo(jsonType<T>::value)) {
+		logger.error("Value for " + key.toStyledString() + " is in invalid format.");
+		return;
 	}
 
-	using bridge::ExpanderDevice;
-	using bridge::Motor;
-	using bridge::Joint;
-	using bridge::Button;
+	jsonType<T>::execute(key, setter);
+}
 
-	template<typename T>
-	struct jsonType {
-		static const Json::ValueType value = Json::stringValue;
+void bridge::BridgeProcessor::tryAssignDirection(const Json::Value &key, function<void(Direction)> setter) {
+	if (key.empty()) {
+		return;
+	}
 
-		static void execute(const Json::Value &key, function<void(T)> &setter) {
-			setter(key.asString());
+	try {
+		auto dir = stringToDirection(key.asString());
+		setter(dir);
+	} catch (runtime_error &e) {
+		logger.error("Value for " + key.toStyledString() + ": " + e.what() + ".");
+	}
+}
+
+void bridge::BridgeProcessor::parseRequest(Json::Value &r) {
+	using namespace std::placeholders;
+	// TODO wkładanie requestów do interfejsu
+
+	tryAssign<bool>(r["ks_en"], std::bind(&InterfaceManager::setKillSwitch, &iface, _1));
+	tryAssign<string>(r["lcd"], std::bind(&InterfaceManager::setLCDText, &iface, _1));
+
+	auto fillArm = [&](string name, Joint j) {
+		tryAssign<int>(r["arm"][name]["speed"],
+				bind(&Interface::ArmClass::SingleJoint::setSpeed, &iface.arm[j], _1));
+
+		tryAssignDirection(r["arm"][name]["dir"],
+				bind(&Interface::ArmClass::SingleJoint::setDirection, &iface.arm[j], _1));
+
+		if (r["arm"][name]["dir"].empty()) {
+			tryAssign<int>(r["arm"][name]["pos"],
+					bind(&Interface::ArmClass::SingleJoint::setPosition, &iface.arm[j], _1));
 		}
 	};
 
-	template<>
-	struct jsonType<bool> {
-		static const Json::ValueType value = Json::booleanValue;
+	// TODO arm ogólne ustawienia kalibracja itd.
 
-		static void execute(const Json::Value &key, function<void(bool)> &setter) {
-			setter(key.asBool());
+	auto fillMotor = [&](string name, Motor m) {
+		tryAssign<int>(r["motor"][name]["speed"],
+				bind(&Interface::MotorClass::SingleMotor::setSpeed, &iface.motor[m], _1));
+
+		tryAssignDirection(r["motor"][name]["dir"],
+				bind(&Interface::MotorClass::SingleMotor::setDirection, &iface.motor[m], _1));
+	};
+
+	auto fillExpander = [&](string name, ExpanderDevice d) {
+		tryAssign<bool>(r["light"][name],
+				bind(&Interface::ExpanderClass::Device::setEnabled, &iface.expander[d], _1));
+	};
+
+	tryAssign<bool>(r["arm"]["b_cal"], [&](bool startCalibration) {
+		if (startCalibration) {
+			iface.arm.calibrate();
+		}
+	});
+
+	fillAllDevices(fillArm, fillMotor, fillExpander);
+}
+
+void bridge::BridgeProcessor::createReport(Json::Value &r) {
+
+	auto fillExpander = [&](string name, ExpanderDevice d) {
+		r["light"][name] = iface.expander[d].isEnabled();
+	};
+
+	auto fillButtons = [&](string name, Button d) {
+		if (iface.isButtonPressed(d)) {
+			r["button"].append(name);
 		}
 	};
 
-	template<>
-	struct jsonType<int> {
-		static const Json::ValueType value = Json::intValue;
-
-		static void execute(const Json::Value &key, function<void(int)> &setter) {
-			setter(key.asInt());
-		}
+	auto fillMotor = [&](string name, Motor m) {
+		r["motor"][name]["speed"] = iface.motor[m].getSpeed();
+		r["motor"][name]["dir"] = directionToString(iface.motor[m].getDirection());
 	};
 
-	template<typename T>
-	void BridgeProcessor::tryAssign(const Json::Value &key, function<void(T)> setter) {
-		if (key.empty()) {
-			return;
-		}
+	auto fillArm = [&](string name, Joint j) {
+		r["arm"][name]["speed"] = iface.arm[j].getSpeed();
+		r["arm"][name]["pos"] = iface.arm[j].getPosition();
+		r["arm"][name]["dir"] = directionToString(iface.arm[j].getDirection());
+	};
 
-		if (not key.isConvertibleTo(jsonType<T>::value)) {
-			logger.error("Value for " + key.toStyledString() + " is in invalid format.");
-			return;
-		}
+	r["arm"]["cal_st"] = armCalibrationStatusToString(iface.arm.getCalibrationStatus());
+	r["arm"]["mode"] = armDriverModeToString(iface.arm.getMode());
 
-		jsonType<T>::execute(key, setter);
-	}
+	fillAllDevices(fillArm, fillMotor, fillExpander);
 
-	void BridgeProcessor::tryAssignDirection(const Json::Value &key, function<void(Direction)> setter) {
-		if (key.empty()) {
-			return;
-		}
+	fillButtons("up", Button::UP);
+	fillButtons("down", Button::DOWN);
+	fillButtons("enter", Button::ENTER);
 
-		try {
-			auto dir = stringToDirection(key.asString());
-			setter(dir);
-		} catch (runtime_error &e) {
-			logger.error("Value for " + key.toStyledString() + ": " + e.what() + ".");
-		}
-	}
+	r["batt"]["volt"] = iface.getVoltage();
+	r["batt"]["curr"] = iface.getCurrent();
 
-	void BridgeProcessor::parseRequest(Json::Value &r) {
-		using namespace std::placeholders;
-		// TODO wkładanie requestów do interfejsu
-
-		tryAssign<bool>(r["ks_en"], std::bind(&InterfaceManager::setKillSwitch, &iface, _1));
-		tryAssign<string>(r["lcd"], std::bind(&InterfaceManager::setLCDText, &iface, _1));
-
-		auto fillArm = [&](string name, Joint j) {
-			tryAssign<int>(r["arm"][name]["speed"],
-					bind(&Interface::ArmClass::SingleJoint::setSpeed, &iface.arm[j], _1));
-
-			tryAssignDirection(r["arm"][name]["dir"],
-					bind(&Interface::ArmClass::SingleJoint::setDirection, &iface.arm[j], _1));
-
-			if (r["arm"][name]["dir"].empty()) {
-				tryAssign<int>(r["arm"][name]["pos"],
-						bind(&Interface::ArmClass::SingleJoint::setPosition, &iface.arm[j], _1));
-			}
-		};
-
-		// TODO arm ogólne ustawienia kalibracja itd.
-
-		auto fillMotor = [&](string name, Motor m) {
-			tryAssign<int>(r["motor"][name]["speed"],
-					bind(&Interface::MotorClass::SingleMotor::setSpeed, &iface.motor[m], _1));
-
-			tryAssignDirection(r["motor"][name]["dir"],
-					bind(&Interface::MotorClass::SingleMotor::setDirection, &iface.motor[m], _1));
-		};
-
-		auto fillExpander = [&](string name, ExpanderDevice d) {
-			tryAssign<bool>(r["light"][name],
-					bind(&Interface::ExpanderClass::Device::setEnabled, &iface.expander[d], _1));
-		};
-
-		tryAssign<bool>(r["arm"]["b_cal"], [&](bool startCalibration) {
-			if (startCalibration) {
-				iface.arm.calibrate();
-			}
-		});
-
-		fillAllDevices(fillArm, fillMotor, fillExpander);
-	}
-
-	void BridgeProcessor::createReport(Json::Value &r) {
-
-		auto fillExpander = [&](string name, ExpanderDevice d) {
-			r["light"][name] = iface.expander[d].isEnabled();
-		};
-
-		auto fillButtons = [&](string name, Button d) {
-			if (iface.isButtonPressed(d)) {
-				r["button"].append(name);
-			}
-		};
-
-		auto fillMotor = [&](string name, Motor m) {
-			r["motor"][name]["speed"] = iface.motor[m].getSpeed();
-			r["motor"][name]["dir"] = directionToString(iface.motor[m].getDirection());
-		};
-
-		auto fillArm = [&](string name, Joint j) {
-			r["arm"][name]["speed"] = iface.arm[j].getSpeed();
-			r["arm"][name]["pos"] = iface.arm[j].getPosition();
-			r["arm"][name]["dir"] = directionToString(iface.arm[j].getDirection());
-		};
-
-		r["arm"]["cal_st"] = armCalibrationStatusToString(iface.arm.getCalibrationStatus());
-		r["arm"]["mode"] = armDriverModeToString(iface.arm.getMode());
-
-		fillAllDevices(fillArm, fillMotor, fillExpander);
-
-		fillButtons("up", Button::UP);
-		fillButtons("down", Button::DOWN);
-		fillButtons("enter", Button::ENTER);
-
-		r["batt"]["volt"] = iface.getVoltage();
-		r["batt"]["curr"] = iface.getCurrent();
-
-		if (iface.isKillSwitchActive()) {
-			if (iface.isKillSwitchCausedByHardware()) {
-				r["ks_stat"] = "hardware";
-			} else {
-				r["ks_stat"] = "software";
-			}
+	if (iface.isKillSwitchActive()) {
+		if (iface.isKillSwitchCausedByHardware()) {
+			r["ks_stat"] = "hardware";
 		} else {
-			r["ks_stat"] = "inactive";
+			r["ks_stat"] = "software";
 		}
+	} else {
+		r["ks_stat"] = "inactive";
 	}
+}
 
-	void BridgeProcessor::fillAllDevices(
-			std::function<void(string name, Joint j)> fillArm,
-			std::function<void(string name, Motor m)> fillMotor,
-			std::function<void(string name, ExpanderDevice d)> fillExpander) {
+void bridge::BridgeProcessor::fillAllDevices(
+		std::function<void(string name, Joint j)> fillArm,
+		std::function<void(string name, Motor m)> fillMotor,
+		std::function<void(string name, ExpanderDevice d)> fillExpander) {
 
-		fillExpander("right", ExpanderDevice::LIGHT_RIGHT);
-		fillExpander("left", ExpanderDevice::LIGHT_LEFT);
-		fillExpander("camera", ExpanderDevice::LIGHT_CAMERA);
+	fillExpander("right", ExpanderDevice::LIGHT_RIGHT);
+	fillExpander("left", ExpanderDevice::LIGHT_LEFT);
+	fillExpander("camera", ExpanderDevice::LIGHT_CAMERA);
 
-		fillMotor("left", Motor::LEFT);
-		fillMotor("right", Motor::RIGHT);
+	fillMotor("left", Motor::LEFT);
+	fillMotor("right", Motor::RIGHT);
 
-		fillArm("shoulder", Joint::SHOULDER);
-		fillArm("elbow", Joint::ELBOW);
-		fillArm("gripper", Joint::GRIPPER);
-	}
-
+	fillArm("shoulder", Joint::SHOULDER);
+	fillArm("elbow", Joint::ELBOW);
+	fillArm("gripper", Joint::GRIPPER);
 }

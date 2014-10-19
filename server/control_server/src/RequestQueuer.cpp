@@ -1,16 +1,3 @@
-/*
- * RequestQueuer.cpp
- *
- *  Project: server
- *  Created on: 26 kwi 2014
- *
- *  Copyright 2014 Michał Słomkowski m.slomkowski@gmail.com
- *
- *	This program is free software; you can redistribute it and/or modify it
- *	under the terms of the GNU General Public License version 3 as
- *	published by the Free Software Foundation.
- */
-
 #include <chrono>
 #include <iomanip>
 #include <boost/format.hpp>
