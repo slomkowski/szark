@@ -1,43 +1,46 @@
-#include <chrono>
-#include <future>
-
-#include <log4cpp/PropertyConfigurator.hh>
+#include <memory>
 #include <wallaroo/catalog.h>
 
 #include "NetworkServer.hpp"
-#include "Configuration.hpp"
+#include "initialization.hpp"
 
 using namespace std;
+using namespace wallaroo;
 
-int main() {
-	std::string initFileName = "logger.properties";
-	log4cpp::PropertyConfigurator::configure(initFileName);
+int main(int argc, char *argv[]) {
 
-	wallaroo::Catalog catalog;
-	catalog.Create("conf", "Configuration", initFileName);
-	catalog.Create("imgGrabberLeft", "ImageGrabber", string("left"));
-	catalog.Create("imgGrabberRight", "ImageGrabber", string("right"));
-	catalog.Create("imgCombiner", "GripperImageSource");
-	catalog.Create("hudPainter", "GripperHudPainter");
+	const char *banner = "SZARK Camera Server\n(C) Michał Słomkowski\nCompilation: " __DATE__;
 
-	wallaroo::use(catalog["conf"]).as("config").of(catalog["imgGrabberLeft"]);
-	wallaroo::use(catalog["conf"]).as("config").of(catalog["imgGrabberRight"]);
-	wallaroo::use(catalog["conf"]).as("config").of(catalog["imgCombiner"]);
-	wallaroo::use(catalog["conf"]).as("config").of(catalog["hudPainter"]);
+	auto configFiles = common::init::initializeProgram(argc, argv, banner);
 
-	wallaroo::use(catalog["imgGrabberLeft"]).as("leftCameraGrabber").of(catalog["imgCombiner"]);
-	wallaroo::use(catalog["imgGrabberRight"]).as("rightCameraGrabber").of(catalog["imgCombiner"]);
-	wallaroo::use(catalog["hudPainter"]).as("hudPainter").of(catalog["imgCombiner"]);
+	Catalog c;
+	c.Create("conf", "Configuration", configFiles);
+	c.Create("imgGrabberLeft", "ImageGrabber", string("left"));
+	c.Create("imgGrabberRight", "ImageGrabber", string("right"));
+	c.Create("imgCombiner", "GripperImageSource");
+	c.Create("hudPainter", "GripperHudPainter");
+	c.Create("srv", "NetworkServer");
 
-	catalog.Create("srv", "NetworkServer");
-	wallaroo::use(catalog["conf"]).as("config").of(catalog["srv"]);
-	wallaroo::use(catalog["imgCombiner"]).as("imageSource").of(catalog["srv"]);
+	wallaroo_within(c) {
+		use("conf").as("config").of("imgGrabberLeft");
+		use("conf").as("config").of("imgGrabberRight");
+		use("conf").as("config").of("imgCombiner");
+		use("conf").as("config").of("hudPainter");
+		use("conf").as("config").of("srv");
 
-	catalog.CheckWiring();
-	catalog.Init();
+		use("imgGrabberLeft").as("leftCameraGrabber").of("imgCombiner");
+		use("imgGrabberRight").as("rightCameraGrabber").of("imgCombiner");
+		use("hudPainter").as("hudPainter").of("imgCombiner");
+		use("imgCombiner").as("imageSource").of("srv");
+	};
 
-	shared_ptr<camera::INetworkServer> srv = catalog["srv"];
+	c.CheckWiring();
+	c.Init();
+
+	shared_ptr<camera::INetworkServer> srv = c["srv"];
 
 	srv->run();
+
+	return 0;
 }
 

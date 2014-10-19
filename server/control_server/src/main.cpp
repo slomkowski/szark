@@ -1,33 +1,20 @@
-/*
- * main.cpp
- *
- *  Created on: 02-08-2013
- *      Author: michal
- */
-
-#include <iostream>
-#include <boost/timer.hpp>
-#include <chrono>
-#include <vector>
-#include <algorithm>
-#include <stdexcept>
-
+#include <memory>
 #include <wallaroo/catalog.h>
 
-#include "Configuration.hpp"
-#include "logging.hpp"
+#include "initialization.hpp"
+
 #include "NetServer.hpp"
 
-using namespace std;
 using namespace wallaroo;
 
 int main(int argc, char *argv[]) {
-	std::string initFileName = "logger.properties";
 
-	common::logger::configureLogger(initFileName, log4cpp::Priority::DEBUG, true);
+	const char *banner = "SZARK Control Server\n(C) Michał Słomkowski\nCompilation: " __DATE__;
+
+	auto configFiles = common::init::initializeProgram(argc, argv, banner);
 
 	Catalog c;
-	c.Create("conf", "Configuration", initFileName);
+	c.Create("conf", "Configuration", configFiles);
 	c.Create("comm", "USBCommunicator");
 	c.Create("netServer", "NetServer");
 	c.Create("reqQueuer", "RequestQueuer");
@@ -44,8 +31,10 @@ int main(int argc, char *argv[]) {
 	c.CheckWiring();
 	c.Init();
 
-	auto netServer = shared_ptr<processing::INetServer>(c["netServer"]);
+	auto netServer = std::shared_ptr<processing::INetServer>(c["netServer"]);
 
 	netServer->run();
+
+	return 0;
 }
 

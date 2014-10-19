@@ -12,7 +12,7 @@ set(TEST_EXECUTABLE szark_camera_server_test)
 
 INCLUDE("../common.cmake")
 
-find_package(Boost COMPONENTS system unit_test_framework REQUIRED)
+find_package(Boost COMPONENTS system unit_test_framework program_options filesystem REQUIRED)
 find_package(OpenCV REQUIRED)
 find_package(PkgConfig REQUIRED)
 
