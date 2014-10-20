@@ -34,7 +34,7 @@ void NetworkServer::Init() {
 	using boost::asio::ip::udp;
 
 	if (port == 0) {
-		port = config->getInt("szark.server.camera.NetworkServer.port");
+		port = config->getInt("NetworkServer.port");
 	}
 
 	recvBuffer.reset(new char[RECEIVED_DATA_MAX_LENGTH]);

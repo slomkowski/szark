@@ -101,7 +101,7 @@ void ImageGrabber::grabberThreadFunction() {
 }
 
 std::string ImageGrabber::getFullConfigPath(std::string property) {
-	return "szark.server.camera.ImageGrabber." + prefix + "." + property;
+	return "ImageGrabber." + prefix + "_" + property;
 }
 
 void ImageGrabber::setVideoCaptureProperty(int prop, std::string confName) {
