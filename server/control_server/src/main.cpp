@@ -16,11 +16,13 @@ int main(int argc, char *argv[]) {
 	Catalog c;
 	c.Create("conf", "Configuration", configFiles);
 	c.Create("comm", "USBCommunicator");
+	c.Create("wifiInfo", "WifiInfo");
 	c.Create("netServer", "NetServer");
 	c.Create("reqQueuer", "RequestQueuer");
 	c.Create("bridgeProc", "BridgeProcessor");
 
 	wallaroo_within(c) {
+		use("conf").as("config").of("wifiInfo");
 		use("conf").as("config").of("netServer");
 		use("comm").as("communicator").of("bridgeProc");
 		use("reqQueuer").as("requestQueuer").of("netServer");

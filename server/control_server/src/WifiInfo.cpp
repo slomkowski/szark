@@ -23,28 +23,39 @@ os::WifiInfo::WifiInfo()
 
 void os::WifiInfo::Init() {
 	if (iwName.length() == 0) {
-		enabled = config->getBool("szark.WifiInfo.enabled");
-		iwName = config->getString("szark.WifiInfo.device");
+		enabled = config->getBool("szark.server.WifiInfo.enabled");
+		iwName = config->getString("szark.server.WifiInfo.device");
 	}
 
-	sockfd = socket(AF_INET, SOCK_DGRAM, 0);
+	if (enabled) {
+		sockfd = socket(AF_INET, SOCK_DGRAM, 0);
 
-	logger.notice("opened wireless device: " + iwName);
+		logger.notice("Opened wireless device: " + iwName + ".");
 
-	try {
-		getSignalLevel();
-		getBitrate();
-	} catch (WifiException &e) {
-		close(sockfd);
-		throw WifiException(std::string("failed to open device ") + iwName);
+		try {
+			getSignalLevel();
+			getBitrate();
+		} catch (WifiException &e) {
+			close(sockfd);
+			throw WifiException(std::string("failed to open device ") + iwName);
+		}
+	} else {
+		logger.warn("Monitoring is disabled. Will return dummy values.");
 	}
+
+	logger.notice("Instance created.");
 }
 
 os::WifiInfo::~WifiInfo() {
 	close(sockfd);
+	logger.notice("Instance destroyed.");
 }
 
 double os::WifiInfo::getSignalLevel() {
+	if (not enabled) {
+		return 0;
+	}
+
 	prepareStructs();
 
 	if (ioctl(sockfd, SIOCGIWSTATS, &req) == -1) {
@@ -79,12 +90,16 @@ double os::WifiInfo::getSignalLevel() {
 		throw WifiException("signal level value invalid");
 	}
 
-	logger.info(std::string("current signal level: ") + std::to_string(sigLevel) + " dBm");
+	logger.info(std::string("Current signal level: ") + std::to_string(sigLevel) + " dBm.");
 
 	return sigLevel;
 }
 
 double os::WifiInfo::getBitrate() {
+	if (not enabled) {
+		return 0;
+	}
+
 	prepareStructs();
 
 	if (ioctl(sockfd, SIOCGIWRATE, &req) == -1) {
@@ -93,16 +108,12 @@ double os::WifiInfo::getBitrate() {
 
 	double bitrate = req.u.bitrate.value / 1000000.0;
 
-	logger.info(std::string("current bitrate: ") + std::to_string(bitrate) + " MBit/s");
+	logger.info(std::string("Current bitrate: ") + std::to_string(bitrate) + " MBit/s.");
 
 	return bitrate;
 }
 
 void os::WifiInfo::prepareStructs() {
-	if (not enabled) {
-		throw WifiException("WifiInfo disabled");
-	}
-
 	std::strncpy(req.ifr_name, iwName.c_str(), IFNAMSIZ);
 	req.u.data.pointer = &stats;
 	req.u.data.length = sizeof(iw_statistics);
