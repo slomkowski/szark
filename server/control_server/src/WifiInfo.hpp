@@ -7,10 +7,6 @@
 #include <log4cpp/Category.hh>
 #include <wallaroo/registered.h>
 
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <linux/wireless.h>
-
 #include "Configuration.hpp"
 
 namespace os {
@@ -42,6 +38,8 @@ namespace os {
 		virtual ~IWifiInfo() = default;
 	};
 
+	struct WifiInfoImpl;
+
 	class WifiInfo : public IWifiInfo, public wallaroo::Device {
 	public:
 		/*
@@ -60,26 +58,19 @@ namespace os {
 
 		virtual double getBitrate();
 
-		std::string getInterfaceName() {
-			return iwName;
-		}
+		std::string getInterfaceName();
 
 	private:
 		log4cpp::Category &logger;
 		wallaroo::Plug<common::config::Configuration> config;
 
-		std::string iwName;
-
-		int sockfd;
-		bool enabled = true;
-		iw_statistics stats;
-		iwreq req;
+		WifiInfoImpl *impl;
 
 		void prepareStructs();
 
 		void Init();
 	};
 
-} /* namespace net */
+} /* namespace os */
 
 #endif /* WIFIINFO_HPP_ */

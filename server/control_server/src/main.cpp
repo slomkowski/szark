@@ -20,14 +20,17 @@ int main(int argc, char *argv[]) {
 	c.Create("netServer", "NetServer");
 	c.Create("reqQueuer", "RequestQueuer");
 	c.Create("bridgeProc", "BridgeProcessor");
+	c.Create("osProc", "OSInformationProcessor");
 
 	wallaroo_within(c) {
 		use("conf").as("config").of("wifiInfo");
 		use("conf").as("config").of("netServer");
+		use("conf").as("config").of("osProc");
+		use("wifiInfo").as("wifiInfo").of("osProc");
 		use("comm").as("communicator").of("bridgeProc");
 		use("reqQueuer").as("requestQueuer").of("netServer");
 		use("bridgeProc").as("requestProcessors").of("reqQueuer");
-		// TODO napisać i dodać os processor - min. wifi
+		use("osProc").as("requestProcessors").of("reqQueuer");
 	}
 
 	c.CheckWiring();
