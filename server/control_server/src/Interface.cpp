@@ -10,12 +10,14 @@
 
 #include "Interface.hpp"
 #include "DataHolder.hpp"
+#include "convert.hpp"
 
 #include "usb-commands.hpp"
 
 using namespace std;
 using namespace boost;
 using namespace bridge;
+using namespace bridge::convert;
 
 constexpr int VOLTAGE_ARRAY_SIZE = 5;
 constexpr int CURRENT_ARRAY_SIZE = 5;
@@ -23,10 +25,8 @@ constexpr int CURRENT_ARRAY_SIZE = 5;
 constexpr uint8_t MOTOR_DRIVER_MAX_SPEED = 11;
 constexpr unsigned int ARM_DRIVER_MAX_SPEED = 255;
 
-map<bridge::Joint, unsigned int> ARM_DRIVER_MAX_POSITION = {{Joint::ELBOW, 105}, {Joint::SHOULDER, 79},
+static map<bridge::Joint, unsigned int> ARM_DRIVER_MAX_POSITION = {{Joint::ELBOW, 105}, {Joint::SHOULDER, 79},
 		{Joint::GRIPPER, 255}};
-
-log4cpp::Category &Interface::logger = log4cpp::Category::getInstance("Interface");
 
 enum Priority {
 	PRIORITY_KILL_SWITCH,
@@ -37,42 +37,11 @@ enum Priority {
 	PRIORITY_LCD
 };
 
-std::string bridge::devToString(ExpanderDevice dev) {
-	switch (dev) {
-		case ExpanderDevice::LIGHT_CAMERA:
-			return "camera light";
-		case ExpanderDevice::LIGHT_LEFT:
-			return "left light";
-		default:
-			return "right light";
-	};
-}
-
-std::string bridge::devToString(Joint dev) {
-	switch (dev) {
-		case Joint::ELBOW:
-			return "elbow";
-		case Joint::GRIPPER:
-			return "gripper";
-		case Joint::SHOULDER:
-		default:
-			return "shoulder";
-	};
-}
-
-std::string bridge::devToString(Motor dev) {
-	if (dev == Motor::LEFT) {
-		return "left";
-	} else {
-		return "right";
-	}
-}
-
 bridge::Interface::Interface()
-		:
-		expander(*(new ExpanderClass(requests))),
-		motor(*(new MotorClass(requests))),
-		arm(*(new ArmClass(requests))) {
+		: logger(log4cpp::Category::getInstance("Interface")),
+		  expander(*(new ExpanderClass(requests, logger))),
+		  motor(*(new MotorClass(requests, logger))),
+		  arm(*(new ArmClass(requests, logger))) {
 
 	rawVoltage.reset(new circular_buffer<unsigned int>(VOLTAGE_ARRAY_SIZE));
 	rawCurrent.reset(new circular_buffer<unsigned int>(CURRENT_ARRAY_SIZE));
@@ -102,13 +71,13 @@ bridge::Interface::~Interface() {
 }
 
 double bridge::Interface::getVoltage() {
-	return round(10.0 * USBCommands::bridge::VOLTAGE_FACTOR * accumulate(rawVoltage->begin(), rawVoltage->end(), 0) / rawVoltage->size())
-			/ 10.0;
+	return round(10.0 * USBCommands::bridge::VOLTAGE_FACTOR
+			* accumulate(rawVoltage->begin(), rawVoltage->end(), 0) / rawVoltage->size()) / 10.0;
 }
 
 double bridge::Interface::getCurrent() {
-	return round(10.0 * USBCommands::bridge::CURRENT_FACTOR * accumulate(rawCurrent->begin(), rawCurrent->end(), 0) / rawCurrent->size())
-			/ 10.0;
+	return round(10.0 * USBCommands::bridge::CURRENT_FACTOR
+			* accumulate(rawCurrent->begin(), rawCurrent->end(), 0) / rawCurrent->size()) / 10.0;
 }
 
 void bridge::Interface::setLCDText(std::string text) {
@@ -185,14 +154,15 @@ void bridge::Interface::MotorClass::SingleMotor::createMotorState() {
 	};
 
 	switch (direction) {
-		case Direction::STOP:
-			mState.direction = motor::STOP;
-			break;
 		case Direction::FORWARD:
 			mState.direction = motor::FORWARD;
 			break;
 		case Direction::BACKWARD:
 			mState.direction = motor::BACKWARD;
+			break;
+		case Direction::STOP:
+		default:
+			mState.direction = motor::STOP;
 			break;
 	};
 
@@ -582,57 +552,5 @@ void bridge::Interface::updateStructsWhenKillSwitchActivated() {
 
 void bridge::Interface::onKillSwitchActivated() {
 	lcdText = "";
-}
-
-std::string bridge::directionToString(const Direction dir) {
-	switch (dir) {
-		case Direction::FORWARD:
-			return "forward";
-		case Direction::BACKWARD:
-			return "backward";
-		case Direction::STOP:
-		default:
-			return "stop";
-	}
-}
-
-Direction bridge::stringToDirection(std::string dir) {
-	boost::algorithm::to_lower(dir);
-
-	if (dir == "stop") {
-		return Direction::STOP;
-	} else if (dir == "forward") {
-		return Direction::FORWARD;
-	} else if (dir == "backward") {
-		return Direction::BACKWARD;
-	} else {
-		throw runtime_error("invalid direction: " + dir);
-	}
-
-	return Direction::STOP;
-}
-
-std::string bridge::armDriverModeToString(const ArmDriverMode mode) {
-	switch (mode) {
-		case ArmDriverMode::CALIBRATING:
-			return "calibrating";
-		case ArmDriverMode::POSITIONAL:
-			return "positional";
-		case ArmDriverMode::DIRECTIONAL:
-		default:
-			return "directional";
-	}
-}
-
-std::string bridge::armCalibrationStatusToString(const ArmCalibrationStatus status) {
-	switch (status) {
-		case ArmCalibrationStatus::DONE:
-			return "done";
-		case ArmCalibrationStatus::IN_PROGRESS:
-			return "prog";
-		case ArmCalibrationStatus::NONE:
-		default:
-			return "none";
-	}
 }
 

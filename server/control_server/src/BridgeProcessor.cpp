@@ -6,9 +6,11 @@
 
 #include "BridgeProcessor.hpp"
 #include "Interface.hpp"
+#include "convert.hpp"
 
 using namespace std;
 using namespace bridge;
+using namespace bridge::convert;
 using boost::format;
 using std::chrono::high_resolution_clock;
 
@@ -43,7 +45,9 @@ bridge::BridgeProcessor::~BridgeProcessor() {
 
 	logger.notice("Waiting for maintenance task to stop.");
 
-	maintenanceThread->join();
+	if (maintenanceThread.get() != nullptr) {
+		maintenanceThread->join();
+	}
 
 	logger.notice("Instance destroyed.");
 }

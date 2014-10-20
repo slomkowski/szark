@@ -12,6 +12,7 @@
 #include "DataHolder.hpp"
 
 namespace bridge {
+	using namespace log4cpp;
 
 	/**
 	* Direction used by motor driver and arm driver.
@@ -19,20 +20,6 @@ namespace bridge {
 	enum class Direction {
 		STOP, FORWARD, BACKWARD
 	};
-
-	/**
-	* Converts Direction enum to string (lowercase letters).
-	* @param dir
-	* @return
-	*/
-	std::string directionToString(const Direction dir);
-
-	/**
-	* Converts string to direction enum. Throws runtime_error if invalid string.
-	* @param dir
-	* @return
-	*/
-	Direction stringToDirection(std::string dir);
 
 	/**
 	* Buttons located on the bridge board.
@@ -64,13 +51,9 @@ namespace bridge {
 		DIRECTIONAL, POSITIONAL, CALIBRATING
 	};
 
-	std::string armDriverModeToString(const ArmDriverMode mode);
-
 	enum class ArmCalibrationStatus {
 		NONE, IN_PROGRESS, DONE
 	};
-
-	std::string armCalibrationStatusToString(const ArmCalibrationStatus status);
 
 	/**
 	* Devices connected to the I2C expander. The enum numbers must match the bit number of the pin the device
@@ -80,12 +63,6 @@ namespace bridge {
 			: uint8_t {
 		LIGHT_CAMERA = 4, LIGHT_LEFT = 2, LIGHT_RIGHT = 3
 	};
-
-	std::string devToString(ExpanderDevice dev);
-
-	std::string devToString(Joint dev);
-
-	std::string devToString(Motor dev);
 
 	typedef std::map<std::string, std::shared_ptr<DataHolder>> RequestMap;
 
@@ -108,8 +85,7 @@ namespace bridge {
 		virtual void onKillSwitchActivated() = 0;
 
 	public:
-		virtual ~IExternalDevice() {
-		}
+		virtual ~IExternalDevice() = default;
 
 		friend class Interface;
 	};
@@ -196,7 +172,7 @@ namespace bridge {
 		const std::string KILLSWITCH_STRING = "killswitch";
 
 	private:
-		static log4cpp::Category &logger;
+		Category &logger;
 
 		std::unique_ptr<boost::circular_buffer<unsigned int>> rawVoltage;
 		std::unique_ptr<boost::circular_buffer<unsigned int>> rawCurrent;
@@ -257,15 +233,17 @@ namespace bridge {
 				void setDirection(Direction dir);
 
 			private:
-				SingleMotor(RequestMap &requests, Motor motor)
-						: requests(requests), motor(motor) {
+				SingleMotor(RequestMap &requests, Motor motor, Category &logger)
+						: logger(logger),
+						  requests(requests),
+						  motor(motor) {
 					direction = Direction::STOP;
 					programmedSpeed = 0;
 					power = 0;
 				}
 
 				std::string getKey() {
-					return std::string("motor_") + std::to_string(int(motor));
+					return std::string("motor_") + std::to_string((int) motor);
 				}
 
 				unsigned int updateFields(USBCommands::Request request, uint8_t *data);
@@ -276,6 +254,7 @@ namespace bridge {
 
 				void initStructure();
 
+				Category &logger;
 				RequestMap &requests;
 				Motor motor;
 
@@ -293,7 +272,7 @@ namespace bridge {
 			* @return reference to motor class providing manipulation methods.
 			*/
 			SingleMotor &operator[](Motor motor) {
-				return *motors[motor];
+				return *(motors[motor]);
 			}
 
 			/**
@@ -302,10 +281,12 @@ namespace bridge {
 			void brake();
 
 		private:
-			MotorClass(RequestMap &requests) {
-				motors[Motor::LEFT] = std::shared_ptr<SingleMotor>(new SingleMotor(requests, Motor::LEFT));
-				motors[Motor::RIGHT] = std::shared_ptr<SingleMotor>(new SingleMotor(requests, Motor::RIGHT));
+			MotorClass(RequestMap &requests, Category &logger) : logger(logger) {
+				motors[Motor::LEFT] = std::shared_ptr<SingleMotor>(new SingleMotor(requests, Motor::LEFT, logger));
+				motors[Motor::RIGHT] = std::shared_ptr<SingleMotor>(new SingleMotor(requests, Motor::RIGHT, logger));
 			}
+
+			Category &logger;
 
 			std::map<Motor, std::shared_ptr<SingleMotor>> motors;
 
@@ -340,8 +321,10 @@ namespace bridge {
 				void setPosition(unsigned int position);
 
 			private:
-				SingleJoint(RequestMap &requests, Joint joint)
-						: requests(requests), joint(joint) {
+				SingleJoint(RequestMap &requests, Joint joint, Category &logger)
+						: logger(logger),
+						  requests(requests),
+						  joint(joint) {
 					speed = 0;
 					direction = Direction::STOP;
 					position = 0;
@@ -359,9 +342,10 @@ namespace bridge {
 				void createJointState();
 
 				std::string getKey() {
-					return std::string("arm_") + std::to_string(int(joint));
+					return std::string("arm_") + std::to_string((int) joint);
 				}
 
+				Category &logger;
 				RequestMap &requests;
 				Joint joint;
 
@@ -391,10 +375,11 @@ namespace bridge {
 			}
 
 		private:
-			ArmClass(RequestMap &requests)
-					: requests(requests) {
+			ArmClass(RequestMap &requests, Category &logger)
+					: logger(logger),
+					  requests(requests) {
 				for (auto j : {Joint::ELBOW, Joint::GRIPPER, Joint::SHOULDER}) {
-					joints[j] = std::shared_ptr<SingleJoint>(new SingleJoint(requests, j));
+					joints[j] = std::shared_ptr<SingleJoint>(new SingleJoint(requests, j, logger));
 				}
 
 				mode = ArmDriverMode::DIRECTIONAL;
@@ -404,6 +389,8 @@ namespace bridge {
 			unsigned int updateFields(USBCommands::Request request, uint8_t *data);
 
 			void onKillSwitchActivated();
+
+			Category &logger;
 
 			std::map<Joint, std::shared_ptr<SingleJoint>> joints;
 			RequestMap &requests;
@@ -424,10 +411,14 @@ namespace bridge {
 				bool isEnabled();
 
 			private:
-				Device(RequestMap &requests, uint8_t &expanderByte, ExpanderDevice device)
-						: requests(requests), device(device), expanderByte(expanderByte) {
+				Device(RequestMap &requests, uint8_t &expanderByte, ExpanderDevice device, Category &logger)
+						: logger(logger),
+						  requests(requests),
+						  device(device),
+						  expanderByte(expanderByte) {
 				}
 
+				Category &logger;
 				RequestMap &requests;
 				ExpanderDevice device;
 				uint8_t &expanderByte;
@@ -440,15 +431,17 @@ namespace bridge {
 			}
 
 		private:
-			ExpanderClass(RequestMap &requests) {
+			ExpanderClass(RequestMap &requests, Category &logger) : logger(logger) {
 				for (auto d : {ExpanderDevice::LIGHT_CAMERA, ExpanderDevice::LIGHT_LEFT, ExpanderDevice::LIGHT_RIGHT}) {
-					devices[d] = std::shared_ptr<Device>(new Device(requests, expanderByte, d));
+					devices[d] = std::shared_ptr<Device>(new Device(requests, expanderByte, d, logger));
 				}
 			}
 
 			unsigned int updateFields(USBCommands::Request request, uint8_t *data);
 
 			void onKillSwitchActivated();
+
+			Category &logger;
 
 			uint8_t expanderByte = 0;
 

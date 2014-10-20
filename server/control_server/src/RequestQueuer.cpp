@@ -40,7 +40,9 @@ processing::RequestQueuer::~RequestQueuer() {
 
 	logger.notice("Waiting for processor thread to be stopped.");
 	cv.notify_one();
-	requestProcessorExecutorThread->join();
+	if (requestProcessorExecutorThread.get() != nullptr) {
+		requestProcessorExecutorThread->join();
+	}
 
 	logger.notice("Instance destroyed.");
 }
