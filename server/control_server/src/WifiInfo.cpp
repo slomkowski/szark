@@ -39,8 +39,8 @@ os::WifiInfo::WifiInfo()
 
 void os::WifiInfo::Init() {
 	if (impl->iwName.length() == 0) {
-		impl->enabled = config->getBool("szark.server.WifiInfo.enabled");
-		impl->iwName = config->getString("szark.server.WifiInfo.device");
+		impl->enabled = config->getBool("WifiInfo.enabled");
+		impl->iwName = config->getString("WifiInfo.device");
 	}
 
 	if (impl->enabled) {

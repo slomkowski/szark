@@ -11,6 +11,7 @@
 #include <boost/asio.hpp>
 
 #include "RequestQueuer.hpp"
+
 #include "Configuration.hpp"
 
 namespace processing {

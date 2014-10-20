@@ -35,7 +35,7 @@ void processing::NetServer::Init() {
 	buff.reset(new char[MAX_PACKET_SIZE]);
 
 	if (udpPort == 0) {
-		udpPort = config->getInt("szark.server.NetServer.port");
+		udpPort = config->getInt("NetServer.port");
 	}
 
 	logger.notice((format("Opening listener socket with port %u.") % udpPort).str());
@@ -74,9 +74,9 @@ void processing::NetServer::doReceive() {
 							logger.debug((format("Senders map contains now %d keys.") % sendersMap.size()).str());
 						}
 
-						using namespace std::placeholders;
-						reqQueuer->setResponseSender(bind(&NetServer::sendResponse, this, _1, _2, _3));
-						reqQueuer->setRejectedRequestRemover(bind(&NetServer::removeFromRequestMap, this, _1));
+						namespace ph = std::placeholders;
+						reqQueuer->setResponseSender(bind(&NetServer::sendResponse, this, ph::_1, ph::_2, ph::_3));
+						reqQueuer->setRejectedRequestRemover(bind(&NetServer::removeFromRequestMap, this, ph::_1));
 					}
 				} else {
 					logger.error((format("Error when receiving packet (%u bytes): %s.") % bytes_recvd % ec.message()).str());
