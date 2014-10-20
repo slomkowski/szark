@@ -15,6 +15,7 @@
 #include <json/value.h>
 #include <json/reader.h>
 #include <json/writer.h>
+#include <boost/asio/ip/address.hpp>
 
 #include "IRequestProcessor.hpp"
 
@@ -22,7 +23,7 @@ namespace processing {
 
 	typedef std::function<void(long, std::string, bool)> ResponseSender;
 	typedef std::function<void(long)> RejectedRequestRemover;
-	typedef std::pair<long, Json::Value> Request;
+	typedef std::tuple<long, boost::asio::ip::address, Json::Value> Request;
 
 	constexpr long INVALID_MESSAGE = -1;
 
@@ -31,9 +32,10 @@ namespace processing {
 		/**
 		* Adds the request to the queue.
 		* @param request text of the request in JSON format
+		* @param address IP address of the client
 		* @return true if the request was added to the queue
 		*/
-		virtual long addRequest(std::string request) = 0;
+		virtual long addRequest(std::string request, boost::asio::ip::address address) = 0;
 
 		virtual int getNumOfMessages() = 0;
 
@@ -49,7 +51,7 @@ namespace processing {
 	class RequestValueComparer {
 	public:
 		bool operator()(const Request &r1, const Request &r2) const {
-			return r1.second["serial"].asInt() > r2.second["serial"].asInt();
+			return std::get<2>(r1)["serial"].asInt() > std::get<2>(r2)["serial"].asInt();
 		}
 	};
 
@@ -59,7 +61,7 @@ namespace processing {
 
 		~RequestQueuer();
 
-		virtual long addRequest(std::string requestString);
+		virtual long addRequest(std::string requestString, boost::asio::ip::address address);
 
 		virtual int getNumOfMessages();
 

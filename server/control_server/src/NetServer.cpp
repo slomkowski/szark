@@ -64,7 +64,7 @@ void processing::NetServer::doReceive() {
 						auto msg = string(buff.get(), 0, bytes_recvd);
 						logger.debug(string("Received data: ") + msg);
 
-						long id = reqQueuer->addRequest(msg);
+						long id = reqQueuer->addRequest(msg, recvSenderEndpoint.address());
 
 						if (id != INVALID_MESSAGE) {
 							logger.debug((format("Adding key %ld to senders map.") % id).str());

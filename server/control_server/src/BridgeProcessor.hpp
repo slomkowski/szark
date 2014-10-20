@@ -23,7 +23,8 @@ namespace bridge {
 
 		~BridgeProcessor();
 
-		virtual void process(Json::Value &request, Json::Value &response) override;
+		virtual void process(Json::Value &request, boost::asio::ip::address address,
+				Json::Value &response) override;
 
 	private:
 		log4cpp::Category &logger;

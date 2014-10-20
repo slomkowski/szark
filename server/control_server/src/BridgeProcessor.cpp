@@ -48,7 +48,8 @@ bridge::BridgeProcessor::~BridgeProcessor() {
 	logger.notice("Instance destroyed.");
 }
 
-void bridge::BridgeProcessor::process(Json::Value &request, Json::Value &response) {
+void bridge::BridgeProcessor::process(Json::Value &request, boost::asio::ip::address address,
+		Json::Value &response) {
 	unique_lock<mutex> lk(maintenanceMutex);
 
 	firstMaintenanceTask = true;

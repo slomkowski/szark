@@ -45,7 +45,7 @@ processing::RequestQueuer::~RequestQueuer() {
 	logger.notice("Instance destroyed.");
 }
 
-long processing::RequestQueuer::addRequest(string requestString) {
+long processing::RequestQueuer::addRequest(string requestString, boost::asio::ip::address address) {
 	unique_lock<mutex> lk(requestsMutex);
 
 	logger.debug((format("Received request with the size of %d bytes.") % requestString.length()).str());
@@ -82,7 +82,7 @@ long processing::RequestQueuer::addRequest(string requestString) {
 
 		long id;
 
-		tie(id, ignore) = requests.top();
+		tie(id, ignore, ignore) = requests.top();
 
 		requests.pop();
 
@@ -100,7 +100,7 @@ long processing::RequestQueuer::addRequest(string requestString) {
 
 	long id = nextId();
 
-	requests.push(make_pair(id, req));
+	requests.push(make_tuple(id, address, req));
 
 	logger.info(
 			(format("Pushed request with the serial %d. Queue size: %d.") % serial % requests.size()).str());
@@ -140,9 +140,10 @@ void processing::RequestQueuer::requestProcessorExecutorThreadFunction() {
 		}
 
 		long id;
+		asio::ip::address addr;
 		Json::Value req;
 
-		tie(id, req) = requests.top();
+		tie(id, addr, req) = requests.top();
 		requests.pop();
 
 		lk.unlock();
@@ -156,7 +157,7 @@ void processing::RequestQueuer::requestProcessorExecutorThreadFunction() {
 			lastSerial = serial;
 		}
 
-		logger.info((format("Executing request with serial %d.") % serial).str());
+		logger.info((format("Executing request with serial %d from %s.") % serial % addr.to_string()).str());
 
 		Json::Value response;
 
@@ -164,7 +165,7 @@ void processing::RequestQueuer::requestProcessorExecutorThreadFunction() {
 
 		auto execTimeMicroseconds = common::utils::measureTime<chrono::microseconds>([&]() {
 			for (auto proc : requestProcessors) {
-				std::shared_ptr<IRequestProcessor>(proc)->process(req, response);
+				std::shared_ptr<IRequestProcessor>(proc)->process(req, addr, response);
 			}
 		});
 
