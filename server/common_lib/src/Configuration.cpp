@@ -1,4 +1,6 @@
 #include <fstream>
+#include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/ini_parser.hpp>
 
 #include "Configuration.hpp"
 
@@ -6,42 +8,49 @@ using namespace common::config;
 
 WALLAROO_REGISTER(Configuration, std::vector<std::string>);
 
-common::config::Configuration::Configuration(const std::string fileName) {
-	std::ifstream conf;
-	//TODO wyjątki itd.
-	conf.open(fileName);
-	prop.load(conf);
-	conf.close();
+namespace common {
+	namespace config {
+		struct ConfigurationImpl {
+			boost::property_tree::ptree ptree;
+		};
+
+		template<typename TYPE>
+		TYPE get(boost::property_tree::ptree tree, const std::string &property) {
+			try {
+				return tree.get<TYPE>(property);
+			} catch (boost::property_tree::ptree_bad_path) {
+				throw ConfigException(std::string(typeid(TYPE).name()) + " key \'" + property + "\' not found");
+			}
+		}
+	}
 }
 
-common::config::Configuration::Configuration(std::vector<std::string> const fileNames) {
+common::config::Configuration::Configuration(const std::string fileName)
+		: impl(new ConfigurationImpl()) {
+	boost::property_tree::read_ini(fileName, impl->ptree);
+}
+
+common::config::Configuration::Configuration(std::vector<std::string> const fileNames)
+		: impl(new ConfigurationImpl()) {
 	for (auto &name : fileNames) {
-		std::ifstream conf;
-		//TODO wyjątki itd.
-		conf.open(name);
-		prop.load(conf);
-		conf.close();
+		boost::property_tree::read_ini(name, impl->ptree);
 	}
+}
+
+common::config::Configuration::~Configuration() {
+	delete impl;
 }
 
 int common::config::Configuration::getInt(const std::string &property) {
-	checkKey(property);
-	return prop.getInt(property, 0);
+	return get<int>(impl->ptree, property);
 }
 
 bool common::config::Configuration::getBool(const std::string &property) {
-	checkKey(property);
-	return prop.getBool(property, false);
+	return get<bool>(impl->ptree, property);
 }
 
 std::string common::config::Configuration::getString(const std::string &property) {
-	checkKey(property);
-	return prop.getString(property, "");
+	return get<std::string>(impl->ptree, property);
 }
 
-void common::config::Configuration::checkKey(const std::string &property) {
-	if (prop.find(property) == prop.end()) {
-		throw ConfigException(std::string("key \'") + property + "\' not found");
-	}
-}
 
