@@ -300,7 +300,9 @@ public class MainWindowLogic extends MainWindowView {
 		batteryCurrBar.setString("Current: " + receivedStatus.battery.getCurrent() + "A");
 
 		// wifi power
-		wifiPowerBar.setValue(100 * receivedStatus.getWirelessPower());
+		int wifiPower = (int) receivedStatus.wifi.getStrength();
+		wifiPowerBar.setValue(150 - wifiPower);
+		wifiPowerBar.setString("Power: " + wifiPower + " dBm");
 
 		// movement indicators
 		statSpeedLeft.setValue(receivedStatus.motors.left.getSpeed());

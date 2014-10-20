@@ -23,7 +23,7 @@ public class Status {
 
 	@Expose(deserialize = true, serialize = false)
 	@SerializedName("wifi")
-	private int wirelessPower;
+	public WifiInfo wifi;
 
 	@Expose(deserialize = false, serialize = true)
 	@SerializedName("ks_en")
@@ -46,7 +46,7 @@ public class Status {
 		lights = new LightSet();
 		joints = new JointSet();
 
-		wirelessPower = 0;
+		wifi = new WifiInfo();
 		killSwitchEnable = true;
 		receivedKillSwitchStatus = KillSwitchStatus.ACTIVE_SOFTWARE;
 		serial = 0;
@@ -62,10 +62,6 @@ public class Status {
 
 	public void setSerial(int serial) {
 		this.serial = serial;
-	}
-
-	public int getWirelessPower() {
-		return wirelessPower;
 	}
 
 	public synchronized boolean isKillSwitchEnable() {
