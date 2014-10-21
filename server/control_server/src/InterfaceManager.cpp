@@ -1,28 +1,31 @@
 #include "InterfaceManager.hpp"
-#include "USBCommunicator.hpp"
-#include "DataHolder.hpp"
+#include "utils.hpp"
 
 #include <cstring>
 #include <thread>
 #include <chrono>
 #include <tuple>
-#include <memory>
 #include <queue>
 
 #include <boost/format.hpp>
-
-#include "utils.hpp"
 
 using namespace std;
 using namespace boost;
 using namespace bridge;
 
+WALLAROO_REGISTER(InterfaceManager);
+
 bridge::InterfaceManager::InterfaceManager()
-		: logger(log4cpp::Category::getInstance("InterfaceManager")) {
+		: logger(log4cpp::Category::getInstance("InterfaceManager")),
+		  config("config", RegistrationToken()) {
+
+	interface = new Interface();// TODO shared memory
+
 	logger.notice("Instance created.");
 }
 
 bridge::InterfaceManager::~InterfaceManager() {
+	delete interface;
 	logger.notice("Instance destroyed.");
 }
 
@@ -74,12 +77,12 @@ pair<vector<uint8_t>, vector<USBCommands::Request>> bridge::InterfaceManager::ge
 	return make_pair(commands, responseOrder);
 }
 
-void bridge::InterfaceManager::syncWithDevice(std::function<std::vector<uint8_t>(std::vector<uint8_t>)> syncFunction) {
+void bridge::InterfaceManager::syncWithDevice(BridgeSyncFunction syncFunction) {
 
 	vector<uint8_t> concatenated;
 	std::priority_queue<std::shared_ptr<DataHolder>, vector<std::shared_ptr<DataHolder>>, DataHolderComparer> sortedRequests;
 
-	auto diff = generateDifferentialRequests(isKillSwitchActive());
+	auto diff = generateDifferentialRequests(interface->isKillSwitchActive());
 
 	for (auto &r : diff) {
 		sortedRequests.push(r.second);
@@ -90,7 +93,7 @@ void bridge::InterfaceManager::syncWithDevice(std::function<std::vector<uint8_t>
 		sortedRequests.pop();
 	}
 
-	auto getterReqs = generateGetRequests(isKillSwitchActive());
+	auto getterReqs = generateGetRequests(interface->isKillSwitchActive());
 	concatenated.insert(concatenated.end(), getterReqs.first.begin(), getterReqs.first.end());
 
 	concatenated.push_back(USBCommands::MESSAGE_END);
@@ -104,13 +107,13 @@ void bridge::InterfaceManager::syncWithDevice(std::function<std::vector<uint8_t>
 	logger.debug(
 			(format("Got response from device (%d bytes): %s.") % response.size() % common::utils::toString<uint8_t>(response)).str());
 
-	updateDataStructures(getterReqs.second, response);
+	interface->updateDataStructures(getterReqs.second, response);
 }
 
 RequestMap bridge::InterfaceManager::generateDifferentialRequests(bool killSwitchActive) {
 	RequestMap diff;
 
-	for (auto &newRequest : requests) {
+	for (auto &newRequest : interface->getRequestMap()) {
 		if (previousRequests.find(newRequest.first) == previousRequests.end()) {
 			logger.debug((format("Key '%s' not in the previous state. Adding.") % newRequest.first).str());
 			diff[newRequest.first] = newRequest.second;
@@ -125,9 +128,9 @@ RequestMap bridge::InterfaceManager::generateDifferentialRequests(bool killSwitc
 		}
 	}
 
-	previousRequests = requests;
+	previousRequests = interface->getRequestMap();
 	if (killSwitchActive) {
-		for (auto &r : requests) {
+		for (auto &r : interface->getRequestMap()) {
 			if (r.second->isKillSwitchDependent()) {
 				logger.debug((format("Removing key '%s' because kill switch is active.") % r.first).str());
 				diff.erase(r.first);
@@ -138,3 +141,6 @@ RequestMap bridge::InterfaceManager::generateDifferentialRequests(bool killSwitc
 	return diff;
 }
 
+Interface &InterfaceManager::iface() {
+	return *interface;
+}

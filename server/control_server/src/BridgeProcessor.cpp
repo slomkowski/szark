@@ -27,6 +27,7 @@ WALLAROO_REGISTER(BridgeProcessor);
 bridge::BridgeProcessor::BridgeProcessor()
 		: logger(log4cpp::Category::getInstance("BridgeProcessor")),
 		  usbComm("communicator", RegistrationToken()),
+		  interfaceManager("interfaceManager", RegistrationToken()),
 		  lastProcessFunctionExecution(high_resolution_clock::now()) {
 }
 
@@ -62,7 +63,7 @@ void bridge::BridgeProcessor::process(Json::Value &request, boost::asio::ip::add
 
 	parseRequest(request);
 
-	iface.syncWithDevice([&](vector<uint8_t> r) {
+	interfaceManager->syncWithDevice([&](vector<uint8_t> r) {
 		usbComm->sendData(r);
 		return usbComm->receiveData();
 	});
@@ -96,7 +97,7 @@ void bridge::BridgeProcessor::maintenanceThreadFunction() {
 		logger.info("Performing maintenance task.");
 		// TODO dodać - jeżeli przez 2s nie ma sygnału, to zatrzymaj wszystko
 
-		iface.syncWithDevice([&](vector<uint8_t> r) {
+		interfaceManager->syncWithDevice([&](vector<uint8_t> r) {
 			usbComm->sendData(r);
 			return usbComm->receiveData();
 		});
@@ -166,19 +167,19 @@ void bridge::BridgeProcessor::parseRequest(Json::Value &r) {
 	using namespace std::placeholders;
 	// TODO wkładanie requestów do interfejsu
 
-	tryAssign<bool>(r["ks_en"], std::bind(&InterfaceManager::setKillSwitch, &iface, _1));
-	tryAssign<string>(r["lcd"], std::bind(&InterfaceManager::setLCDText, &iface, _1));
+	tryAssign<bool>(r["ks_en"], std::bind(&Interface::setKillSwitch, &iface(), _1));
+	tryAssign<string>(r["lcd"], std::bind(&Interface::setLCDText, &iface(), _1));
 
 	auto fillArm = [&](string name, Joint j) {
 		tryAssign<int>(r["arm"][name]["speed"],
-				bind(&Interface::ArmClass::SingleJoint::setSpeed, &iface.arm[j], _1));
+				bind(&Interface::ArmClass::SingleJoint::setSpeed, &iface().arm[j], _1));
 
 		tryAssignDirection(r["arm"][name]["dir"],
-				bind(&Interface::ArmClass::SingleJoint::setDirection, &iface.arm[j], _1));
+				bind(&Interface::ArmClass::SingleJoint::setDirection, &iface().arm[j], _1));
 
 		if (r["arm"][name]["dir"].empty()) {
 			tryAssign<int>(r["arm"][name]["pos"],
-					bind(&Interface::ArmClass::SingleJoint::setPosition, &iface.arm[j], _1));
+					bind(&Interface::ArmClass::SingleJoint::setPosition, &iface().arm[j], _1));
 		}
 	};
 
@@ -186,20 +187,20 @@ void bridge::BridgeProcessor::parseRequest(Json::Value &r) {
 
 	auto fillMotor = [&](string name, Motor m) {
 		tryAssign<int>(r["motor"][name]["speed"],
-				bind(&Interface::MotorClass::SingleMotor::setSpeed, &iface.motor[m], _1));
+				bind(&Interface::MotorClass::SingleMotor::setSpeed, &iface().motor[m], _1));
 
 		tryAssignDirection(r["motor"][name]["dir"],
-				bind(&Interface::MotorClass::SingleMotor::setDirection, &iface.motor[m], _1));
+				bind(&Interface::MotorClass::SingleMotor::setDirection, &iface().motor[m], _1));
 	};
 
 	auto fillExpander = [&](string name, ExpanderDevice d) {
 		tryAssign<bool>(r["light"][name],
-				bind(&Interface::ExpanderClass::Device::setEnabled, &iface.expander[d], _1));
+				bind(&Interface::ExpanderClass::Device::setEnabled, &iface().expander[d], _1));
 	};
 
 	tryAssign<bool>(r["arm"]["b_cal"], [&](bool startCalibration) {
 		if (startCalibration) {
-			iface.arm.calibrate();
+			iface().arm.calibrate();
 		}
 	});
 
@@ -209,28 +210,28 @@ void bridge::BridgeProcessor::parseRequest(Json::Value &r) {
 void bridge::BridgeProcessor::createReport(Json::Value &r) {
 
 	auto fillExpander = [&](string name, ExpanderDevice d) {
-		r["light"][name] = iface.expander[d].isEnabled();
+		r["light"][name] = iface().expander[d].isEnabled();
 	};
 
 	auto fillButtons = [&](string name, Button d) {
-		if (iface.isButtonPressed(d)) {
+		if (iface().isButtonPressed(d)) {
 			r["button"].append(name);
 		}
 	};
 
 	auto fillMotor = [&](string name, Motor m) {
-		r["motor"][name]["speed"] = iface.motor[m].getSpeed();
-		r["motor"][name]["dir"] = directionToString(iface.motor[m].getDirection());
+		r["motor"][name]["speed"] = iface().motor[m].getSpeed();
+		r["motor"][name]["dir"] = directionToString(iface().motor[m].getDirection());
 	};
 
 	auto fillArm = [&](string name, Joint j) {
-		r["arm"][name]["speed"] = iface.arm[j].getSpeed();
-		r["arm"][name]["pos"] = iface.arm[j].getPosition();
-		r["arm"][name]["dir"] = directionToString(iface.arm[j].getDirection());
+		r["arm"][name]["speed"] = iface().arm[j].getSpeed();
+		r["arm"][name]["pos"] = iface().arm[j].getPosition();
+		r["arm"][name]["dir"] = directionToString(iface().arm[j].getDirection());
 	};
 
-	r["arm"]["cal_st"] = armCalibrationStatusToString(iface.arm.getCalibrationStatus());
-	r["arm"]["mode"] = armDriverModeToString(iface.arm.getMode());
+	r["arm"]["cal_st"] = armCalibrationStatusToString(iface().arm.getCalibrationStatus());
+	r["arm"]["mode"] = armDriverModeToString(iface().arm.getMode());
 
 	fillAllDevices(fillArm, fillMotor, fillExpander);
 
@@ -238,11 +239,11 @@ void bridge::BridgeProcessor::createReport(Json::Value &r) {
 	fillButtons("down", Button::DOWN);
 	fillButtons("enter", Button::ENTER);
 
-	r["batt"]["volt"] = iface.getVoltage();
-	r["batt"]["curr"] = iface.getCurrent();
+	r["batt"]["volt"] = iface().getVoltage();
+	r["batt"]["curr"] = iface().getCurrent();
 
-	if (iface.isKillSwitchActive()) {
-		if (iface.isKillSwitchCausedByHardware()) {
+	if (iface().isKillSwitchActive()) {
+		if (iface().isKillSwitchCausedByHardware()) {
 			r["ks_stat"] = "hardware";
 		} else {
 			r["ks_stat"] = "software";

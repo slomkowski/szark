@@ -16,6 +16,7 @@ int main(int argc, char *argv[]) {
 	Catalog c;
 	c.Create("conf", "Configuration", configFiles);
 	c.Create("comm", "USBCommunicator");
+	c.Create("ifaceMgr", "InterfaceManager");
 	c.Create("wifiInfo", "WifiInfo");
 	c.Create("netServer", "NetServer");
 	c.Create("reqQueuer", "RequestQueuer");
@@ -26,6 +27,8 @@ int main(int argc, char *argv[]) {
 		use("conf").as("config").of("wifiInfo");
 		use("conf").as("config").of("netServer");
 		use("conf").as("config").of("osProc");
+		use("conf").as("config").of("ifaceMgr");
+		use("ifaceMgr").as("interfaceManager").of("bridgeProc");
 		use("wifiInfo").as("wifiInfo").of("osProc");
 		use("comm").as("communicator").of("bridgeProc");
 		use("reqQueuer").as("requestQueuer").of("netServer");

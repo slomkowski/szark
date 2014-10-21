@@ -152,16 +152,8 @@ namespace bridge {
 		*/
 		bool isButtonPressed(Button button);
 
-	protected:
+	private:
 		RequestMap requests;
-
-		/**
-		* Fills the interface's structures with data from the device. Because of that the getters like getSpeed()
-		* could work.
-		* @param getterRequests vector of getter requests.
-		* @param deviceResponse response from the device. The responses order must match the request's.
-		*/
-		void updateDataStructures(std::vector<USBCommands::Request> getterRequests, std::vector<uint8_t> deviceResponse);
 
 		/**
 		* If the kill switch is requested by the user or detected by hardware, this function should be called.
@@ -171,7 +163,6 @@ namespace bridge {
 
 		const std::string KILLSWITCH_STRING = "killswitch";
 
-	private:
 		Category &logger;
 
 		boost::circular_buffer<unsigned int> rawVoltage;
@@ -482,8 +473,20 @@ namespace bridge {
 		ExpanderClass expander;
 		MotorClass motor;
 		ArmClass arm;
-	};
 
+		RequestMap &getRequestMap() {
+			return requests;
+		}
+
+		/**
+		* Fills the interface's structures with data from the device. Because of that the getters like getSpeed()
+		* could work.
+		* @param getterRequests vector of getter requests.
+		* @param deviceResponse response from the device. The responses order must match the request's.
+		*/
+		void updateDataStructures(std::vector<USBCommands::Request> getterRequests, std::vector<uint8_t> deviceResponse);
+	};
 }
+
 /* namespace bridge */
 #endif /* INTERFACE_HPP_ */

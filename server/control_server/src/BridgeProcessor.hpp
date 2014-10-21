@@ -29,9 +29,8 @@ namespace bridge {
 	private:
 		log4cpp::Category &logger;
 
-		// shared data
 		wallaroo::Plug<ICommunicator> usbComm;
-		InterfaceManager iface;
+		wallaroo::Plug<IInterfaceManager> interfaceManager;
 
 		std::unique_ptr<std::thread> maintenanceThread;
 		std::mutex maintenanceMutex;
@@ -44,6 +43,10 @@ namespace bridge {
 		void Init();
 
 		void maintenanceThreadFunction();
+
+		Interface &iface() {
+			return interfaceManager->iface();
+		}
 
 		void createReport(Json::Value &r);
 
