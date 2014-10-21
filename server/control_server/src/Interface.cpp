@@ -39,24 +39,23 @@ enum Priority {
 
 bridge::Interface::Interface()
 		: logger(log4cpp::Category::getInstance("Interface")),
-		  expander(*(new ExpanderClass(requests, logger))),
-		  motor(*(new MotorClass(requests, logger))),
-		  arm(*(new ArmClass(requests, logger))) {
+		  rawVoltage(VOLTAGE_ARRAY_SIZE),
+		  rawCurrent(CURRENT_ARRAY_SIZE),
+		  expander(requests, logger),
+		  motor(requests, logger),
+		  arm(requests, logger) {
 
-	rawVoltage.reset(new circular_buffer<unsigned int>(VOLTAGE_ARRAY_SIZE));
-	rawCurrent.reset(new circular_buffer<unsigned int>(CURRENT_ARRAY_SIZE));
-
-	rawVoltage->push_back(0);
-	rawCurrent->push_back(0);
+	rawVoltage.push_back(0);
+	rawCurrent.push_back(0);
 
 	extDevListeners.push_back(this);
 	extDevListeners.push_back(&arm);
 	extDevListeners.push_back(&expander);
 	for (auto d : arm.joints) {
-		extDevListeners.push_back(d.second.get());
+		extDevListeners.push_back(d.second);
 	}
 	for (auto d : motor.motors) {
-		extDevListeners.push_back(d.second.get());
+		extDevListeners.push_back(d.second);
 	}
 
 	killSwitchActive = true;
@@ -72,12 +71,12 @@ bridge::Interface::~Interface() {
 
 double bridge::Interface::getVoltage() {
 	return round(10.0 * USBCommands::bridge::VOLTAGE_FACTOR
-			* accumulate(rawVoltage->begin(), rawVoltage->end(), 0) / rawVoltage->size()) / 10.0;
+			* accumulate(rawVoltage.begin(), rawVoltage.end(), 0) / rawVoltage.size()) / 10.0;
 }
 
 double bridge::Interface::getCurrent() {
 	return round(10.0 * USBCommands::bridge::CURRENT_FACTOR
-			* accumulate(rawCurrent->begin(), rawCurrent->end(), 0) / rawCurrent->size()) / 10.0;
+			* accumulate(rawCurrent.begin(), rawCurrent.end(), 0) / rawCurrent.size()) / 10.0;
 }
 
 void bridge::Interface::setLCDText(std::string text) {
@@ -519,8 +518,8 @@ unsigned int bridge::Interface::updateFields(USBCommands::Request request, uint8
 	unsigned int curr = state->rawCurrent;
 	unsigned int volt = state->rawVoltage;
 
-	rawCurrent->push_back(curr);
-	rawVoltage->push_back(volt);
+	rawCurrent.push_back(curr);
+	rawVoltage.push_back(volt);
 
 	logger.debug((format("Raw voltage: %u, raw current: %u.") % volt % curr).str());
 

@@ -174,8 +174,8 @@ namespace bridge {
 	private:
 		Category &logger;
 
-		std::unique_ptr<boost::circular_buffer<unsigned int>> rawVoltage;
-		std::unique_ptr<boost::circular_buffer<unsigned int>> rawCurrent;
+		boost::circular_buffer<unsigned int> rawVoltage;
+		boost::circular_buffer<unsigned int> rawCurrent;
 
 		std::string lcdText;
 
@@ -266,13 +266,16 @@ namespace bridge {
 				friend class MotorClass;
 			};
 
+			SingleMotor left;
+			SingleMotor right;
+
 			/**
 			* Convenience operator for getting one of the available motors.
 			* @param motor
 			* @return reference to motor class providing manipulation methods.
 			*/
 			SingleMotor &operator[](Motor motor) {
-				return *(motors[motor]);
+				return *motors.at(motor);
 			}
 
 			/**
@@ -281,14 +284,19 @@ namespace bridge {
 			void brake();
 
 		private:
-			MotorClass(RequestMap &requests, Category &logger) : logger(logger) {
-				motors[Motor::LEFT] = std::shared_ptr<SingleMotor>(new SingleMotor(requests, Motor::LEFT, logger));
-				motors[Motor::RIGHT] = std::shared_ptr<SingleMotor>(new SingleMotor(requests, Motor::RIGHT, logger));
+			MotorClass(RequestMap &requests, Category &logger)
+					: left(requests, Motor::LEFT, logger),
+					  right(requests, Motor::RIGHT, logger),
+					  logger(logger) {
+				motors = {
+						{Motor::LEFT, &left},
+						{Motor::RIGHT, &right}
+				};
 			}
 
 			Category &logger;
 
-			std::map<Motor, std::shared_ptr<SingleMotor>> motors;
+			std::map<Motor, SingleMotor *> motors;
 
 			friend class Interface;
 		};
@@ -358,8 +366,12 @@ namespace bridge {
 				friend class ArmClass;
 			};
 
+			SingleJoint shoulder;
+			SingleJoint elbow;
+			SingleJoint gripper;
+
 			SingleJoint &operator[](Joint joint) {
-				return *joints[joint];
+				return *joints.at(joint);
 			}
 
 			void brake();
@@ -376,11 +388,17 @@ namespace bridge {
 
 		private:
 			ArmClass(RequestMap &requests, Category &logger)
-					: logger(logger),
+					: shoulder(requests, Joint::SHOULDER, logger),
+					  elbow(requests, Joint::ELBOW, logger),
+					  gripper(requests, Joint::GRIPPER, logger),
+					  logger(logger),
 					  requests(requests) {
-				for (auto j : {Joint::ELBOW, Joint::GRIPPER, Joint::SHOULDER}) {
-					joints[j] = std::shared_ptr<SingleJoint>(new SingleJoint(requests, j, logger));
-				}
+
+				joints = {
+						{Joint::ELBOW, &elbow},
+						{Joint::GRIPPER, &gripper},
+						{Joint::SHOULDER, &shoulder}
+				};
 
 				mode = ArmDriverMode::DIRECTIONAL;
 				calibrationStatus = ArmCalibrationStatus::NONE;
@@ -392,7 +410,7 @@ namespace bridge {
 
 			Category &logger;
 
-			std::map<Joint, std::shared_ptr<SingleJoint>> joints;
+			std::map<Joint, SingleJoint *> joints;
 			RequestMap &requests;
 
 			ArmDriverMode mode;
@@ -426,15 +444,25 @@ namespace bridge {
 				friend class ExpanderClass;
 			};
 
+			Device lightCamera;
+			Device lightLeft;
+			Device lightRight;
+
 			Device &operator[](ExpanderDevice device) {
-				return *devices[device];
+				return *devices.at(device);
 			}
 
 		private:
-			ExpanderClass(RequestMap &requests, Category &logger) : logger(logger) {
-				for (auto d : {ExpanderDevice::LIGHT_CAMERA, ExpanderDevice::LIGHT_LEFT, ExpanderDevice::LIGHT_RIGHT}) {
-					devices[d] = std::shared_ptr<Device>(new Device(requests, expanderByte, d, logger));
-				}
+			ExpanderClass(RequestMap &requests, Category &logger)
+					: lightCamera(requests, expanderByte, ExpanderDevice::LIGHT_CAMERA, logger),
+					  lightLeft(requests, expanderByte, ExpanderDevice::LIGHT_LEFT, logger),
+					  lightRight(requests, expanderByte, ExpanderDevice::LIGHT_RIGHT, logger),
+					  logger(logger) {
+				devices = {
+						{ExpanderDevice::LIGHT_CAMERA, &lightCamera},
+						{ExpanderDevice::LIGHT_LEFT, &lightLeft},
+						{ExpanderDevice::LIGHT_RIGHT, &lightRight}
+				};
 			}
 
 			unsigned int updateFields(USBCommands::Request request, uint8_t *data);
@@ -445,15 +473,15 @@ namespace bridge {
 
 			uint8_t expanderByte = 0;
 
-			std::map<ExpanderDevice, std::shared_ptr<Device>> devices;
+			std::map<ExpanderDevice, Device *> devices;
 
 			friend class Interface;
 		};
 
 	public:
-		ExpanderClass &expander;
-		MotorClass &motor;
-		ArmClass &arm;
+		ExpanderClass expander;
+		MotorClass motor;
+		ArmClass arm;
 	};
 
 }
