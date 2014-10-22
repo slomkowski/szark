@@ -1,6 +1,7 @@
 #include <chrono>
 #include <iomanip>
 #include <boost/format.hpp>
+#include <pthread.h>
 
 #include "utils.hpp"
 #include "IRequestProcessor.hpp"
@@ -30,6 +31,10 @@ processing::RequestQueuer::RequestQueuer()
 
 void processing::RequestQueuer::Init() {
 	requestProcessorExecutorThread.reset(new thread(&RequestQueuer::requestProcessorExecutorThreadFunction, this));
+	int result = pthread_setname_np(requestProcessorExecutorThread->native_handle(), "reqProcExec");
+	if (result != 0) {
+		logger.error((format("Cannot set thread name: %s.") % strerror(result)).str());
+	}
 	logger.notice("Instance created.");
 }
 
