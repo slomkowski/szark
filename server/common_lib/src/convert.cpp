@@ -2,9 +2,9 @@
 
 #include "convert.hpp"
 
-using namespace bridge;
+using namespace common::bridge;
 
-std::string bridge::convert::devToString(ExpanderDevice dev) {
+std::string common::bridge::devToString(ExpanderDevice dev) {
 	switch (dev) {
 		case ExpanderDevice::LIGHT_CAMERA:
 			return "camera light";
@@ -15,7 +15,7 @@ std::string bridge::convert::devToString(ExpanderDevice dev) {
 	};
 }
 
-std::string bridge::convert::devToString(Joint dev) {
+std::string common::bridge::devToString(Joint dev) {
 	switch (dev) {
 		case Joint::ELBOW:
 			return "elbow";
@@ -27,7 +27,7 @@ std::string bridge::convert::devToString(Joint dev) {
 	};
 }
 
-std::string bridge::convert::devToString(Motor dev) {
+std::string common::bridge::devToString(Motor dev) {
 	if (dev == Motor::LEFT) {
 		return "left";
 	} else {
@@ -36,7 +36,7 @@ std::string bridge::convert::devToString(Motor dev) {
 }
 
 
-std::string bridge::convert::directionToString(const Direction dir) {
+std::string common::bridge::directionToString(const Direction dir) {
 	switch (dir) {
 		case Direction::FORWARD:
 			return "forward";
@@ -48,7 +48,7 @@ std::string bridge::convert::directionToString(const Direction dir) {
 	}
 }
 
-Direction bridge::convert::stringToDirection(std::string dir) {
+Direction common::bridge::stringToDirection(std::string dir) {
 	boost::algorithm::to_lower(dir);
 
 	if (dir == "stop") {
@@ -64,7 +64,7 @@ Direction bridge::convert::stringToDirection(std::string dir) {
 	return Direction::STOP;
 }
 
-std::string bridge::convert::armDriverModeToString(const ArmDriverMode mode) {
+std::string common::bridge::armDriverModeToString(const ArmDriverMode mode) {
 	switch (mode) {
 		case ArmDriverMode::CALIBRATING:
 			return "calibrating";
@@ -76,7 +76,7 @@ std::string bridge::convert::armDriverModeToString(const ArmDriverMode mode) {
 	}
 }
 
-std::string bridge::convert::armCalibrationStatusToString(const ArmCalibrationStatus status) {
+std::string common::bridge::armCalibrationStatusToString(const ArmCalibrationStatus status) {
 	switch (status) {
 		case ArmCalibrationStatus::DONE:
 			return "done";

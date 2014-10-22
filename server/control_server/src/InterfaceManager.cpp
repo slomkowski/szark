@@ -8,24 +8,44 @@
 #include <queue>
 
 #include <boost/format.hpp>
+#include <boost/interprocess/managed_shared_memory.hpp>
 
 using namespace std;
 using namespace boost;
+using namespace boost::interprocess;
 using namespace bridge;
+using namespace common::bridge;
 
 WALLAROO_REGISTER(InterfaceManager);
+
+const string SHARED_MEM_SEGMENT_NAME = "SZARK_Interface_shm";
+const string SHARED_MEM_INTERFACE_OBJECT_NAME = "Interface";
+const int SHARED_MEM_SIZE = 0xffff;
 
 bridge::InterfaceManager::InterfaceManager()
 		: logger(log4cpp::Category::getInstance("InterfaceManager")),
 		  config("config", RegistrationToken()) {
 
-	interface = new Interface();// TODO shared memory
+	shared_memory_object::remove(SHARED_MEM_SEGMENT_NAME.c_str());
+
+	logger.info((format("Allocating %d bytes of shared memory with name '%s'.")
+			% SHARED_MEM_SIZE % SHARED_MEM_SEGMENT_NAME).str());
+
+	memorySegment = new managed_shared_memory(create_only, SHARED_MEM_SEGMENT_NAME.c_str(), SHARED_MEM_SIZE);
+
+	interface = memorySegment->construct<Interface>(SHARED_MEM_INTERFACE_OBJECT_NAME.c_str())();
 
 	logger.notice("Instance created.");
 }
 
 bridge::InterfaceManager::~InterfaceManager() {
-	delete interface;
+
+	memorySegment->destroy_ptr(interface);
+
+	delete memorySegment;
+
+	shared_memory_object::remove(SHARED_MEM_SEGMENT_NAME.c_str());
+
 	logger.notice("Instance destroyed.");
 }
 
@@ -110,8 +130,8 @@ void bridge::InterfaceManager::syncWithDevice(BridgeSyncFunction syncFunction) {
 	interface->updateDataStructures(getterReqs.second, response);
 }
 
-RequestMap bridge::InterfaceManager::generateDifferentialRequests(bool killSwitchActive) {
-	RequestMap diff;
+::RequestMap bridge::InterfaceManager::generateDifferentialRequests(bool killSwitchActive) {
+	::RequestMap diff;
 
 	for (auto &newRequest : interface->getRequestMap()) {
 		if (previousRequests.find(newRequest.first) == previousRequests.end()) {

@@ -16,8 +16,7 @@
 
 using namespace std;
 using namespace boost;
-using namespace bridge;
-using namespace bridge::convert;
+using namespace common;
 
 constexpr int VOLTAGE_ARRAY_SIZE = 5;
 constexpr int CURRENT_ARRAY_SIZE = 5;
@@ -25,8 +24,11 @@ constexpr int CURRENT_ARRAY_SIZE = 5;
 constexpr uint8_t MOTOR_DRIVER_MAX_SPEED = 11;
 constexpr unsigned int ARM_DRIVER_MAX_SPEED = 255;
 
-static map<bridge::Joint, unsigned int> ARM_DRIVER_MAX_POSITION = {{Joint::ELBOW, 105}, {Joint::SHOULDER, 79},
-		{Joint::GRIPPER, 255}};
+static map<bridge::Joint, unsigned int> ARM_DRIVER_MAX_POSITION = {
+		{bridge::Joint::ELBOW, 105},
+		{bridge::Joint::SHOULDER, 79},
+		{bridge::Joint::GRIPPER, 255}
+};
 
 enum Priority {
 	PRIORITY_KILL_SWITCH,

@@ -10,6 +10,8 @@
 #include "USBCommunicator.hpp"
 #include "Configuration.hpp"
 
+#include <boost/interprocess/managed_shared_memory.hpp>
+
 namespace bridge {
 
 	typedef std::function<std::vector<uint8_t>(std::vector<uint8_t>)> BridgeSyncFunction;
@@ -20,7 +22,7 @@ namespace bridge {
 
 		virtual void syncWithDevice(BridgeSyncFunction syncFunction) = 0;
 
-		virtual Interface &iface() = 0;
+		virtual common::bridge::Interface &iface() = 0;
 	};
 
 	class InterfaceManager : public IInterfaceManager, public wallaroo::Device {
@@ -31,20 +33,22 @@ namespace bridge {
 
 		void syncWithDevice(BridgeSyncFunction syncFunction);
 
-		Interface &iface();
+		common::bridge::Interface &iface();
 
 	private:
 		log4cpp::Category &logger;
 
 		wallaroo::Plug<common::config::Configuration> config;
 
-		Interface *interface;
+		boost::interprocess::managed_shared_memory *memorySegment;
+
+		common::bridge::Interface *interface;
 
 		std::pair<std::vector<uint8_t>, std::vector<USBCommands::Request>> generateGetRequests(bool killSwitchActive);
 
-		RequestMap previousRequests;
+		common::bridge::RequestMap previousRequests;
 
-		RequestMap generateDifferentialRequests(bool killSwitchActive);
+		common::bridge::RequestMap generateDifferentialRequests(bool killSwitchActive);
 	};
 
 } /* namespace bridge */

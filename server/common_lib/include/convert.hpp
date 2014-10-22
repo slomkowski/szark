@@ -3,8 +3,8 @@
 
 #include "Interface.hpp"
 
-namespace bridge {
-	namespace convert {
+namespace common {
+	namespace bridge {
 		/**
 		* Converts Direction enum to string (lowercase letters).
 		* @param dir

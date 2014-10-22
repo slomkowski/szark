@@ -2,20 +2,20 @@
 
 #include "DataHolder.hpp"
 
-using namespace bridge;
+using namespace common::bridge;
 
-bridge::DataHolder::DataHolder(const USBCommands::Request request, const int pr, bool killswitchDependent) {
+common::bridge::DataHolder::DataHolder(const USBCommands::Request request, const int pr, bool killswitchDependent) {
 	initData(request, pr, killswitchDependent, 0);
 }
 
-bridge::DataHolder::DataHolder(const USBCommands::Request request, const int pr, bool killswitchDependent,
+common::bridge::DataHolder::DataHolder(const USBCommands::Request request, const int pr, bool killswitchDependent,
 		const uint8_t byte) {
 	initData(request, pr, killswitchDependent, sizeof(char));
 
 	data[1] = byte;
 }
 
-bridge::DataHolder::DataHolder(const USBCommands::Request request, const int pr, bool killswitchDependent,
+common::bridge::DataHolder::DataHolder(const USBCommands::Request request, const int pr, bool killswitchDependent,
 		const std::vector<uint8_t> &vec) {
 	initData(request, pr, killswitchDependent, vec.size());
 
@@ -26,20 +26,20 @@ bridge::DataHolder::DataHolder(const USBCommands::Request request, const int pr,
 	}
 }
 
-bridge::DataHolder::DataHolder(const DataHolder &dh) {
+common::bridge::DataHolder::DataHolder(const DataHolder &dh) {
 	this->length = dh.length;
 	this->priority = dh.priority;
 	this->killswitchDependent = dh.killswitchDependent;
 	std::memcpy(this->data, dh.data, length + 1);
 }
 
-bridge::DataHolder::DataHolder(const USBCommands::Request request, const int pr, bool killswitchDependent, void *data,
+common::bridge::DataHolder::DataHolder(const USBCommands::Request request, const int pr, bool killswitchDependent, void *data,
 		int size) {
 	initData(request, pr, killswitchDependent, size);
 	std::memcpy(this->data + 1, data, length);
 }
 
-DataHolder &bridge::DataHolder::operator=(const DataHolder &dh) {
+DataHolder &common::bridge::DataHolder::operator=(const DataHolder &dh) {
 	this->length = dh.length;
 	this->priority = dh.priority;
 	this->killswitchDependent = dh.killswitchDependent;
@@ -48,7 +48,7 @@ DataHolder &bridge::DataHolder::operator=(const DataHolder &dh) {
 	return *this;
 }
 
-bool bridge::DataHolder::equals(const DataHolder &right) {
+bool common::bridge::DataHolder::equals(const DataHolder &right) {
 
 	if (this->priority != right.priority) {
 		return false;
@@ -69,7 +69,7 @@ bool bridge::DataHolder::equals(const DataHolder &right) {
 	return true;
 }
 
-void bridge::DataHolder::initData(USBCommands::Request request, const int pr, bool killswitchDependent,
+void common::bridge::DataHolder::initData(USBCommands::Request request, const int pr, bool killswitchDependent,
 		unsigned int dataSize) {
 	priority = pr;
 	length = dataSize + 1;

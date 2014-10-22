@@ -16,6 +16,7 @@
 #include "InterfaceManager.hpp"
 
 namespace bridge {
+	using namespace common::bridge;
 
 	class BridgeProcessor : public processing::IRequestProcessor, public wallaroo::Device {
 	public:

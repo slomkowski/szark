@@ -10,7 +10,8 @@
 
 using namespace std;
 using namespace bridge;
-using namespace bridge::convert;
+using namespace common::bridge;
+
 using boost::format;
 using std::chrono::high_resolution_clock;
 
