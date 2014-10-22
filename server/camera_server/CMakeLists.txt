@@ -15,6 +15,7 @@ INCLUDE("../common.cmake")
 find_package(Boost COMPONENTS system unit_test_framework program_options filesystem REQUIRED)
 find_package(OpenCV REQUIRED)
 find_package(PkgConfig REQUIRED)
+find_package(Threads REQUIRED)
 
 pkg_check_modules(LOG4CPP "log4cpp")
 
@@ -32,6 +33,9 @@ target_link_libraries(${MAIN_EXECUTABLE} ${COMMON_LIB})
 target_link_libraries(${MAIN_EXECUTABLE} ${LOG4CPP_LIBRARIES})
 target_link_libraries(${MAIN_EXECUTABLE} ${Boost_LIBRARIES})
 target_link_libraries(${MAIN_EXECUTABLE} ${OpenCV_LIBRARIES})
+target_link_libraries(${MAIN_EXECUTABLE} ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(${MAIN_EXECUTABLE} rt)
+
 
 enable_testing()
 
@@ -43,5 +47,7 @@ target_link_libraries(${TEST_EXECUTABLE} ${COMMON_LIB})
 target_link_libraries(${TEST_EXECUTABLE} ${LOG4CPP_LIBRARIES})
 target_link_libraries(${TEST_EXECUTABLE} ${Boost_LIBRARIES})
 target_link_libraries(${TEST_EXECUTABLE} ${OpenCV_LIBRARIES})
+target_link_libraries(${TEST_EXECUTABLE} ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(${TEST_EXECUTABLE} rt)
 
 add_test(SZARKCameraServerTest ${TEST_EXECUTABLE})
