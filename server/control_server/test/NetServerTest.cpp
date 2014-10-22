@@ -10,7 +10,7 @@ using namespace processing;
 
 class RequestQueuerMock : public wallaroo::Device, public processing::IRequestQueuer {
 public:
-	virtual long addRequest(std::string request) {
+	virtual long addRequest(std::string request, boost::asio::ip::address address) {
 		id++;
 		//respThread.reset(new thread(&RequestQueuerMock::respThreadFunction, this));
 		return id;

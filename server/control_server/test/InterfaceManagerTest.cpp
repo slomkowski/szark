@@ -7,6 +7,7 @@
 #include <memory>
 
 #include <boost/test/unit_test.hpp>
+#include <wallaroo/catalog.h>
 
 #include "InterfaceManager.hpp"
 #include "USBCommunicator.hpp"
@@ -16,8 +17,20 @@ BOOST_AUTO_TEST_CASE(InterfaceManager_Operation) {
 	using std::chrono::microseconds;
 	typedef std::chrono::high_resolution_clock Clock;
 
-	bridge::USBCommunicator comm;
-	bridge::InterfaceManager i;
+	using namespace bridge;
+	using namespace common::bridge;
+
+	USBCommunicator comm;
+
+	wallaroo::Catalog catalog;
+	catalog.Create("config", "Configuration");
+	catalog.Create("mgr", "InterfaceManager");
+	wallaroo_within(catalog) {
+		wallaroo::use("config").as("config").of("mgr");
+	};
+
+	auto interfaceManager = std::shared_ptr<IInterfaceManager>(catalog["mgr"]);
+	Interface &i = interfaceManager->iface();
 
 	auto syncWithDeviceFunc = [&](std::vector<uint8_t> r) {
 		comm.sendData(r);
@@ -31,11 +44,11 @@ BOOST_AUTO_TEST_CASE(InterfaceManager_Operation) {
 	i.setKillSwitch(false);
 	i.isKillSwitchActive();
 
-	i.motor[bridge::Motor::LEFT].setSpeed(8);
-	i.motor[bridge::Motor::LEFT].setDirection(bridge::Direction::STOP);
-	i.expander[bridge::ExpanderDevice::LIGHT_LEFT].setEnabled(false);
-	i.arm[bridge::Joint::ELBOW].setDirection(bridge::Direction::BACKWARD);
-	i.arm[bridge::Joint::ELBOW].setSpeed(70);
+	i.motor[Motor::LEFT].setSpeed(8);
+	i.motor[Motor::LEFT].setDirection(Direction::STOP);
+	i.expander[ExpanderDevice::LIGHT_LEFT].setEnabled(false);
+	i.arm[Joint::ELBOW].setDirection(Direction::BACKWARD);
+	i.arm[Joint::ELBOW].setSpeed(70);
 	i.setLCDText("hello world");
 	i.arm.calibrate();
 
@@ -44,52 +57,48 @@ BOOST_AUTO_TEST_CASE(InterfaceManager_Operation) {
 	for (int t = 0; t < 500; t++) {
 		auto tstart = Clock::now();
 
-		i.expander[bridge::ExpanderDevice::LIGHT_LEFT].setEnabled(true);
+		i.expander[ExpanderDevice::LIGHT_LEFT].setEnabled(true);
 
 		if (t % 3 == 1)
-			i.motor[bridge::Motor::LEFT].setSpeed(9);
+			i.motor[Motor::LEFT].setSpeed(9);
 		if (t % 3 == 2)
-			i.motor[bridge::Motor::LEFT].setSpeed(9);
+			i.motor[Motor::LEFT].setSpeed(9);
 
 		if (t % 7 == 4)
 			i.setLCDText("hi" + std::to_string(t));
 
 		if (t % 60 == 30) {
 			i.setLCDText("this is a very long text to test maximal transfer time");
-			//i.arm[bridge::Joint::ELBOW].setDirection(bridge::Direction::STOP);
-			//i.arm[bridge::Joint::ELBOW].setSpeed(3);
-			i.arm[bridge::Joint::GRIPPER].setDirection(bridge::Direction::STOP);
-			i.arm[bridge::Joint::GRIPPER].setSpeed(3);
-			i.motor[bridge::Motor::LEFT].setSpeed(3);
-			i.motor[bridge::Motor::RIGHT].setSpeed(4);
-			i.expander[bridge::ExpanderDevice::LIGHT_CAMERA].setEnabled(true);
+			//i.arm[Joint::ELBOW].setDirection(Direction::STOP);
+			//i.arm[Joint::ELBOW].setSpeed(3);
+			i.arm[Joint::GRIPPER].setDirection(Direction::STOP);
+			i.arm[Joint::GRIPPER].setSpeed(3);
+			i.motor[Motor::LEFT].setSpeed(3);
+			i.motor[Motor::RIGHT].setSpeed(4);
+			i.expander[ExpanderDevice::LIGHT_CAMERA].setEnabled(true);
 		}
 
-		i.motor[bridge::Motor::LEFT].setSpeed(t % 10);
+		i.motor[Motor::LEFT].setSpeed(t % 10);
 
-		BOOST_CHECK_EQUAL(i.motor[bridge::Motor::LEFT].getSpeed(), t % 10);
+		BOOST_CHECK_EQUAL(i.motor[Motor::LEFT].getSpeed(), t % 10);
 
-		i.arm[bridge::Joint::ELBOW].setDirection(bridge::Direction::BACKWARD);
-		i.arm[bridge::Joint::ELBOW].setSpeed(t % 5);
+		i.arm[Joint::ELBOW].setDirection(Direction::BACKWARD);
+		i.arm[Joint::ELBOW].setSpeed(t % 5);
 
 		if (t % 2)
-			i.motor[bridge::Motor::LEFT].setDirection(bridge::Direction::FORWARD);
+			i.motor[Motor::LEFT].setDirection(Direction::FORWARD);
 		else
-			i.motor[bridge::Motor::LEFT].setDirection(bridge::Direction::BACKWARD);
+			i.motor[Motor::LEFT].setDirection(Direction::BACKWARD);
 
-		i.syncWithDevice(syncWithDeviceFunc);
+		interfaceManager->syncWithDevice(syncWithDeviceFunc);
 
 		auto tstop = Clock::now();
 		timings.push_back(duration_cast<microseconds>(tstop - tstart).count());
-
-		//std::cout << t << ": timer single: " << duration_cast<microseconds>(tstop - tstart).count() << " us\n";
-
-		//std::cout << "voltage: " << i.getVoltage() << std::endl;
 	}
 
 	i.arm.brake();
 
-	i.syncWithDevice(syncWithDeviceFunc);
+	interfaceManager->syncWithDevice(syncWithDeviceFunc);
 
 	auto t2 = Clock::now();
 

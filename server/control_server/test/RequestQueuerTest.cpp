@@ -8,12 +8,12 @@
 #include "RequestQueuer.hpp"
 #include "IRequestProcessor.hpp"
 
-class RequestProcessorMock: public processing::IRequestProcessor, public wallaroo::Device {
+class RequestProcessorMock : public processing::IRequestProcessor, public wallaroo::Device {
 public:
-	virtual void process(Json::Value& request, Json::Value& response);
+	virtual void process(Json::Value &request, boost::asio::ip::address address, Json::Value &response);
 };
 
-void RequestProcessorMock::process(Json::Value& request, Json::Value& response) {
+void RequestProcessorMock::process(Json::Value &request, boost::asio::ip::address address, Json::Value &response) {
 
 	response["lights"]["led"] = false;
 	response["lights"]["camera"] = true;
@@ -91,7 +91,7 @@ static std::string validRequestWithHigherSerial =
      }
 })";
 
-static std::shared_ptr<processing::RequestQueuer> prepareBindings(wallaroo::Catalog& catalog) {
+static std::shared_ptr<processing::RequestQueuer> prepareBindings(wallaroo::Catalog &catalog) {
 	catalog.Create("rq", "RequestQueuer");
 	catalog.Create("mock1", "RequestProcessorMock");
 	wallaroo::use(catalog["mock1"]).as("requestProcessors").of(catalog["rq"]);
@@ -128,7 +128,7 @@ BOOST_AUTO_TEST_CASE(RequestQueuerTest_addRequest) {
 	};
 
 	for (auto t : tests) {
-		BOOST_CHECK_EQUAL(rq->addRequest(t.first), t.second);
+		BOOST_CHECK_EQUAL(rq->addRequest(t.first, boost::asio::ip::address()), t.second);
 		std::this_thread::sleep_for(std::chrono::milliseconds(15));
 	}
 
