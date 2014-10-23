@@ -125,6 +125,60 @@ void parse_bitrate(struct nlattr *bitrate_attr, char *buf, int buflen) {
 				" VHT-NSS %d", nla_get_u8(rinfo[NL80211_RATE_INFO_VHT_NSS]));
 }
 
+
+static char *get_chain_signal(struct nlattr *attr_list) {
+	struct nlattr *attr;
+	static char buf[64];
+	char *cur = buf;
+	int i = 0, rem;
+	const char *prefix;
+
+	if (!attr_list)
+		return "";
+
+	for (attr = reinterpret_cast<nlattr *>(nla_data(attr_list)), rem = nla_len(attr_list);
+		 nla_ok(attr_list, rem);
+		 attr = nla_next(attr, &(rem))) {
+
+		if (i++ > 0)
+			prefix = ", ";
+		else
+			prefix = "[";
+
+		cur += snprintf(cur, sizeof(buf) - (cur - buf), "%s%d", prefix,
+				(int8_t) nla_get_u8(attr));
+	}
+
+	if (i)
+		snprintf(cur, sizeof(buf) - (cur - buf), "] ");
+
+	return buf;
+}
+
+static std::string macToStr(char *mac) {
+	boost::format fmt("%02x:%02x:%02x:%02x:%02x:%02x");
+
+	for (int i = 0; i != 6; ++i) {
+		fmt % static_cast<unsigned int>(mac[i]);
+	}
+	return fmt.str();
+}
+
+void mac_addr_n2a(char *mac_addr, unsigned char *arg) {
+	int i, l;
+
+	l = 0;
+	for (i = 0; i < 6; i++) {
+		if (i == 0) {
+			sprintf(mac_addr + l, "%02x", arg[i]);
+			l += 2;
+		} else {
+			sprintf(mac_addr + l, ":%02x", arg[i]);
+			l += 3;
+		}
+	}
+}
+
 static int print_sta_handler(struct nl_msg *msg, void *arg) {
 
 	struct nlattr *tb[NL80211_ATTR_MAX + 1];
@@ -157,8 +211,7 @@ static int print_sta_handler(struct nl_msg *msg, void *arg) {
 	};
 	char *chain;
 
-	nla_parse(tb, NL80211_ATTR_MAX, genlmsg_attrdata(gnlh, 0),
-			genlmsg_attrlen(gnlh, 0), NULL);
+	nla_parse(tb, NL80211_ATTR_MAX, genlmsg_attrdata(gnlh, 0), genlmsg_attrlen(gnlh, 0), NULL);
 
 	/*
 	 * TODO: validate the interface and mac address!
@@ -170,54 +223,27 @@ static int print_sta_handler(struct nl_msg *msg, void *arg) {
 		fprintf(stderr, "sta stats missing!\n");
 		return NL_SKIP;
 	}
-	if (nla_parse_nested(sinfo, NL80211_STA_INFO_MAX,
-			tb[NL80211_ATTR_STA_INFO],
-			stats_policy)) {
+	if (nla_parse_nested(sinfo, NL80211_STA_INFO_MAX, tb[NL80211_ATTR_STA_INFO], stats_policy)) {
 		fprintf(stderr, "failed to parse nested attributes!\n");
 		return NL_SKIP;
 	}
 
-	/*mac_addr_n2a(mac_addr, nla_data(tb[NL80211_ATTR_MAC]));
+	mac_addr_n2a(mac_addr, reinterpret_cast<unsigned char *>(nla_data(tb[NL80211_ATTR_MAC])));
 	if_indextoname(nla_get_u32(tb[NL80211_ATTR_IFINDEX]), dev);
-	printf("Station %s (on %s)", mac_addr, dev);*/
+	printf("Station %s (on %s)", mac_addr, dev);
+	std::cout << macToStr(mac_addr);
 
-	if (sinfo[NL80211_STA_INFO_INACTIVE_TIME])
-		printf("\n\tinactive time:\t%u ms",
-				nla_get_u32(sinfo[NL80211_STA_INFO_INACTIVE_TIME]));
-	if (sinfo[NL80211_STA_INFO_RX_BYTES])
-		printf("\n\trx bytes:\t%u",
-				nla_get_u32(sinfo[NL80211_STA_INFO_RX_BYTES]));
-	if (sinfo[NL80211_STA_INFO_RX_PACKETS])
-		printf("\n\trx packets:\t%u",
-				nla_get_u32(sinfo[NL80211_STA_INFO_RX_PACKETS]));
-	if (sinfo[NL80211_STA_INFO_TX_BYTES])
-		printf("\n\ttx bytes:\t%u",
-				nla_get_u32(sinfo[NL80211_STA_INFO_TX_BYTES]));
-	if (sinfo[NL80211_STA_INFO_TX_PACKETS])
-		printf("\n\ttx packets:\t%u",
-				nla_get_u32(sinfo[NL80211_STA_INFO_TX_PACKETS]));
-	if (sinfo[NL80211_STA_INFO_TX_RETRIES])
-		printf("\n\ttx retries:\t%u",
-				nla_get_u32(sinfo[NL80211_STA_INFO_TX_RETRIES]));
-	if (sinfo[NL80211_STA_INFO_TX_FAILED])
-		printf("\n\ttx failed:\t%u",
-				nla_get_u32(sinfo[NL80211_STA_INFO_TX_FAILED]));
-
-	/*chain = get_chain_signal(sinfo[NL80211_STA_INFO_CHAIN_SIGNAL]);
+	chain = get_chain_signal(sinfo[NL80211_STA_INFO_CHAIN_SIGNAL]);
 	if (sinfo[NL80211_STA_INFO_SIGNAL])
 		printf("\n\tsignal:  \t%d %sdBm",
-				(int8_t)nla_get_u8(sinfo[NL80211_STA_INFO_SIGNAL]),
+				(int8_t) nla_get_u8(sinfo[NL80211_STA_INFO_SIGNAL]),
 				chain);
 
 	chain = get_chain_signal(sinfo[NL80211_STA_INFO_CHAIN_SIGNAL_AVG]);
 	if (sinfo[NL80211_STA_INFO_SIGNAL_AVG])
 		printf("\n\tsignal avg:\t%d %sdBm",
-				(int8_t)nla_get_u8(sinfo[NL80211_STA_INFO_SIGNAL_AVG]),
-				chain);*/
-
-	if (sinfo[NL80211_STA_INFO_T_OFFSET])
-		printf("\n\tToffset:\t%lld us",
-				(unsigned long long) nla_get_u64(sinfo[NL80211_STA_INFO_T_OFFSET]));
+				(int8_t) nla_get_u8(sinfo[NL80211_STA_INFO_SIGNAL_AVG]),
+				chain);
 
 	if (sinfo[NL80211_STA_INFO_TX_BITRATE]) {
 		char buf[100];
@@ -244,25 +270,10 @@ static int print_sta_handler(struct nl_msg *msg, void *arg) {
 				thr / 1000, thr % 1000);
 	}
 
-	if (sinfo[NL80211_STA_INFO_LLID])
-		printf("\n\tmesh llid:\t%d",
-				nla_get_u16(sinfo[NL80211_STA_INFO_LLID]));
-	if (sinfo[NL80211_STA_INFO_PLID])
-		printf("\n\tmesh plid:\t%d",
-				nla_get_u16(sinfo[NL80211_STA_INFO_PLID]));
-
 	printf("\n");
 
 	return NL_SKIP;
 }
-
-enum id_input {
-	II_NONE,
-	II_NETDEV,
-	II_PHY_NAME,
-	II_PHY_IDX,
-	II_WDEV,
-};
 
 struct nl80211_state {
 	struct nl_sock *nl_sock;
@@ -270,34 +281,25 @@ struct nl80211_state {
 };
 
 static int nl80211_init(struct nl80211_state *state) {
-	int err;
-
 	state->nl_sock = nl_socket_alloc();
 	if (!state->nl_sock) {
-		fprintf(stderr, "Failed to allocate netlink socket.\n");
-		return -ENOMEM;
+		throw WifiException("failed to allocate netlink socket");
 	}
 
 	nl_socket_set_buffer_size(state->nl_sock, 8192, 8192);
 
 	if (genl_connect(state->nl_sock)) {
-		fprintf(stderr, "Failed to connect to generic netlink.\n");
-		err = -ENOLINK;
-		goto out_handle_destroy;
+		nl_socket_free(state->nl_sock);
+		throw WifiException("failed to connect to generic netlink");
 	}
 
 	state->nl80211_id = genl_ctrl_resolve(state->nl_sock, "nl80211");
 	if (state->nl80211_id < 0) {
-		fprintf(stderr, "nl80211 not found.\n");
-		err = -ENOENT;
-		goto out_handle_destroy;
+		nl_socket_free(state->nl_sock);
+		throw WifiException("nl80211 not found");
 	}
 
 	return 0;
-
-	out_handle_destroy:
-	nl_socket_free(state->nl_sock);
-	return err;
 }
 
 static void nl80211_cleanup(struct nl80211_state *state) {
@@ -406,10 +408,6 @@ double os::WifiInfo::getBitrate() {
 void os::WifiInfo::prepareStructs() {
 }
 
-static std::string macToStr(char *mac) {
-	return (boost::format("%x:%x:%x:%x:%x:%x")
-			% mac[0] % mac[1] % mac[2] % mac[3] % mac[4] % mac[5]).str();
-}
 
 std::unique_ptr<char> os::WifiInfo::getMacAddress(boost::asio::ip::address address) {
 	std::unique_ptr<char> mac(new char[6]);
