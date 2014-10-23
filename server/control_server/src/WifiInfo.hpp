@@ -6,6 +6,7 @@
 
 #include <log4cpp/Category.hh>
 #include <wallaroo/registered.h>
+#include <boost/asio/ip/address.hpp>
 
 #include "Configuration.hpp"
 
@@ -35,6 +36,8 @@ namespace os {
 		 */
 		virtual std::string getInterfaceName() = 0;
 
+		virtual std::unique_ptr<char> getMacAddress(boost::asio::ip::address address) = 0;
+
 		virtual ~IWifiInfo() = default;
 	};
 
@@ -59,6 +62,8 @@ namespace os {
 		virtual double getBitrate();
 
 		std::string getInterfaceName();
+
+		virtual std::unique_ptr<char> getMacAddress(boost::asio::ip::address address);
 
 	private:
 		log4cpp::Category &logger;

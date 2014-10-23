@@ -14,7 +14,7 @@ BOOST_AUTO_TEST_CASE(WifiInfoTest_Run) {
 
 	BOOST_CHECK_EQUAL(INTERFACE_NAME, wifi.getInterfaceName());
 
-	for (int i = 0; i < 15; i++) {
+	for (int i = 0; i < 10; i++) {
 		auto bitrate = wifi.getBitrate();
 		auto sigLevel = wifi.getSignalLevel();
 
@@ -27,6 +27,8 @@ BOOST_AUTO_TEST_CASE(WifiInfoTest_Run) {
 		BOOST_CHECK_LT(sigLevel, 0);
 
 		BOOST_TEST_MESSAGE(std::string("wifi signal strength: ") + std::to_string(sigLevel));
+
+		wifi.getMacAddress(boost::asio::ip::address_v4::from_string("192.168.0.1"));
 
 		usleep(100000);
 		std::this_thread::sleep_for(std::chrono::milliseconds(50));
