@@ -137,6 +137,7 @@ abstract class MainWindowView extends JFrame implements ActionListener, ChangeLi
 		p.setBorder(new TitledBorder("Wi-Fi signal strength:"));
 		p.add(wifiPowerBar);
 		wifiPowerBar.setStringPainted(true);
+		wifiPowerBar.setMaximum(150);
 		sidePanel.add(p);
 
 		// EMERGENCY BUTTON

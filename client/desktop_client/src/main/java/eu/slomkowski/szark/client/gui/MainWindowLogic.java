@@ -301,7 +301,7 @@ public class MainWindowLogic extends MainWindowView {
 
 		// wifi power
 		int wifiPower = (int) receivedStatus.wifi.getStrength();
-		wifiPowerBar.setValue(150 - wifiPower);
+		wifiPowerBar.setValue(150 + wifiPower);
 		wifiPowerBar.setString("Power: " + wifiPower + " dBm");
 
 		// movement indicators

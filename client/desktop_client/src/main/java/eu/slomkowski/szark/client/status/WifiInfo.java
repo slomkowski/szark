@@ -1,17 +1,12 @@
 package eu.slomkowski.szark.client.status;
 
+import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 
 public class WifiInfo {
-	@SerializedName("b")
-	private double bitrate;
-
+	@Expose
 	@SerializedName("s")
 	private double strength;
-
-	public double getBitrate() {
-		return bitrate;
-	}
 
 	public double getStrength() {
 		return strength;

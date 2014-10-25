@@ -17,15 +17,7 @@ public class Battery {
 		return current;
 	}
 
-	public void setCurrent(float current) {
-		this.current = (float) (Math.round(current * 1000.0) / 1000.0);
-	}
-
 	public float getVoltage() {
 		return voltage;
-	}
-
-	public void setVoltage(float voltage) {
-		this.voltage = (float) (Math.round(voltage * 1000.0) / 1000.0);
 	}
 }
