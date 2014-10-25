@@ -20,8 +20,14 @@ void os::OSInformationProcessor::process(Json::Value &request,
 		Json::Value &response) {
 	logger.info("Processing request.");
 
-	auto linkParams = wifiInfo->getWifiLinkParams(address);
+	try {
+		auto linkParams = wifiInfo->getWifiLinkParams(address);
 
-	response["wifi"]["b"] = linkParams.getRxBitrate();
-	response["wifi"]["s"] = linkParams.getSignalStrength();
+		response["wifi"]["b"] = linkParams.getRxBitrate();
+		response["wifi"]["s"] = linkParams.getSignalStrength();
+	} catch (WifiException &e) {
+		logger.info(std::string("Error reading Wi-Fi information: ") + e.what());
+		response["wifi"]["b"] = 0;
+		response["wifi"]["s"] = 0;
+	}
 }

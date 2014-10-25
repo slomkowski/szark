@@ -102,6 +102,16 @@ os::WifiInfo::WifiInfo()
 
 void os::WifiInfo::Init() {
 
+	if (impl->iwName.length() == 0) {
+		impl->iwName = config->getString("WifiInfo.device");
+		impl->enabled = config->getBool("WifiInfo.enabled");
+	}
+
+	if (not impl->enabled) {
+		logger.warn("Monitoring is disabled. Will throw when at read.");
+		return;
+	}
+
 	impl->wifiSock = nl_socket_alloc();
 	if (not impl->wifiSock) {
 		throw WifiException("failed to allocate netlink wifi socket");
@@ -149,16 +159,21 @@ void os::WifiInfo::Init() {
 os::WifiInfo::~WifiInfo() {
 	impl->acquireNetworkInformationThreadStop = true;
 
-	impl->acquireNetworkInformationThread->join();
+	if (impl->acquireNetworkInformationThread.get() != nullptr) {
+		impl->acquireNetworkInformationThread->join();
 
-	nl_socket_free(impl->wifiSock);
-
+		nl_socket_free(impl->wifiSock);
+	}
 	delete impl;
 
 	logger.notice("Instance destroyed.");
 }
 
 WifiLinkParams os::WifiInfo::getWifiLinkParams(asio::ip::address address) {
+	if (not impl->enabled) {
+		throw WifiException("WifiInfo is disabled");
+	}
+
 	unique_lock<mutex> iplk(impl->ipToMacMapMutex);
 
 	if (impl->ipToMacMap.find(address) == impl->ipToMacMap.end()) {
@@ -183,10 +198,9 @@ WifiLinkParams os::WifiInfo::getWifiLinkParams(asio::ip::address address) {
 
 static double parseBitrate(struct nlattr *bitrate_attr) {
 	struct nlattr *rinfo[NL80211_RATE_INFO_MAX + 1];
-	static struct nla_policy rate_policy[NL80211_RATE_INFO_MAX + 1] = {
-			[NL80211_RATE_INFO_BITRATE] = {NLA_U16},
-			[NL80211_RATE_INFO_BITRATE32] = {NLA_U32},
-	};
+	static struct nla_policy rate_policy[NL80211_RATE_INFO_MAX + 1];
+	rate_policy[NL80211_RATE_INFO_BITRATE] = {NLA_U16};
+	rate_policy[NL80211_RATE_INFO_BITRATE32] = {NLA_U32};
 
 	if (nla_parse_nested(rinfo, NL80211_RATE_INFO_MAX, bitrate_attr, rate_policy)) {
 		throw WifiException("failed to parse nested bitrate attributes");
@@ -207,12 +221,11 @@ static int dumpStationHandler(struct nl_msg *msg, void *arg) {
 	genlmsghdr *gnlh = reinterpret_cast<genlmsghdr *>(nlmsg_data(nlmsg_hdr(msg)));
 	nlattr *sinfo[NL80211_STA_INFO_MAX + 1];
 
-	static nla_policy stats_policy[NL80211_STA_INFO_MAX + 1] = {
-			[NL80211_STA_INFO_SIGNAL] = {NLA_U8},
-			[NL80211_STA_INFO_SIGNAL_AVG] = {NLA_U8},
-			[NL80211_STA_INFO_TX_BITRATE] = {NLA_NESTED},
-			[NL80211_STA_INFO_RX_BITRATE] = {NLA_NESTED}
-	};
+	static nla_policy stats_policy[NL80211_STA_INFO_MAX + 1];
+	stats_policy[NL80211_STA_INFO_SIGNAL] = {NLA_U8};
+	stats_policy[NL80211_STA_INFO_SIGNAL_AVG] = {NLA_U8};
+	stats_policy[NL80211_STA_INFO_TX_BITRATE] = {NLA_NESTED};
+	stats_policy[NL80211_STA_INFO_RX_BITRATE] = {NLA_NESTED};
 
 	nla_parse(tb, NL80211_ATTR_MAX, genlmsg_attrdata(gnlh, 0), genlmsg_attrlen(gnlh, 0), nullptr);
 
@@ -352,6 +365,10 @@ static void arpTableDumpHanlder(struct nl_object *obj, void *arg) {
 
 	nl_addr *macRawAddr = rtnl_neigh_get_lladdr(neigh);
 	nl_addr *ipRawAddr = rtnl_neigh_get_dst(neigh);
+
+	if (macRawAddr == nullptr or ipRawAddr == nullptr) {
+		return;
+	}
 
 	if (nl_addr_get_family(ipRawAddr) != AF_INET) {
 		return;
