@@ -5,11 +5,8 @@
 #include <netlink/genl/ctrl.h>
 #include <netlink/msg.h>
 #include <netlink/attr.h>
+#include <netlink/route/neighbour.h>
 #include <linux/nl80211.h>
-
-extern "C" {
-#include <libnetlink.h>
-}
 
 #include <pthread.h>
 
@@ -31,31 +28,6 @@ using namespace boost;
 using namespace std;
 
 WALLAROO_REGISTER(WifiInfo);
-
-namespace os {
-	struct WifiInfoImpl {
-		bool enabled = true;
-
-		string iwName;
-
-		struct nl_sock *nl_sock;
-		int nl80211_id;
-
-		struct rtnl_handle rth;
-
-		map<asio::ip::address, MacAddress> ipToMacMap;
-		mutex ipToMacMapMutex;
-
-		map<MacAddress, WifiLinkParams> wifiLinkParamsMap;
-		mutex wifiLinkParamsMapMutex;
-
-		unique_ptr<thread> acquireNetworkInformationThread;
-		volatile bool acquireNetworkInformationThreadStop = false;
-
-		log4cpp::Category *logger;
-	};
-
-}
 
 os::MacAddress::MacAddress(char *addr) {
 	memcpy(this->mac, addr, 6);
@@ -83,6 +55,35 @@ string os::WifiLinkParams::toString() const {
 			% macAddress.toString() % signalStrength % txBitrate % rxBitrate).str();
 }
 
+namespace os {
+	struct WifiInfoImpl {
+		bool enabled = true;
+
+		string iwName;
+
+		// wifi info
+		struct nl_sock *wifiSock;
+		int nl80211_id;
+
+		// arp
+		struct nl_sock *arpSock;
+		struct rtnl_neigh *neigh;
+		struct nl_cache *neigh_cache;
+
+		map<asio::ip::address, MacAddress> ipToMacMap;
+		mutex ipToMacMapMutex;
+
+		map<MacAddress, WifiLinkParams> wifiLinkParamsMap;
+		mutex wifiLinkParamsMapMutex;
+
+		unique_ptr<thread> acquireNetworkInformationThread;
+		volatile bool acquireNetworkInformationThreadStop = false;
+
+		log4cpp::Category *logger;
+	};
+
+}
+
 os::WifiInfo::WifiInfo(string iwName)
 		: logger(log4cpp::Category::getInstance("WifiInfo")),
 		  config("config", RegistrationToken()),
@@ -101,30 +102,39 @@ os::WifiInfo::WifiInfo()
 
 void os::WifiInfo::Init() {
 
-	impl->nl_sock = nl_socket_alloc();
-	if (not impl->nl_sock) {
-		throw WifiException("failed to allocate netlink socket");
+	impl->wifiSock = nl_socket_alloc();
+	if (not impl->wifiSock) {
+		throw WifiException("failed to allocate netlink wifi socket");
 	}
 
 	if (if_nametoindex(impl->iwName.c_str()) == 0) {
 		throw WifiException(string("invalid interface name: ") + impl->iwName);
 	}
 
-	nl_socket_set_buffer_size(impl->nl_sock, 8192, 8192);
+	nl_socket_set_buffer_size(impl->wifiSock, 8192, 8192);
 
-	if (genl_connect(impl->nl_sock)) {
-		nl_socket_free(impl->nl_sock);
+	if (genl_connect(impl->wifiSock)) {
+		nl_socket_free(impl->wifiSock);
 		throw WifiException("failed to connect to generic netlink");
 	}
 
-	impl->nl80211_id = genl_ctrl_resolve(impl->nl_sock, "nl80211");
+	impl->nl80211_id = genl_ctrl_resolve(impl->wifiSock, "nl80211");
 	if (impl->nl80211_id < 0) {
-		nl_socket_free(impl->nl_sock);
+		nl_socket_free(impl->wifiSock);
 		throw WifiException("nl80211 not found");
 	}
 
-	if (rtnl_open(&impl->rth, 0) < 0) {
-		throw WifiException("cannot open netlink socket");
+	impl->arpSock = nl_socket_alloc();
+	if (not impl->arpSock) {
+		throw WifiException("failed to allocate netlink arp socket");
+	}
+
+	if (nl_connect(impl->arpSock, NETLINK_ROUTE) < 0) {
+		throw WifiException("failed connect netlink arp socket");
+	}
+
+	if (rtnl_neigh_alloc_cache(impl->arpSock, &(impl->neigh_cache)) < 0) {
+		throw WifiException("failed alloc neighbour cache");
 	}
 
 	impl->acquireNetworkInformationThread.reset(new thread(&WifiInfo::acquireNetworkInformationThreadFunction, this));
@@ -141,7 +151,7 @@ os::WifiInfo::~WifiInfo() {
 
 	impl->acquireNetworkInformationThread->join();
 
-	nl_socket_free(impl->nl_sock);
+	nl_socket_free(impl->wifiSock);
 
 	delete impl;
 
@@ -296,9 +306,9 @@ void os::WifiInfo::dumpStation() {
 	namespace ph = placeholders;
 	nl_cb_set(cb, NL_CB_VALID, NL_CB_CUSTOM, &dumpStationHandler, impl);
 
-	nl_socket_set_cb(impl->nl_sock, s_cb);
+	nl_socket_set_cb(impl->wifiSock, s_cb);
 
-	err = nl_send_auto_complete(impl->nl_sock, msg);
+	err = nl_send_auto_complete(impl->wifiSock, msg);
 
 	if (err < 0) {
 		nl_cb_put(cb);
@@ -311,7 +321,7 @@ void os::WifiInfo::dumpStation() {
 	nl_cb_set(cb, NL_CB_ACK, NL_CB_CUSTOM, ackHandler, &err);
 
 	while (err > 0) {
-		nl_recvmsgs(impl->nl_sock, cb);
+		nl_recvmsgs(impl->wifiSock, cb);
 	}
 
 	return;
@@ -319,8 +329,6 @@ void os::WifiInfo::dumpStation() {
 	nla_put_failure:
 	throw WifiException((format("failed to execute station dump: %d") % err).str());
 }
-
-void dumpArp();
 
 void os::WifiInfo::acquireNetworkInformationThreadFunction() {
 	while (not impl->acquireNetworkInformationThreadStop) {
@@ -338,36 +346,32 @@ void os::WifiInfo::acquireNetworkInformationThreadFunction() {
 	}
 }
 
-static int arpTableDumpHanlder(const struct sockaddr_nl *who, struct nlmsghdr *n, void *arg) {
+static void arpTableDumpHanlder(struct nl_object *obj, void *arg) {
 	auto impl = reinterpret_cast<WifiInfoImpl *>(arg);
-	struct ndmsg *r = reinterpret_cast<ndmsg *>(NLMSG_DATA(n));
-	struct rtattr *tb[NDA_MAX + 1];
+	auto neigh = reinterpret_cast<rtnl_neigh *>(obj);
 
-	if (!((0xFF & ~NUD_NOARP) & r->ndm_state)) {
-		return 0;
+	nl_addr *macRawAddr = rtnl_neigh_get_lladdr(neigh);
+	nl_addr *ipRawAddr = rtnl_neigh_get_dst(neigh);
+
+	if (nl_addr_get_family(ipRawAddr) != AF_INET) {
+		return;
 	}
 
-	parse_rtattr(tb, NDA_MAX, NDA_RTA(r), n->nlmsg_len - NLMSG_LENGTH(sizeof(*r)));
-
-	if ((not tb[NDA_DST]) or (not tb[NDA_LLADDR])) {
-		throw WifiException("information returned from netlink doesn't contain IP nor MAC");
-	}
-
-	if (RTA_PAYLOAD(tb[NDA_DST]) != 4) {
+	if (nl_addr_get_len(ipRawAddr) != 4) {
 		throw WifiException("returned IP address has invalid length");
 	}
 
-	if (RTA_PAYLOAD(tb[NDA_LLADDR]) != 6) {
+	if (nl_addr_get_len(macRawAddr) != 6) {
 		throw WifiException("returned MAC address has invalid length");
 	}
 
 	asio::ip::address_v4::bytes_type addrBytes;
 	for (int i = 0; i < 4; i++) {
-		addrBytes[i] = reinterpret_cast<char *>(RTA_DATA(tb[NDA_DST]))[i];
+		addrBytes[i] = reinterpret_cast<char *>(nl_addr_get_binary_addr(ipRawAddr))[i];
 	}
 	asio::ip::address_v4 ip(addrBytes);
 
-	MacAddress mac(reinterpret_cast<char *>(RTA_DATA(tb[NDA_LLADDR])));
+	MacAddress mac(reinterpret_cast<char *>(nl_addr_get_binary_addr(macRawAddr)));
 
 	impl->logger->info((format("Got ARP table entry: %s -> %s.") % ip.to_string() % mac.toString()).str());
 
@@ -378,17 +382,13 @@ static int arpTableDumpHanlder(const struct sockaddr_nl *who, struct nlmsghdr *n
 	impl->ipToMacMap.erase(ip);
 	impl->ipToMacMap.insert(make_pair(ip, mac));
 
-	return 0;
 }
-
 
 void os::WifiInfo::dumpArp() {
 
-	if (rtnl_wilddump_request(&impl->rth, AF_UNSPEC, RTM_GETNEIGH) < 0) {
-		throw WifiException("cannot send dump request");
+	if (nl_cache_refill(impl->arpSock, impl->neigh_cache) < 0) {
+		throw WifiException("nf_cache_fill");
 	}
 
-	if (rtnl_dump_filter(&impl->rth, arpTableDumpHanlder, impl) < 0) {
-		throw WifiException("ARP dump terminated");
-	}
+	nl_cache_foreach(impl->neigh_cache, arpTableDumpHanlder, impl);
 }
