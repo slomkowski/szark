@@ -20,6 +20,8 @@ void os::OSInformationProcessor::process(Json::Value &request,
 		Json::Value &response) {
 	logger.info("Processing request.");
 
-	response["wifi"]["b"] = wifiInfo->getBitrate();
-	response["wifi"]["s"] = wifiInfo->getSignalLevel();
+	auto linkParams = wifiInfo->getWifiLinkParams(address);
+
+	response["wifi"]["b"] = linkParams.getRxBitrate();
+	response["wifi"]["s"] = linkParams.getSignalStrength();
 }
