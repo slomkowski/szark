@@ -127,7 +127,9 @@ namespace os {
 
 		void Init();
 
-		void stationDumpThreadFunction();
+		void acquireNetworkInformationThreadFunction();
+
+		void dumpStation();
 	};
 
 
