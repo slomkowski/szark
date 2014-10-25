@@ -7,6 +7,10 @@
 #include <netlink/attr.h>
 #include <linux/nl80211.h>
 
+extern "C" {
+#include <libnetlink.h>
+}
+
 #include <pthread.h>
 
 #include <cmath>
@@ -36,6 +40,8 @@ namespace os {
 
 		struct nl_sock *nl_sock;
 		int nl80211_id;
+
+		struct rtnl_handle rth;
 
 		map<asio::ip::address, MacAddress> ipToMacMap;
 		mutex ipToMacMapMutex;
@@ -115,6 +121,10 @@ void os::WifiInfo::Init() {
 	if (impl->nl80211_id < 0) {
 		nl_socket_free(impl->nl_sock);
 		throw WifiException("nl80211 not found");
+	}
+
+	if (rtnl_open(&impl->rth, 0) < 0) {
+		throw WifiException("cannot open netlink socket");
 	}
 
 	impl->acquireNetworkInformationThread.reset(new thread(&WifiInfo::acquireNetworkInformationThreadFunction, this));
@@ -232,7 +242,7 @@ static int dumpStationHandler(struct nl_msg *msg, void *arg) {
 
 	WifiLinkParams p(txBitrate, rxBitrate, signal, macAddress, string(dev));
 
-	impl->logger->debug((format("Read client info: %s, avg: %2.0f dBm.") % p.toString() % signalAvg).str());
+	impl->logger->info((format("Read client info: %s, avg: %2.0f dBm.") % p.toString() % signalAvg).str());
 
 	return NL_SKIP;
 }
@@ -301,6 +311,8 @@ void os::WifiInfo::dumpStation() {
 	throw WifiException((format("failed to execute station dump: %d") % err).str());
 }
 
+void dumpArp();
+
 void os::WifiInfo::acquireNetworkInformationThreadFunction() {
 	while (not impl->acquireNetworkInformationThreadStop) {
 		using namespace chrono;
@@ -309,6 +321,58 @@ void os::WifiInfo::acquireNetworkInformationThreadFunction() {
 
 		logger.debug((format("Station dump completed in %d us.") % m).str());
 
+		m = common::utils::measureTime<microseconds>(bind(&WifiInfo::dumpArp, this));
+
+		logger.debug((format("ARP table completed in %d us.") % m).str());
+
 		this_thread::sleep_for(DUMP_STATION_INTERVAL);
+	}
+}
+
+static int arpTableDumpHanlder(const struct sockaddr_nl *who, struct nlmsghdr *n, void *arg) {
+	auto impl = reinterpret_cast<WifiInfoImpl *>(arg);
+	struct ndmsg *r = reinterpret_cast<ndmsg *>(NLMSG_DATA(n));
+	struct rtattr *tb[NDA_MAX + 1];
+
+	if (!((0xFF & ~NUD_NOARP) & r->ndm_state)) {
+		return 0;
+	}
+
+	parse_rtattr(tb, NDA_MAX, NDA_RTA(r), n->nlmsg_len - NLMSG_LENGTH(sizeof(*r)));
+
+	if ((not tb[NDA_DST]) or (not tb[NDA_LLADDR])) {
+		throw WifiException("information returned from netlink doesn't contain IP nor MAC");
+	}
+
+	if (RTA_PAYLOAD(tb[NDA_DST]) != 4) {
+		throw WifiException("returned IP address has invalid length");
+	}
+
+	if (RTA_PAYLOAD(tb[NDA_LLADDR]) != 6) {
+		throw WifiException("returned MAC address has invalid length");
+	}
+
+	asio::ip::address_v4::bytes_type addrBytes;
+	for (int i = 0; i < 4; i++) {
+		addrBytes[i] = reinterpret_cast<char *>(RTA_DATA(tb[NDA_DST]))[i];
+	}
+	asio::ip::address_v4 ip(addrBytes);
+
+	MacAddress mac(reinterpret_cast<char *>(RTA_DATA(tb[NDA_LLADDR])));
+
+	impl->logger->info((format("Got ARP table entry: %s -> %s.") % ip.to_string() % mac.toString()).str());
+
+	return 0;
+}
+
+
+void os::WifiInfo::dumpArp() {
+
+	if (rtnl_wilddump_request(&impl->rth, AF_UNSPEC, RTM_GETNEIGH) < 0) {
+		throw WifiException("cannot send dump request");
+	}
+
+	if (rtnl_dump_filter(&impl->rth, arpTableDumpHanlder, impl) < 0) {
+		throw WifiException("ARP dump terminated");
 	}
 }

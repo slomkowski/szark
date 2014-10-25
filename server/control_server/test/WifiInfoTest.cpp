@@ -13,7 +13,7 @@ BOOST_AUTO_TEST_CASE(WifiInfoTest_Run) {
 	os::WifiInfo wifi(INTERFACE_NAME);
 
 	for (int i = 0; i < 10; i++) {
-		std::this_thread::sleep_for(std::chrono::milliseconds(100));
+		std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
 		BOOST_CHECK_THROW(wifi.getWifiLinkParams(boost::asio::ip::address_v4::from_string("1.1.1.1")), os::WifiException);
 

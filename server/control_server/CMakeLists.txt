@@ -42,6 +42,7 @@ target_link_libraries(${MAIN_EXECUTABLE} ${NETLINK_LIBRARIES})
 target_link_libraries(${MAIN_EXECUTABLE} ${Boost_LIBRARIES})
 target_link_libraries(${MAIN_EXECUTABLE} ${CMAKE_THREAD_LIBS_INIT})
 target_link_libraries(${MAIN_EXECUTABLE} rt)
+target_link_libraries(${MAIN_EXECUTABLE} netlink)
 
 enable_testing()
 
@@ -57,5 +58,6 @@ target_link_libraries(${TEST_EXECUTABLE} ${NETLINK_LIBRARIES})
 target_link_libraries(${TEST_EXECUTABLE} ${Boost_LIBRARIES})
 target_link_libraries(${TEST_EXECUTABLE} ${CMAKE_THREAD_LIBS_INIT})
 target_link_libraries(${TEST_EXECUTABLE} rt)
+target_link_libraries(${TEST_EXECUTABLE} netlink)
 
 add_test(SZARKControlServerTest ${TEST_EXECUTABLE})

@@ -130,6 +130,8 @@ namespace os {
 		void acquireNetworkInformationThreadFunction();
 
 		void dumpStation();
+
+		void dumpArp();
 	};
 
 
