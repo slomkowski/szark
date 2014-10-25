@@ -244,6 +244,15 @@ static int dumpStationHandler(struct nl_msg *msg, void *arg) {
 
 	impl->logger->info((format("Read client info: %s, avg: %2.0f dBm.") % p.toString() % signalAvg).str());
 
+	unique_lock<mutex> iplk(impl->wifiLinkParamsMapMutex);
+
+	if (impl->wifiLinkParamsMap.find(macAddress) == impl->wifiLinkParamsMap.end()) {
+		impl->logger->notice("New station added: " + macAddress.toString() + ".");
+	}
+
+	impl->wifiLinkParamsMap.erase(macAddress);
+	impl->wifiLinkParamsMap.insert(make_pair(macAddress, p));
+
 	return NL_SKIP;
 }
 
@@ -317,13 +326,13 @@ void os::WifiInfo::acquireNetworkInformationThreadFunction() {
 	while (not impl->acquireNetworkInformationThreadStop) {
 		using namespace chrono;
 
-		auto m = common::utils::measureTime<microseconds>(bind(&WifiInfo::dumpStation, this));
-
-		logger.debug((format("Station dump completed in %d us.") % m).str());
-
-		m = common::utils::measureTime<microseconds>(bind(&WifiInfo::dumpArp, this));
+		int m = common::utils::measureTime<microseconds>(bind(&WifiInfo::dumpArp, this));
 
 		logger.debug((format("ARP table completed in %d us.") % m).str());
+
+		m = common::utils::measureTime<microseconds>(bind(&WifiInfo::dumpStation, this));
+
+		logger.debug((format("Station dump completed in %d us.") % m).str());
 
 		this_thread::sleep_for(DUMP_STATION_INTERVAL);
 	}
@@ -361,6 +370,13 @@ static int arpTableDumpHanlder(const struct sockaddr_nl *who, struct nlmsghdr *n
 	MacAddress mac(reinterpret_cast<char *>(RTA_DATA(tb[NDA_LLADDR])));
 
 	impl->logger->info((format("Got ARP table entry: %s -> %s.") % ip.to_string() % mac.toString()).str());
+
+	unique_lock<mutex> iplk(impl->ipToMacMapMutex);
+	if (impl->ipToMacMap.find(ip) == impl->ipToMacMap.end()) {
+		impl->logger->notice("New IP address found: " + ip.to_string() + ".");
+	}
+	impl->ipToMacMap.erase(ip);
+	impl->ipToMacMap.insert(make_pair(ip, mac));
 
 	return 0;
 }

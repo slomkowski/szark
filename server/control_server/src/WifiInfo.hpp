@@ -81,7 +81,7 @@ namespace os {
 			return interfaceName;
 		}
 
-		WifiLinkParams(double txBitrate, double rxBitrate, double signalStrength, MacAddress const &macAddress, std::string interfaceName)
+		WifiLinkParams(double txBitrate, double rxBitrate, double signalStrength, MacAddress &macAddress, std::string interfaceName)
 				: txBitrate(txBitrate),
 				  rxBitrate(rxBitrate),
 				  signalStrength(signalStrength),
