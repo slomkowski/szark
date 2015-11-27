@@ -6,18 +6,12 @@ import javax.swing.*;
 
 class SzarkClient implements Runnable {
 
-	@Override
-	public void run() {
-		new MainWindowLogic();
-	}
+    @Override
+    public void run() {
+        new MainWindowLogic();
+    }
 
-	public static void main(String[] args) {
-		try {
-			UIManager.setLookAndFeel("com.sun.java.swing.plaf.gtk.GTKLookAndFeel");
-		} catch (final Exception e) {
-			// e.printStackTrace();
-		}
-
-		SwingUtilities.invokeLater(new SzarkClient());
-	}
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(new SzarkClient());
+    }
 }
