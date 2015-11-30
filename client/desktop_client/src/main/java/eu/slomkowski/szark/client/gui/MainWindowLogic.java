@@ -3,8 +3,8 @@ package eu.slomkowski.szark.client.gui;
 import eu.slomkowski.szark.client.HardcodedConfiguration;
 import eu.slomkowski.szark.client.camera.CameraMode;
 import eu.slomkowski.szark.client.camera.CameraType;
-import eu.slomkowski.szark.client.joystick.InvalidJoystickException;
-import eu.slomkowski.szark.client.joystick.JoystickBackend;
+import eu.slomkowski.szark.client.pad.PadException;
+import eu.slomkowski.szark.client.pad.PadStatusUpdater;
 import eu.slomkowski.szark.client.status.Direction;
 import eu.slomkowski.szark.client.status.Status;
 import eu.slomkowski.szark.client.updaters.ControlUpdater;
@@ -27,7 +27,7 @@ public class MainWindowLogic extends MainWindowView {
 
 	private final MoveControlWindow mConWin = new MoveControlWindow(status);
 
-	private JoystickBackend joystickBackend = null;
+	private PadStatusUpdater padStatusUpdater = null;
 
 	private boolean connected = false;
 
@@ -39,11 +39,11 @@ public class MainWindowLogic extends MainWindowView {
 
 		if (HardcodedConfiguration.JOYSTICK_ENABLE) {
 			try {
-				joystickBackend = new JoystickBackend();
+				padStatusUpdater = new PadStatusUpdater();
 
 				mWinMoveCtrl.setEnabled(false);
 				mWinMoveCtrl.setText(mWinMoveCtrl.getText() + " (Disabled because of joystick)");
-			} catch (final InvalidJoystickException e) {
+			} catch (final PadException e) {
 				e.printStackTrace();
 
 				JOptionPane.showMessageDialog(this,
@@ -76,7 +76,7 @@ public class MainWindowLogic extends MainWindowView {
 		startStopButton.setIcon(iconStop);
 		setDeviceControlsEnabled(true);
 
-		if (joystickBackend == null) {
+		if (padStatusUpdater == null) {
 			mConWin.setEnabled(true);
 		}
 
@@ -98,7 +98,7 @@ public class MainWindowLogic extends MainWindowView {
 	private void performControlServerConnection(InetAddress address) {
 		performKillSwitchEnable();
 
-		controlUpdater = new ControlUpdater(this, address, status, joystickBackend);
+		controlUpdater = new ControlUpdater(this, address, status, padStatusUpdater);
 		controlUpdater.execute();
 
 		setOverallControlsEnabled(true);

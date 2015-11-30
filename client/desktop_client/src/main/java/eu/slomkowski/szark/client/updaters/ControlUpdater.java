@@ -4,8 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import eu.slomkowski.szark.client.HardcodedConfiguration;
 import eu.slomkowski.szark.client.gui.MainWindowLogic;
-import eu.slomkowski.szark.client.joystick.JoystickBackend;
-import eu.slomkowski.szark.client.joystick.JoystickDataUpdater;
+import eu.slomkowski.szark.client.pad.PadStatusUpdater;
 import eu.slomkowski.szark.client.status.CalibrationStatus;
 import eu.slomkowski.szark.client.status.KillSwitchStatus;
 import eu.slomkowski.szark.client.status.Status;
@@ -17,163 +16,157 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class ControlUpdater extends SwingWorker<Void, Status> {
-	private final Gson gson;
-	private final Status status;
-	private final AtomicBoolean needToStop = new AtomicBoolean(false);
-	private final MainWindowLogic mainWindow;
-	private JoystickDataUpdater joystickDataUpdater = null;
-	private InetSocketAddress address;
-	private DatagramSocket socket;
-	private byte[] inputBuffer = new byte[1024];
+    private final Gson gson;
+    private final Status status;
+    private final AtomicBoolean needToStop = new AtomicBoolean(false);
+    private final MainWindowLogic mainWindow;
+    private PadStatusUpdater padStatusUpdater;
+    private InetSocketAddress address;
+    private DatagramSocket socket;
+    private byte[] inputBuffer = new byte[1024];
 
-	public ControlUpdater(MainWindowLogic mainWindow,
-						  InetAddress host,
-						  Status status,
-						  JoystickBackend joystickBackend) {
-		this.mainWindow = mainWindow;
-		this.status = status;
+    public ControlUpdater(MainWindowLogic mainWindow,
+                          InetAddress host,
+                          Status status,
+                          PadStatusUpdater padStatusUpdater) {
+        this.mainWindow = mainWindow;
+        this.status = status;
+        this.padStatusUpdater = padStatusUpdater;
 
-		this.gson = new GsonBuilder().excludeFieldsWithoutExposeAnnotation().create();
+        this.gson = new GsonBuilder().excludeFieldsWithoutExposeAnnotation().create();
 
-		if (joystickBackend != null) {
-			this.joystickDataUpdater = new JoystickDataUpdater(status, joystickBackend);
-		}
+        try {
+            address = new InetSocketAddress(host, HardcodedConfiguration.CONTROL_SERVER_PORT);
+            socket = new DatagramSocket();
+            socket.setSoTimeout(HardcodedConfiguration.CONTROL_SERVER_TIMEOUT);
+        } catch (IOException e) {
+            e.printStackTrace();
+            System.exit(2);
+        }
+    }
 
-		try {
-			address = new InetSocketAddress(host, HardcodedConfiguration.CONTROL_SERVER_PORT);
-			socket = new DatagramSocket();
-			socket.setSoTimeout(HardcodedConfiguration.CONTROL_SERVER_TIMEOUT);
-		} catch (IOException e) {
-			e.printStackTrace();
-			System.exit(2);
-		}
-	}
+    private synchronized Status updateCycle() throws HardwareStoppedException, IOException {
+        String output = gson.toJson(status);
 
-	private synchronized Status updateCycle() throws HardwareStoppedException, IOException {
-		String output = gson.toJson(status);
+        DatagramPacket packet = new DatagramPacket(output.getBytes(), output.length(), address);
+        socket.send(packet);
 
-		DatagramPacket packet = new DatagramPacket(output.getBytes(), output.length(), address);
-		socket.send(packet);
+        DatagramPacket receivedPacket = new DatagramPacket(inputBuffer, inputBuffer.length);
 
-		DatagramPacket receivedPacket = new DatagramPacket(inputBuffer, inputBuffer.length);
+        try {
+            socket.receive(receivedPacket);
+        } catch (final SocketTimeoutException e) {
+            System.err.println("Control receive timeout");
+            status.setSerial(0);
+            return null;
+        }
 
-		try {
-			socket.receive(receivedPacket);
-		} catch (final SocketTimeoutException e) {
-			System.err.println("Control receive timeout");
-			status.setSerial(0);
-			return null;
-		}
+        String receivedJson = new String(receivedPacket.getData(), 0, receivedPacket.getLength());
+        Status receivedStatus = gson.fromJson(receivedJson, Status.class);
 
-		String receivedJson = new String(receivedPacket.getData(), 0, receivedPacket.getLength());
-		Status receivedStatus = gson.fromJson(receivedJson, Status.class);
+        boolean responseMatchesRequest = false;
 
-		boolean responseMatchesRequest = false;
+        if (status.getSerial() == receivedStatus.getSerial()) {
+            responseMatchesRequest = true;
+        }
 
-		if (status.getSerial() == receivedStatus.getSerial()) {
-			responseMatchesRequest = true;
-		}
+        if (receivedStatus.joints.getCalStatus() == CalibrationStatus.IN_PROGRESS) {
+            status.joints.setBeginCalibration(false);
+        }
 
-		if (receivedStatus.joints.getCalStatus() == CalibrationStatus.IN_PROGRESS) {
-			status.joints.setBeginCalibration(false);
-		}
+        status.incrementSerial();
 
-		status.incrementSerial();
+        if (!status.isKillSwitchEnable() &&
+                receivedStatus.getReceivedKillSwitchStatus() != KillSwitchStatus.INACTIVE) {
 
-		if (!status.isKillSwitchEnable() &&
-				receivedStatus.getReceivedKillSwitchStatus() != KillSwitchStatus.INACTIVE) {
+            if (receivedStatus.getReceivedKillSwitchStatus() == KillSwitchStatus.ACTIVE_HARDWARE) {
+                throw new HardwareStoppedException("Kill switch has been pressed!");
+            } else if (responseMatchesRequest) {
+                throw new HardwareStoppedException("Other client has disabled the device");
+            }
+        }
 
-			if (receivedStatus.getReceivedKillSwitchStatus() == KillSwitchStatus.ACTIVE_HARDWARE) {
-				throw new HardwareStoppedException("Kill switch has been pressed!");
-			} else if (responseMatchesRequest) {
-				throw new HardwareStoppedException("Other client has disabled the device");
-			}
-		}
+        return receivedStatus;
+    }
 
-		return receivedStatus;
-	}
+    @Override
+    protected Void doInBackground() throws Exception {
+        while (!needToStop.get()) {
+            try {
+                while (!needToStop.get()) {
 
-	@Override
-	protected Void doInBackground() throws Exception {
-		while (!needToStop.get()) {
-			try {
-				while (!needToStop.get()) {
+                    if (padStatusUpdater != null) {
+                        padStatusUpdater.fillWithCurrentData(status);
+                    }
 
-					if (joystickDataUpdater != null) {
-						joystickDataUpdater.update();
-					}
+                    Status receivedStatus = updateCycle();
 
-					Status receivedStatus = updateCycle();
+                    if (receivedStatus != null) {
+                        publish(receivedStatus);
+                    }
 
-					if (receivedStatus != null) {
-						publish(receivedStatus);
-					}
+                    Thread.sleep(HardcodedConfiguration.CONTROL_SERVER_REFRESH_INTERVAL, 0);
+                }
 
-					Thread.sleep(HardcodedConfiguration.CONTROL_SERVER_REFRESH_INTERVAL, 0);
-				}
+            } catch (final IOException e) {
+                SwingUtilities.invokeAndWait(new Runnable() {
+                    @Override
+                    public void run() {
+                        mainWindow.performControlServerDisconnection(false);
 
-			} catch (final IOException e) {
-				SwingUtilities.invokeAndWait(new Runnable() {
-					@Override
-					public void run() {
-						mainWindow.performControlServerDisconnection(false);
+                        JOptionPane.showMessageDialog(mainWindow,
+                                String.format("Control communication error: %s. Disabling control.",
+                                        e.getMessage() != null ? e.getMessage() : e.getClass().getName()),
+                                "Network error",
+                                JOptionPane.ERROR_MESSAGE);
+                    }
+                });
 
-						JOptionPane.showMessageDialog(mainWindow,
-								String.format("Control communication error: %s. Disabling control.",
-										e.getMessage() != null ? e.getMessage() : e.getClass().getName()),
-								"Network error",
-								JOptionPane.ERROR_MESSAGE);
-					}
-				});
+                return null;
+            } catch (final HardwareStoppedException e) {
+                SwingUtilities.invokeAndWait(() -> {
+                    mainWindow.performKillSwitchEnable();
 
-				return null;
-			} catch (final HardwareStoppedException e) {
-				SwingUtilities.invokeAndWait(new Runnable() {
-					@Override
-					public void run() {
-						mainWindow.performKillSwitchEnable();
+                    JOptionPane.showMessageDialog(mainWindow,
+                            "Kill switch: " + e.getMessage(),
+                            "Kill switch activated",
+                            JOptionPane.WARNING_MESSAGE);
+                });
+            } catch (final Exception e) {
+                e.printStackTrace();
+                throw e;
+            }
+        }
+        return null;
+    }
 
-						JOptionPane.showMessageDialog(mainWindow,
-								"Kill switch: " + e.getMessage(),
-								"Kill switch activated",
-								JOptionPane.WARNING_MESSAGE);
-					}
-				});
-			} catch (final Exception e) {
-				e.printStackTrace();
-				throw e;
-			}
-		}
-		return null;
-	}
+    @Override
+    protected void process(List<Status> chunks) {
+        mainWindow.updateIndicators(chunks.get(chunks.size() - 1));
+    }
 
-	@Override
-	protected void process(List<Status> chunks) {
-		mainWindow.updateIndicators(chunks.get(chunks.size() - 1));
-	}
+    @Override
+    protected void done() {
+        try {
+            socket.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 
-	@Override
-	protected void done() {
-		try {
-			socket.close();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
+    public void stopTask() {
+        needToStop.set(true);
 
-	public void stopTask() {
-		needToStop.set(true);
+        try {
+            this.get();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 
-		try {
-			this.get();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
-
-	public class HardwareStoppedException extends Exception {
-		public HardwareStoppedException(String msg) {
-			super(msg);
-		}
-	}
+    public class HardwareStoppedException extends Exception {
+        public HardwareStoppedException(String msg) {
+            super(msg);
+        }
+    }
 }
