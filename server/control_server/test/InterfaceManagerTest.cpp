@@ -104,9 +104,9 @@ BOOST_AUTO_TEST_CASE(InterfaceManager_Operation) {
 
 	std::stringstream avgTime;
 	avgTime << "avg time: " << (std::accumulate(timings.begin(), timings.end(), 0.0) / timings.size()) << " us\n";
-	BOOST_MESSAGE(avgTime.str());
+	BOOST_TEST_MESSAGE(avgTime.str());
 
 	std::stringstream totalTime;
 	totalTime << "total time: " << duration_cast<microseconds>(t2 - t1).count() << " us\n";
-	BOOST_MESSAGE(totalTime.str());
+	BOOST_TEST_MESSAGE(totalTime.str());
 }

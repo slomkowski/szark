@@ -25,7 +25,8 @@ pkg_check_modules(NETLINK_ROUTE "libnl-route-3.0")
 include_directories(${LIBUSB_INCLUDE_DIRS})
 include_directories(${LOG4CPP_INCLUDE_DIRS})
 include_directories(${JSON_INCLUDE_DIRS})
-include_directories(${NETLINK_INCLUDE_DIRS})
+include_directories(${NETLINK_GENL_INCLUDE_DIRS})
+include_directories(${NETLINK_ROUTE_INCLUDE_DIRS})
 
 include_directories("src")
 

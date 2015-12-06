@@ -15,7 +15,7 @@ static void execTest(const shared_ptr<bridge::BridgeProcessor> &proc) {
 	Json::Value req;
 	Json::Value resp;
 	proc->process(req, boost::asio::ip::address(), resp);
-	BOOST_MESSAGE(resp.toStyledString());
+	BOOST_TEST_MESSAGE(resp.toStyledString());
 	for (int i = 0; i < 30; i++) {
 		proc->process(req, boost::asio::ip::address(), resp);
 		this_thread::sleep_for(milliseconds(40));

@@ -67,7 +67,7 @@ long processing::RequestQueuer::addRequest(string requestString, boost::asio::ip
 
 	if (not parseSuccess) {
 		logger.error("Received request is not valid JSON document. See NOTICE for details.");
-		logger.notice("Details of the invalid request: " + jsonReader.getFormatedErrorMessages());
+		logger.notice("Details of the invalid request: " + jsonReader.getFormattedErrorMessages());
 		return INVALID_MESSAGE;
 	}
 

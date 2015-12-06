@@ -58,7 +58,7 @@ pair<vector<uint8_t>, vector<USBCommands::Request>> bridge::InterfaceManager::ge
 	commands.push_back(USBCommands::Request::BRIDGE_GET_STATE);
 	responseOrder.push_back(USBCommands::Request::BRIDGE_GET_STATE);
 
-	// if the kill switch is active, devices are in reset state and won't repond anyway
+	// if the kill switch is active, devices are in reset state and won't respond anyway
 	if (killSwitchActive) {
 		return make_pair(commands, responseOrder);
 	}
