@@ -22,6 +22,8 @@ namespace common {
 
 		class Configuration : boost::noncopyable, public wallaroo::Device {
 		public:
+			Configuration();
+
 			Configuration(const std::string fileName);
 
 			Configuration(const std::vector<std::string> fileNames);

@@ -25,6 +25,9 @@ namespace common {
 	}
 }
 
+common::config::Configuration::Configuration()
+		: impl(new ConfigurationImpl()) { }
+
 common::config::Configuration::Configuration(const std::string fileName)
 		: impl(new ConfigurationImpl()) {
 	boost::property_tree::read_ini(fileName, impl->ptree);

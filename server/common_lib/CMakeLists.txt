@@ -28,7 +28,7 @@ enable_testing()
 
 file(GLOB test_src "test/*.hpp" "test/*.cpp")
 
-add_executable(${TEST_EXECUTABLE} ${src} ${test_src})
+add_executable(${TEST_EXECUTABLE} ${src} ${test_src} test/main.cpp)
 
 target_link_libraries(${TEST_EXECUTABLE} ${LOG4CPP_LIBRARIES})
 target_link_libraries(${TEST_EXECUTABLE} ${Boost_LIBRARIES})
