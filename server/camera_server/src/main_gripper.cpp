@@ -1,6 +1,5 @@
 #include "NetworkServer.hpp"
 #include "initialization.hpp"
-#include <Configuration.hpp>
 
 #include <wallaroo/catalog.h>
 
@@ -13,22 +12,23 @@ int main(int argc, char *argv[]) {
 
     auto configFiles = common::init::initializeProgram(argc, argv, banner);
 
-    common::config::Configuration cc;
-
     Catalog c;
     c.Create("conf", "Configuration", configFiles);
-    c.Create("imgGrabber", "ImageGrabber", string("head"));
-    c.Create("imgCombiner", "HeadImageSource");
-    c.Create("hudPainter", "HeadHudPainter");
+    c.Create("imgGrabberLeft", "ImageGrabber", string("left"));
+    c.Create("imgGrabberRight", "ImageGrabber", string("right"));
+    c.Create("imgCombiner", "GripperImageSource");
+    c.Create("hudPainter", "GripperHudPainter");
     c.Create("srv", "NetworkServer");
 
     wallaroo_within(c) {
-        use("conf").as("config").of("imgGrabber");
+        use("conf").as("config").of("imgGrabberLeft");
+        use("conf").as("config").of("imgGrabberRight");
         use("conf").as("config").of("imgCombiner");
         use("conf").as("config").of("hudPainter");
         use("conf").as("config").of("srv");
 
-        use("imgGrabber").as("cameraGrabber").of("imgCombiner");
+        use("imgGrabberLeft").as("leftCameraGrabber").of("imgCombiner");
+        use("imgGrabberRight").as("rightCameraGrabber").of("imgCombiner");
         use("hudPainter").as("hudPainter").of("imgCombiner");
         use("imgCombiner").as("imageSource").of("srv");
     };

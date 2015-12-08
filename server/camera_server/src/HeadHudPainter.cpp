@@ -1,7 +1,7 @@
+#include "HeadHudPainter.hpp"
+
 #include <opencv2/opencv.hpp>
 #include <wallaroo/registered.h>
-
-#include "HeadHudPainter.hpp"
 
 using namespace std;
 using namespace boost;

@@ -1,22 +1,22 @@
 #pragma once
 
-#include <wallaroo/device.h>
-#include <log4cpp/Category.hh>
-
 #include "Configuration.hpp"
 #include "Painter.hpp"
 
+#include <wallaroo/device.h>
+#include <log4cpp/Category.hh>
+
 namespace camera {
-	class HeadHudPainter : public IPainter, public wallaroo::Device {
-	public:
-		HeadHudPainter();
+    class HeadHudPainter : public IPainter, public wallaroo::Device {
+    public:
+        HeadHudPainter();
 
-		virtual ~HeadHudPainter();
+        virtual ~HeadHudPainter();
 
-		virtual cv::Mat drawContent(cv::Mat rawImage, boost::any additionalArg);
+        virtual cv::Mat drawContent(cv::Mat rawImage, boost::any additionalArg);
 
-	private:
-		log4cpp::Category &logger;
-		wallaroo::Plug<common::config::Configuration> config;
-	};
+    private:
+        log4cpp::Category &logger;
+        wallaroo::Plug<common::config::Configuration> config;
+    };
 }

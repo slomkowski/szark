@@ -1,14 +1,11 @@
 #
 # CMake configuration for SZARK Camera Server
-# (C) 2014 Michał Słomkowski
+# (C) 2014, 2015 Michał Słomkowski
 # License: GPL v3
 #
 
-cmake_minimum_required(VERSION 2.6)
+cmake_minimum_required(VERSION 2.8.4)
 project(SZARK_camera_server)
-
-set(MAIN_EXECUTABLE szark_camera_server)
-set(TEST_EXECUTABLE szark_camera_server_test)
 
 INCLUDE("../common.cmake")
 
@@ -23,7 +20,7 @@ include_directories(${LOG4CPP_INCLUDE_DIRS})
 
 include_directories("src")
 
-set(SRC
+add_library(szark_camserver_lib STATIC
         src/CameraImageGrabber.cpp src/CameraImageGrabber.hpp
         src/Painter.hpp
         src/GripperHudPainter.cpp src/GripperHudPainter.hpp
@@ -34,33 +31,38 @@ set(SRC
         src/NetworkServer.cpp src/NetworkServer.hpp
         )
 
-add_executable(${MAIN_EXECUTABLE} ${SRC} src/main.cpp)
-target_link_libraries(${MAIN_EXECUTABLE} ${COMMON_LIB})
-target_link_libraries(${MAIN_EXECUTABLE} ${LOG4CPP_LIBRARIES})
-target_link_libraries(${MAIN_EXECUTABLE} ${Boost_LIBRARIES})
-target_link_libraries(${MAIN_EXECUTABLE} ${OpenCV_LIBRARIES})
-target_link_libraries(${MAIN_EXECUTABLE} ${CMAKE_THREAD_LIBS_INIT})
-target_link_libraries(${MAIN_EXECUTABLE} rt)
+target_link_libraries(szark_camserver_lib ${LOG4CPP_LIBRARIES})
+target_link_libraries(szark_camserver_lib ${Boost_LIBRARIES})
+target_link_libraries(szark_camserver_lib ${OpenCV_LIBRARIES})
+target_link_libraries(szark_camserver_lib ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(szark_camserver_lib rt)
 
-add_executable(szark_camera_server_framegrabber ${SRC} src/main_framegrabber.cpp)
-target_link_libraries(szark_camera_server_framegrabber ${COMMON_LIB})
-target_link_libraries(szark_camera_server_framegrabber ${LOG4CPP_LIBRARIES})
-target_link_libraries(szark_camera_server_framegrabber ${Boost_LIBRARIES})
-target_link_libraries(szark_camera_server_framegrabber ${OpenCV_LIBRARIES})
-target_link_libraries(szark_camera_server_framegrabber ${CMAKE_THREAD_LIBS_INIT})
-target_link_libraries(szark_camera_server_framegrabber rt)
+SET(CAMSERVER_LIB -Wl,--whole-archive szark_camserver_lib -Wl,--no-whole-archive)
+
+add_executable(szark_camserver_gripper src/main_gripper.cpp)
+target_link_libraries(szark_camserver_gripper ${CAMSERVER_LIB})
+target_link_libraries(szark_camserver_gripper ${COMMON_LIB})
+
+
+add_executable(szark_camserver_framegrabber src/main_framegrabber.cpp)
+target_link_libraries(szark_camserver_framegrabber ${CAMSERVER_LIB})
+target_link_libraries(szark_camserver_framegrabber ${COMMON_LIB})
+
 
 enable_testing()
 
-file(GLOB test_src "test/*.hpp" "test/*.cpp")
+add_library(szark_camserver_testlib STATIC
+        test/CameraImageGrabberTest.cpp
+        test/GripperImageSourceTest.cpp
+        test/NetworkServerTest.cpp
+        )
 
-add_executable(${TEST_EXECUTABLE} ${SRC} ${test_src})
+SET(CAMSERVER_TESTLIB -Wl,--whole-archive szark_camserver_testlib -Wl,--no-whole-archive)
 
-target_link_libraries(${TEST_EXECUTABLE} ${COMMON_LIB})
-target_link_libraries(${TEST_EXECUTABLE} ${LOG4CPP_LIBRARIES})
-target_link_libraries(${TEST_EXECUTABLE} ${Boost_LIBRARIES})
-target_link_libraries(${TEST_EXECUTABLE} ${OpenCV_LIBRARIES})
-target_link_libraries(${TEST_EXECUTABLE} ${CMAKE_THREAD_LIBS_INIT})
-target_link_libraries(${TEST_EXECUTABLE} rt)
+add_executable(szark_camserver_test test/main.cpp)
+target_link_libraries(szark_camserver_test ${CAMSERVER_LIB})
+target_link_libraries(szark_camserver_test ${COMMON_LIB})
+target_link_libraries(szark_camserver_test ${CAMSERVER_TESTLIB})
 
-add_test(SZARKCameraServerTest ${TEST_EXECUTABLE})
+
+add_test(SZARKCameraServerTest szark_camserver_test)

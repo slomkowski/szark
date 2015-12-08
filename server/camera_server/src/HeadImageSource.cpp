@@ -1,10 +1,10 @@
-#include  <utility>
+#include "utils.hpp"
+#include "HeadImageSource.hpp"
 
 #include <opencv2/opencv.hpp>
 #include <boost/format.hpp>
 
-#include "utils.hpp"
-#include "HeadImageSource.hpp"
+#include  <utility>
 
 using namespace camera;
 

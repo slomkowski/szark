@@ -1,13 +1,13 @@
 #pragma once
 
-#include <opencv2/opencv.hpp>
-#include <wallaroo/device.h>
-#include <log4cpp/Category.hh>
-#include <Configuration.hpp>
-
 #include "ImageSource.hpp"
 #include "Painter.hpp"
 #include "CameraImageGrabber.hpp"
+#include <Configuration.hpp>
+
+#include <opencv2/opencv.hpp>
+#include <wallaroo/device.h>
+#include <log4cpp/Category.hh>
 
 namespace camera {
 

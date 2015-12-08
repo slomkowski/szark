@@ -19,7 +19,7 @@ include_directories("src")
 
 file(GLOB src "include/*.hpp" "src/*.cpp")
 
-add_library(${MAIN_LIB} ${src})
+add_library(${MAIN_LIB} STATIC ${src})
 
 target_link_libraries(${MAIN_LIB} ${LOG4CPP_LIBRARIES})
 target_link_libraries(${MAIN_LIB} ${Boost_LIBRARIES})
