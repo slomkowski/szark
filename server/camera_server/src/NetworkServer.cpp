@@ -17,6 +17,7 @@ camera::NetworkServer::NetworkServer()
         : logger(log4cpp::Category::getInstance("NetworkServer")),
           config("config", RegistrationToken()),
           imageSource("imageSource", RegistrationToken()),
+          jpegEncoder("jpegEncoder", RegistrationToken()),
           ioService(),
           port(0),
           udpSocket(ioService) {
@@ -26,6 +27,7 @@ camera::NetworkServer::NetworkServer(int port)
         : logger(log4cpp::Category::getInstance("NetworkServer")),
           config("config", RegistrationToken()),
           imageSource("imageSource", RegistrationToken()),
+          jpegEncoder("jpegEncoder", RegistrationToken()),
           ioService(),
           port(port),
           udpSocket(ioService) {
@@ -37,8 +39,6 @@ void NetworkServer::Init() {
     if (port == 0) {
         port = config->getInt("NetworkServer.port");
     }
-
-    jpegEncoder.reset(new OpenCvJpegEncoder());
 
     recvBuffer.reset(new char[RECEIVED_DATA_MAX_LENGTH]);
 

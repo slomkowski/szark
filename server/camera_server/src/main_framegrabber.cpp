@@ -21,6 +21,7 @@ int main(int argc, char *argv[]) {
     c.Create("imgCombiner", "HeadImageSource");
     c.Create("hudPainter", "HeadHudPainter");
     c.Create("srv", "NetworkServer");
+    c.Create("jpegEncoder", "OpenCvJpegEncoder");
 
     wallaroo_within(c) {
         use("conf").as("config").of("imgGrabber");
@@ -31,6 +32,7 @@ int main(int argc, char *argv[]) {
         use("imgGrabber").as("cameraGrabber").of("imgCombiner");
         use("hudPainter").as("hudPainter").of("imgCombiner");
         use("imgCombiner").as("imageSource").of("srv");
+        use("jpegEncoder").as("jpegEncoder").of("srv");
     };
 
     c.CheckWiring();

@@ -43,6 +43,7 @@ namespace camera {
 
         wallaroo::Plug<common::config::Configuration> config;
         wallaroo::Plug<camera::IImageSource> imageSource;
+        wallaroo::Plug<camera::IJpegEncoder> jpegEncoder;
 
         boost::asio::io_service ioService;
         int port;
@@ -50,8 +51,6 @@ namespace camera {
         boost::asio::ip::udp::endpoint endpoint;
 
         std::unique_ptr<char> recvBuffer;
-
-        std::unique_ptr<camera::IJpegEncoder> jpegEncoder;
 
         void Init();
 

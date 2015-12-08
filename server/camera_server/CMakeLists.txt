@@ -29,6 +29,7 @@ add_library(szark_camserver_lib STATIC
         src/GripperImageSource.cpp src/GripperImageSource.hpp
         src/HeadImageSource.cpp src/HeadImageSource.hpp
         src/NetworkServer.cpp src/NetworkServer.hpp
+        src/JpegEncoder.cpp src/JpegEncoder.hpp
         )
 
 target_link_libraries(szark_camserver_lib ${LOG4CPP_LIBRARIES})
