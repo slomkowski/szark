@@ -19,14 +19,8 @@ namespace camera {
 
         virtual cv::Mat getImage(bool drawHud);
 
-        virtual void getEncodedImage(bool drawHud, EncodedImageProcessor processor);
-
     private:
         log4cpp::Category &logger;
-
-        bool leftCameraIsFaster;
-
-        std::vector<int> jpegEncoderParameters;
 
         wallaroo::Plug<common::config::Configuration> config;
         wallaroo::Plug<IImageGrabber> cameraGrabber;

@@ -7,81 +7,93 @@ using namespace boost;
 using namespace camera;
 
 namespace camera {
-	const int RECEIVED_DATA_MAX_LENGTH = 10;
+    const int RECEIVED_DATA_MAX_LENGTH = 10;
 }
 
 WALLAROO_REGISTER(NetworkServer);
 
 camera::NetworkServer::NetworkServer()
-		: logger(log4cpp::Category::getInstance("NetworkServer")),
-		  config("config", RegistrationToken()),
-		  imageSource("imageSource", RegistrationToken()),
-		  ioService(),
-		  port(0),
-		  udpSocket(ioService) {
+        : logger(log4cpp::Category::getInstance("NetworkServer")),
+          config("config", RegistrationToken()),
+          imageSource("imageSource", RegistrationToken()),
+          ioService(),
+          port(0),
+          udpSocket(ioService) {
 }
 
 camera::NetworkServer::NetworkServer(int port)
-		: logger(log4cpp::Category::getInstance("NetworkServer")),
-		  config("config", RegistrationToken()),
-		  imageSource("imageSource", RegistrationToken()),
-		  ioService(),
-		  port(port),
-		  udpSocket(ioService) {
+        : logger(log4cpp::Category::getInstance("NetworkServer")),
+          config("config", RegistrationToken()),
+          imageSource("imageSource", RegistrationToken()),
+          ioService(),
+          port(port),
+          udpSocket(ioService) {
 }
 
 void NetworkServer::Init() {
-	using boost::asio::ip::udp;
+    using boost::asio::ip::udp;
 
-	if (port == 0) {
-		port = config->getInt("NetworkServer.port");
-	}
+    if (port == 0) {
+        port = config->getInt("NetworkServer.port");
+    }
 
-	recvBuffer.reset(new char[RECEIVED_DATA_MAX_LENGTH]);
+    jpegEncoder.reset(new OpenCvJpegEncoder());
 
-	logger.notice((format("Opening listener socket with port %u.") % port).str());
+    recvBuffer.reset(new char[RECEIVED_DATA_MAX_LENGTH]);
 
-	system::error_code err;
-	udpSocket.open(udp::v4());
-	udpSocket.bind(udp::endpoint(udp::v4(), port), err);
-	if (err) {
-		throw NetworkException("error at binding socket: " + err.message());
-	}
+    logger.notice((format("Opening listener socket with port %u.") % port).str());
 
-	doReceive();
+    system::error_code err;
+    udpSocket.open(udp::v4());
+    udpSocket.bind(udp::endpoint(udp::v4(), port), err);
+    if (err) {
+        throw NetworkException("error at binding socket: " + err.message());
+    }
 
-	logger.notice("Instance created.");
+    doReceive();
+
+    logger.notice("Instance created.");
 }
 
 camera::NetworkServer::~NetworkServer() {
-	logger.notice("Instance destroyed.");
+    logger.notice("Instance destroyed.");
 }
 
 void camera::NetworkServer::run() {
-	logger.notice("Starting UDP listener.");
-	ioService.run();
+    logger.notice("Starting UDP listener.");
+    ioService.run();
 }
 
 void camera::NetworkServer::doReceive() {
-	udpSocket.async_receive_from(asio::buffer(recvBuffer.get(), RECEIVED_DATA_MAX_LENGTH), endpoint,
-			[this](boost::system::error_code ec, std::size_t bytesReceived) {
-				if (ec) {
-					throw NetworkException((format("error at receiving request: %s") % ec.message()).str());
-				}
+    udpSocket.async_receive_from(
+            asio::buffer(recvBuffer.get(), RECEIVED_DATA_MAX_LENGTH),
+            endpoint,
+            [this](boost::system::error_code ec, std::size_t bytesReceived) {
+                if (ec) {
+                    throw NetworkException(
+                            (format("error at receiving request: %s") % ec.message()).str());
+                }
 
-				bool drawHud = string(recvBuffer.get(), bytesReceived) == "HUD";
+                bool drawHud = string(recvBuffer.get(), bytesReceived) == "HUD";
 
-				logger.info((format("Received request %s HUD.") % (drawHud ? "with" : "without")).str());
+                logger.info((format("Received request %s HUD.") %
+                             (drawHud ? "with" : "without")).str());
 
-				imageSource->getEncodedImage(drawHud, [this](void *buff, size_t length) {
-					auto sentBytes = udpSocket.send_to(asio::buffer(buff, length), endpoint);
-					if (sentBytes != length) {
-						throw NetworkException((format("not whole file sent (%u < %u)") % sentBytes % length).str());
-					}
-					logger.info((format("Sent file (%u bytes).") % length).str());
-				});
+                auto img = imageSource->getImage(drawHud);
 
-				doReceive();
-			});
+                std::array<unsigned char, 32768> buffer;
+
+                auto encodedLength = jpegEncoder->encodeImage(img, buffer.data(), buffer.size());
+
+                auto sentBytes = udpSocket.send_to(asio::buffer(buffer.data(), encodedLength), endpoint);
+                if (sentBytes != encodedLength) {
+                    throw NetworkException(
+                            (format("not whole file sent (%u < %u)") % sentBytes % encodedLength).str());
+                }
+
+                logger.info((format("Sent file (%u bytes).") % encodedLength).str());
+
+                doReceive();
+            });
 }
 
