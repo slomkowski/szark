@@ -30,7 +30,6 @@ BOOST_GLOBAL_FIXTURE(AllocatorSetup);
 AllocatorSetup::AllocatorSetup() {
 	std::string initFileName = "loggerTest.properties";
 	log4cpp::PropertyConfigurator::configure(initFileName);
-	config::Configuration::create();
 }
 
 AllocatorSetup::~AllocatorSetup() {

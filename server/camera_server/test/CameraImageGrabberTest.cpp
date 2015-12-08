@@ -18,10 +18,10 @@ BOOST_AUTO_TEST_CASE(CameraImageGrabberTest_Run) {
 		long frameNo;
 
 		tie(frameNo, ignore, ignore) = imageGrabber->getFrame(true);
-		BOOST_MESSAGE("Frame wait no. " << frameNo);
+		BOOST_TEST_MESSAGE("Frame wait no. " << frameNo);
 
 		tie(frameNo, ignore, ignore) = imageGrabber->getFrame(false);
-		BOOST_MESSAGE("Frame nowait no. " << frameNo);
+		BOOST_TEST_MESSAGE("Frame nowait no. " << frameNo);
 	}
 
 	BOOST_CHECK_EQUAL(1, 1);

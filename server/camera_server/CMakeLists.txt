@@ -23,12 +23,18 @@ include_directories(${LOG4CPP_INCLUDE_DIRS})
 
 include_directories("src")
 
-file(GLOB src "src/*.hpp" "src/*.cpp")
-list(REMOVE_ITEM src "${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp")
+set(SRC
+        src/CameraImageGrabber.cpp src/CameraImageGrabber.hpp
+        src/Painter.hpp
+        src/GripperHudPainter.cpp src/GripperHudPainter.hpp
+        src/HeadHudPainter.cpp src/HeadHudPainter.hpp
+        src/ImageSource.hpp
+        src/GripperImageSource.cpp src/GripperImageSource.hpp
+        src/HeadImageSource.cpp src/HeadImageSource.hpp
+        src/NetworkServer.cpp src/NetworkServer.hpp
+        )
 
-file(GLOB main_file "src/main.cpp")
-add_executable(${MAIN_EXECUTABLE} ${src} ${main_file})
-
+add_executable(${MAIN_EXECUTABLE} ${SRC} src/main.cpp)
 target_link_libraries(${MAIN_EXECUTABLE} ${COMMON_LIB})
 target_link_libraries(${MAIN_EXECUTABLE} ${LOG4CPP_LIBRARIES})
 target_link_libraries(${MAIN_EXECUTABLE} ${Boost_LIBRARIES})
@@ -36,12 +42,19 @@ target_link_libraries(${MAIN_EXECUTABLE} ${OpenCV_LIBRARIES})
 target_link_libraries(${MAIN_EXECUTABLE} ${CMAKE_THREAD_LIBS_INIT})
 target_link_libraries(${MAIN_EXECUTABLE} rt)
 
+add_executable(szark_camera_server_framegrabber ${SRC} src/main_framegrabber.cpp)
+target_link_libraries(szark_camera_server_framegrabber ${COMMON_LIB})
+target_link_libraries(szark_camera_server_framegrabber ${LOG4CPP_LIBRARIES})
+target_link_libraries(szark_camera_server_framegrabber ${Boost_LIBRARIES})
+target_link_libraries(szark_camera_server_framegrabber ${OpenCV_LIBRARIES})
+target_link_libraries(szark_camera_server_framegrabber ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(szark_camera_server_framegrabber rt)
 
 enable_testing()
 
 file(GLOB test_src "test/*.hpp" "test/*.cpp")
 
-add_executable(${TEST_EXECUTABLE} ${src} ${test_src})
+add_executable(${TEST_EXECUTABLE} ${SRC} ${test_src})
 
 target_link_libraries(${TEST_EXECUTABLE} ${COMMON_LIB})
 target_link_libraries(${TEST_EXECUTABLE} ${LOG4CPP_LIBRARIES})

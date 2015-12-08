@@ -28,7 +28,7 @@ BOOST_AUTO_TEST_CASE(GripperImageSourceTest_Run) {
 		string fileName = "out.jpg";
 		auto result = imageGrabber->getImage(true);
 		cv::imwrite(fileName, result);
-		BOOST_MESSAGE("Frame combined and saved to " << fileName);
+		BOOST_TEST_MESSAGE("Frame combined and saved to " << fileName);
 	}
 
 	BOOST_CHECK_EQUAL(1, 1);
