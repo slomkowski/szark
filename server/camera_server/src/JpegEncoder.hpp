@@ -8,6 +8,8 @@
 #include <log4cpp/Category.hh>
 #include <wallaroo/device.h>
 
+#include <turbojpeg.h>
+
 #include <vector>
 #include <cstring>
 
@@ -31,5 +33,21 @@ namespace camera {
 
     private:
         log4cpp::Category &logger = log4cpp::Category::getInstance("OpenCvJpegEncoder");
+    };
+
+    class TurboJpegEncoder : public IJpegEncoder, public wallaroo::Device {
+    public:
+        TurboJpegEncoder();
+
+        ~TurboJpegEncoder();
+
+        unsigned int encodeImage(cv::Mat inputImage,
+                                 unsigned char *outputBuffer,
+                                 unsigned int maxOutputLength);
+
+    private:
+        log4cpp::Category &logger = log4cpp::Category::getInstance("TurboJpegEncoder");
+
+        tjhandle _jpegCompressor;
     };
 }

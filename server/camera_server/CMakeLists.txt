@@ -37,6 +37,7 @@ target_link_libraries(szark_camserver_lib ${Boost_LIBRARIES})
 target_link_libraries(szark_camserver_lib ${OpenCV_LIBRARIES})
 target_link_libraries(szark_camserver_lib ${CMAKE_THREAD_LIBS_INIT})
 target_link_libraries(szark_camserver_lib rt)
+target_link_libraries(szark_camserver_lib turbojpeg)
 
 SET(CAMSERVER_LIB -Wl,--whole-archive szark_camserver_lib -Wl,--no-whole-archive)
 

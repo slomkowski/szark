@@ -13,15 +13,14 @@ int main(int argc, char *argv[]) {
 
     auto configFiles = common::init::initializeProgram(argc, argv, banner);
 
-    common::config::Configuration cc;
-
     Catalog c;
     c.Create("conf", "Configuration", configFiles);
     c.Create("imgGrabber", "ImageGrabber", string("head"));
     c.Create("imgCombiner", "HeadImageSource");
     c.Create("hudPainter", "HeadHudPainter");
     c.Create("srv", "NetworkServer");
-    c.Create("jpegEncoder", "OpenCvJpegEncoder");
+//    c.Create("jpegEncoder", "OpenCvJpegEncoder");
+    c.Create("jpegEncoder", "TurboJpegEncoder");
 
     wallaroo_within(c) {
         use("conf").as("config").of("imgGrabber");

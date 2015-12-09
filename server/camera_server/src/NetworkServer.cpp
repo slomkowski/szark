@@ -82,7 +82,7 @@ void camera::NetworkServer::doReceive() {
 
                 auto img = imageSource->getImage(drawHud);
 
-                std::array<unsigned char, 32768> buffer;
+                std::array<unsigned char, 60000> buffer;
 
                 auto encodedLength = jpegEncoder->encodeImage(img, buffer.data(), buffer.size());
 
