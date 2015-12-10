@@ -16,6 +16,10 @@ camera::HeadImageSource::HeadImageSource()
           cameraGrabber("cameraGrabber", RegistrationToken()),
           hudPainter("hudPainter", RegistrationToken()) {
 
+    if (not cv::useOptimized()) {
+        logger.warn("OpenCV doesn't use optimized functions.");
+    }
+
     logger.notice("Instance created.");
 }
 
@@ -31,7 +35,7 @@ cv::Mat camera::HeadImageSource::getImage(bool drawHud) {
     std::tie(frameNo, fps, frame) = cameraGrabber->getFrame(true);
 
     if (drawHud) {
-        frame = hudPainter->drawContent(frame, frameNo);
+        frame = hudPainter->drawContent(frame, std::make_pair(frameNo, fps));
     }
 
     return frame;

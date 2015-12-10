@@ -2,6 +2,7 @@
 
 #include <opencv2/opencv.hpp>
 #include <wallaroo/registered.h>
+#include <boost/format.hpp>
 
 using namespace std;
 using namespace boost;
@@ -20,12 +21,19 @@ camera::HeadHudPainter::~HeadHudPainter() {
 }
 
 cv::Mat camera::HeadHudPainter::drawContent(cv::Mat rawImage, boost::any additionalArg) {
-    long frameNo = any_cast<long>(additionalArg);
+    long frameNo;
+    double fps;
+
+    tie(frameNo, fps) = any_cast<pair<long, double>>(additionalArg);
 
     using namespace cv;
     //TODO draw hud
 
     putText(rawImage, to_string(frameNo).c_str(), Point(30, 30), FONT_HERSHEY_SIMPLEX, 1, Scalar(0, 200, 20), 4);
+
+    putText(rawImage, (boost::format("%.1f") % fps).str().c_str(), Point(30, 63),
+            FONT_HERSHEY_SIMPLEX, 1, Scalar(0, 20, 200), 4);
+
 
     return rawImage;
 }

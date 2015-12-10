@@ -17,6 +17,10 @@ camera::GripperImageSource::GripperImageSource()
           rightCameraGrabber("rightCameraGrabber", RegistrationToken()),
           hudPainter("hudPainter", RegistrationToken()) {
 
+    if (not cv::useOptimized()) {
+        logger.warn("OpenCV doesn't use optimized functions.");
+    }
+
     logger.notice("Instance created.");
 }
 
