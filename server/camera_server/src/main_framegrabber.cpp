@@ -15,7 +15,9 @@ int main(int argc, char *argv[]) {
 
     Catalog c;
     c.Create("conf", "Configuration", configFiles);
-    c.Create("imgGrabber", "ImageGrabber", string("head"));
+//    c.Create("imgGrabber", "ImageGrabber", string("head"));
+    c.Create("imgGrabber", "Video4LinuxImageGrabber", string("head"));
+
     c.Create("imgCombiner", "HeadImageSource");
     c.Create("hudPainter", "HeadHudPainter");
     c.Create("srv", "NetworkServer");

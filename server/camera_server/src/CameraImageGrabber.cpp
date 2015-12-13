@@ -139,7 +139,24 @@ static int xioctl(int fd, int request, void *arg) {
     return r;
 }
 
+static void checkedXioctl(int fd, int request, void *arg, string errorMessage) {
+    int status;
+    do {
+        status = ioctl(fd, request, arg);
+    } while (status == -1 && EINTR == errno);
+
+    if (status == -1) {
+        const char *errorDescription = std::strerror(errno);
+        throw ImageGrabberException((boost::format("%s: %s") % errorMessage % errorDescription).str());
+    }
+}
+
 namespace camera {
+
+    struct VideoBuffer {
+        uint8_t *video4linuxBuffer;
+        uint8_t *rgbBuffer;
+    };
 
     class Video4LinuxImageGrabber : public IImageGrabber, public wallaroo::Device {
     public:
@@ -150,7 +167,11 @@ namespace camera {
                   captureTimesAvgBuffer(FRAMERATE_AVG_FRAMES),
                   currentFrameNo(1) { }
 
-        virtual ~ Video4LinuxImageGrabber() { }
+        virtual ~ Video4LinuxImageGrabber() {
+            for (auto vb : buffers) {
+                delete[] vb.rgbBuffer;
+            }
+        }
 
         virtual std::tuple<long, double, cv::Mat> getFrame(bool wait) {
             std::unique_lock<std::mutex> lk(dataMutex);
@@ -165,6 +186,11 @@ namespace camera {
             return std::tuple<long, double, cv::Mat>(currentFrameNo, currentFps, currentFrame);
         }
 
+        void setInput(int inputNo) {
+            logger.info("Setting video input to %d.", inputNo);
+            checkedXioctl(fd, VIDIOC_S_INPUT, &inputNo, "cannot set input to " + to_string(inputNo));
+        }
+
     private:
         std::string prefix;
 
@@ -173,8 +199,6 @@ namespace camera {
         wallaroo::Plug<common::config::Configuration> config;
 
         boost::circular_buffer<double> captureTimesAvgBuffer;
-
-        std::unique_ptr<cv::VideoCapture> videoCapture;
 
         std::unique_ptr<std::thread> grabberThread;
 
@@ -185,103 +209,85 @@ namespace camera {
         int currentFrameNo;
         double currentFps;
 
-        vector<uint8_t *> buffers;
+        vector<VideoBuffer> buffers;
 
         volatile bool finishThread = false;
 
         int fd;
 
-        void checkedXioctl(int fd, int request, void *arg, string errorMessage) {
-            if (-1 == xioctl(fd, request, arg)) {
-                throw ImageGrabberException(errorMessage);
-            }
-        }
-
+        unsigned int width;
+        unsigned int height;
 
         virtual void Init() {
             string videoDevice = "/dev/video" + to_string(config->getInt(getFullConfigPath("device")));
 
             fd = open(videoDevice.c_str(), O_RDWR);
             if (fd == -1) {
-                // couldn't find capture device
-                throw ImageGrabberException(string("Opening Video device ") + videoDevice);
+                throw ImageGrabberException(string("cannot open device ") + videoDevice);
             }
 
             v4l2_capability caps = {0};
-            if (-1 == xioctl(fd, VIDIOC_QUERYCAP, &caps)) {
-                throw ImageGrabberException("Querying Capabilites");
+            checkedXioctl(fd, VIDIOC_QUERYCAP, &caps, "cannot query capabilities");
+
+            if (not (caps.capabilities & V4L2_CAP_STREAMING)) {
+                throw ImageGrabberException("device doesn't support streaming I/O");
             }
 
-            if (!(caps.capabilities & V4L2_CAP_STREAMING)) {
-                throw ImageGrabberException(videoDevice + " does not support streaming I/O");
-            }
+            logger.info("Capabilities: driver: %s, card: %s, bus: %s, version: %d.%d, caps: %08x.",
+                        caps.driver,
+                        caps.card,
+                        caps.bus_info,
+                        (caps.version >> 16) && 0xff, (caps.version >> 24) && 0xff,
+                        caps.capabilities);
 
-            printf("Driver Caps:\n"
-                           "  Driver: \"%s\"\n"
-                           "  Card: \"%s\"\n"
-                           "  Bus: \"%s\"\n"
-                           "  Version: %d.%d\n"
-                           "  Capabilities: %08x\n",
-                   caps.driver,
-                   caps.card,
-                   caps.bus_info,
-                   (caps.version >> 16) && 0xff,
-                   (caps.version >> 24) && 0xff,
-                   caps.capabilities);
-
-
-            int support_grbg10 = 0;
-
-            struct v4l2_fmtdesc fmtdesc = {0};
+            v4l2_fmtdesc fmtdesc = {0};
             fmtdesc.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+
             char fourcc[5] = {0};
-            char c, e;
-            printf("  FMT : CE Desc\n--------------------\n");
+            logger.info("Supported formats:");
             while (0 == xioctl(fd, VIDIOC_ENUM_FMT, &fmtdesc)) {
                 strncpy(fourcc, (char *) &fmtdesc.pixelformat, 4);
-                if (fmtdesc.pixelformat == V4L2_PIX_FMT_SGRBG10)
-                    support_grbg10 = 1;
-                c = fmtdesc.flags & 1 ? 'C' : ' ';
-                e = fmtdesc.flags & 2 ? 'E' : ' ';
-                printf("  %s: %c%c %s\n", fourcc, c, e, fmtdesc.description);
+                char c = fmtdesc.flags & 1 ? 'C' : ' ';
+                char e = fmtdesc.flags & 2 ? 'E' : ' ';
+                logger.info(">>  %s: %c%c %s.", fourcc, c, e, fmtdesc.description);
                 fmtdesc.index++;
             }
 
-            if (!support_grbg10) {
-                printf("Doesn't support GRBG10.\n");
-            }
-
-
+            width = getVideoCaptureProperty("width");
+            height = getVideoCaptureProperty("height");
             v4l2_format fmt = {0};
             fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-            fmt.fmt.pix.width = getVideoCaptureProperty("width");
-            fmt.fmt.pix.height = getVideoCaptureProperty("height");
+            fmt.fmt.pix.width = width;
+            fmt.fmt.pix.height = height;
             fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_BGR24;
             fmt.fmt.pix.field = V4L2_FIELD_NONE;
 
-            if (-1 == xioctl(fd, VIDIOC_S_FMT, &fmt)) {
-                throw ImageGrabberException("Setting Pixel Format");
-            }
+            checkedXioctl(fd, VIDIOC_S_FMT, &fmt, "cannot set pixel format");
 
             strncpy(fourcc, (char *) &fmt.fmt.pix.pixelformat, 4);
-            printf("Selected Camera Mode:\n"
-                           "  Width: %d\n"
-                           "  Height: %d\n"
-                           "  PixFmt: %s\n"
-                           "  Field: %d\n",
-                   fmt.fmt.pix.width,
-                   fmt.fmt.pix.height,
-                   fourcc,
-                   fmt.fmt.pix.field);
+            logger.notice("Camera mode: width: %d, height: %d, pixel format: %s, field: %d.",
+                          fmt.fmt.pix.width,
+                          fmt.fmt.pix.height,
+                          fourcc,
+                          fmt.fmt.pix.field);
+
+            logger.info("Available inputs:");
+            v4l2_input input = {0};
+            while (0 == xioctl(fd, VIDIOC_ENUMINPUT, &input)) {
+                logger.info(">> %d: %s.", input.index, input.name);
+                input.index++;
+            }
+
+            setInput(getVideoCaptureProperty("input"));
 
             v4l2_requestbuffers req = {0};
             req.count = 16; // some high value
             req.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
             req.memory = V4L2_MEMORY_MMAP;
-            checkedXioctl(fd, VIDIOC_REQBUFS, &req, "requesting buffer");
+            checkedXioctl(fd, VIDIOC_REQBUFS, &req, "error when requesting memory buffers");
 
             if (req.count < 2) {
-                throw ImageGrabberException("Insufficient buffer memory ");
+                throw ImageGrabberException("insufficient buffer memory");
             }
 
             for (unsigned int i = 0; i < req.count; ++i) {
@@ -290,15 +296,22 @@ namespace camera {
                 buf.memory = V4L2_MEMORY_MMAP;
                 buf.index = i;
 
-                checkedXioctl(fd, VIDIOC_QUERYBUF, &buf, "query buffer");
+                checkedXioctl(fd, VIDIOC_QUERYBUF, &buf, "error when querying buffer");
 
-                uint8_t *bufferPtr = static_cast<uint8_t *>(
-                        mmap(NULL, buf.length, PROT_READ | PROT_WRITE, MAP_SHARED, fd, buf.m.offset));
+                VideoBuffer buffer;
+                buffer.video4linuxBuffer = static_cast<uint8_t *>(
+                        mmap(nullptr, buf.length, PROT_READ | PROT_WRITE, MAP_SHARED, fd, buf.m.offset));
 
-                printf("Length: %d\nAddress: %p\n", buf.length, bufferPtr);
-                printf("Image Length: %d\n", buf.bytesused);
+                logger.debug("Initialized buffer %d: address: %p, length: %d.", i,
+                             buffer.video4linuxBuffer, buf.length);
 
-                buffers.push_back(bufferPtr);
+                unsigned int rgbBufferSize = fmt.fmt.pix.width * fmt.fmt.pix.height * 3;
+
+                logger.debug("Allocating %d B for RGB buffer %d.", rgbBufferSize, i);
+
+                buffer.rgbBuffer = new unsigned char[rgbBufferSize];
+
+                buffers.push_back(buffer);
             }
 
             queryAllBuffers();
@@ -328,7 +341,10 @@ namespace camera {
 
         void grabberThreadFunction() {
             while (!finishThread) {
-                cv::Mat frame;
+                v4l2_buffer v4l2_buf = {0};
+                v4l2_buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+                v4l2_buf.memory = V4L2_MEMORY_MMAP;
+
                 int elapsedTime = common::utils::measureTime<std::chrono::milliseconds>([&]() {
 
                     fd_set fds;
@@ -336,24 +352,17 @@ namespace camera {
                     FD_SET(fd, &fds);
                     timeval tv = {0};
                     tv.tv_sec = 2;
-                    int r = select(fd + 1, &fds, NULL, NULL, &tv);
+                    int r = select(fd + 1, &fds, nullptr, nullptr, &tv);
                     if (-1 == r) {
                         throw ImageGrabberException("Waiting for Frame");
                     }
 
-                    v4l2_buffer buf = {0};
-                    buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-                    buf.memory = V4L2_MEMORY_MMAP;
+                    checkedXioctl(fd, VIDIOC_DQBUF, &v4l2_buf, "error during dequeing buffer");
 
-                    checkedXioctl(fd, VIDIOC_DQBUF, &buf, "error during dequeing buffer");
+                    auto *buffer = &buffers[v4l2_buf.index];
 
-                    logger.info("idx: %d, bytes used: %d", buf.index, buf.bytesused);
-
-                    frame = cv::Mat(720, 480, CV_8UC3, (void *) buffers[buf.index]);
-
-                    checkedXioctl(fd, VIDIOC_QBUF, &buf, "error during querying buffer");
-
-                    logger.info("Height: %d, width: %d", frame.rows, frame.cols);
+                    logger.debug("Buffer %d (%p), bytes used: %d.", v4l2_buf.index, buffer->video4linuxBuffer,
+                                 v4l2_buf.bytesused);
                 });
 
 
@@ -365,6 +374,24 @@ namespace camera {
                 logger.info((format("Captured frame no %d in %d ms (%2.1f fps).") % currentFrameNo % elapsedTime %
                              fps).str());
 
+                cv::Mat frame;
+
+                elapsedTime = common::utils::measureTime<std::chrono::microseconds>([&]() {
+                    auto *buffer = &buffers[v4l2_buf.index];
+
+                    // todo timecode can be used
+                    convertUYVYToRGB(buffer->video4linuxBuffer, buffer->rgbBuffer, width * height);
+
+                    frame = cv::Mat(height, width, CV_8UC3, (void *) buffer->rgbBuffer);
+
+                    logger.debug("Mat: height: %d, width: %d.", frame.rows, frame.cols);
+                });
+
+                logger.info((format(
+                        "Converted frame %d from UYUV to RGB in %d us.") % currentFrameNo % elapsedTime).str());
+
+                checkedXioctl(fd, VIDIOC_QBUF, &v4l2_buf, "error during querying buffer");
+
                 dataMutex.lock();
                 this->currentFrame = frame;
                 this->currentFrameNo++;
@@ -375,6 +402,16 @@ namespace camera {
             }
         }
 
+        void convertUYVYToRGB(const uint8_t *source, uint8_t *destination, int pixels) {
+            //todo this has to be speed up
+
+            for (int i = 0, j = 0; i < pixels * 3; i += 3, j += 2) {
+                destination[i] = source[j + 1];
+                destination[i + 1] = source[j + 1];
+                destination[i + 2] = source[j + 1];
+            }
+        }
+
         std::string getFullConfigPath(std::string property) {
             return "ImageGrabber." + prefix + "_" + property;
         }
@@ -382,20 +419,14 @@ namespace camera {
         int getVideoCaptureProperty(std::string confName) {
             auto path = getFullConfigPath(confName);
             try {
-                return config->getInt(path);
+                int val = config->getInt(path);
+                logger.info("Trying to set property '%s' to %d.", confName.c_str(), val);
+                return val;
             } catch (common::config::ConfigException &e) {
                 throw ImageGrabberException((format("failed to set property: %s") % e.what()).str());
             }
-
-//	if (readVal != val) {
-//		throw ImageGrabberException((format("failed to set property '%s' to value %d, previous value: %d")
-//				% path % val % readVal).str());
-//	}
-
-//            logger.info((format("Set property '%s' to value %d.") % path % val).str());
         }
     };
-
 }
 
 WALLAROO_REGISTER(Video4LinuxImageGrabber, string);
