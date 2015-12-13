@@ -8,7 +8,7 @@ include_directories("../common_lib/include")
 include_directories("../../firmware/common")
 include_directories(${EXTERNAL_LIBS_DIR}/wallaroo)
 
-find_library(COMMON_LIB_PRIVATE szark_common "../common_lib/build")
+find_library(COMMON_LIB szark_common "../common_lib/build")
 
-SET(COMMON_LIB -Wl,--whole-archive ${COMMON_LIB_PRIVATE} -Wl,--no-whole-archive)
+#SET(COMMON_LIB -Wl,--whole-archive ${COMMON_LIB_PRIVATE} -Wl,--no-whole-archive)
 

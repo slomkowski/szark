@@ -3,15 +3,18 @@
 #include "Configuration.hpp"
 
 #include <opencv2/opencv.hpp>
-#include <boost/format.hpp>
 
-#include <pthread.h>
-#include <cstring>
+#include <pixfc-sse.h>
 
 #include <sys/ioctl.h>
 #include <linux/v4l2-common.h>
 #include <linux/videodev2.h>
 #include <sys/mman.h>
+
+#include <boost/format.hpp>
+#include <pthread.h>
+#include <cstring>
+#include <cstdlib>
 
 using namespace std;
 using namespace boost;
@@ -168,8 +171,12 @@ namespace camera {
                   currentFrameNo(1) { }
 
         virtual ~ Video4LinuxImageGrabber() {
+            //todo close v4l
+
+            destroy_pixfc(pixfc);
+
             for (auto vb : buffers) {
-                delete[] vb.rgbBuffer;
+                free(vb.rgbBuffer);
             }
         }
 
@@ -217,6 +224,8 @@ namespace camera {
 
         unsigned int width;
         unsigned int height;
+
+        PixFcSSE *pixfc;
 
         virtual void Init() {
             string videoDevice = "/dev/video" + to_string(config->getInt(getFullConfigPath("device")));
@@ -307,9 +316,11 @@ namespace camera {
 
                 unsigned int rgbBufferSize = fmt.fmt.pix.width * fmt.fmt.pix.height * 3;
 
-                logger.debug("Allocating %d B for RGB buffer %d.", rgbBufferSize, i);
+                if (posix_memalign(reinterpret_cast<void **>(&buffer.rgbBuffer), 16, rgbBufferSize) != 0) {
+                    throw ImageGrabberException("cannot allocate buffer " + to_string(i));
+                }
 
-                buffer.rgbBuffer = new unsigned char[rgbBufferSize];
+                logger.debug("Allocated %d B for RGB buffer %d (%p).", rgbBufferSize, i, buffer.rgbBuffer);
 
                 buffers.push_back(buffer);
             }
@@ -318,6 +329,13 @@ namespace camera {
 
             uint32_t bufType = V4L2_BUF_TYPE_VIDEO_CAPTURE;
             checkedXioctl(fd, VIDIOC_STREAMON, &bufType, "streamon");
+
+            int status = create_pixfc(&pixfc, PixFcUYVY, PixFcBGR24,
+                                      width, height, width * 2, width * 3, PixFcFlag_Default);
+
+            if (status != 0) {
+                throw ImageGrabberException("cannot create struct for pixfc: " + to_string(status));
+            }
 
             grabberThread.reset(new std::thread(&Video4LinuxImageGrabber::grabberThreadFunction, this));
             int result = pthread_setname_np(grabberThread->native_handle(), (prefix + "ImgGrab").c_str());
@@ -379,9 +397,8 @@ namespace camera {
                 elapsedTime = common::utils::measureTime<std::chrono::microseconds>([&]() {
                     auto *buffer = &buffers[v4l2_buf.index];
 
+                    pixfc->convert(pixfc, buffer->video4linuxBuffer, buffer->rgbBuffer);
                     // todo timecode can be used
-                    convertUYVYToRGB(buffer->video4linuxBuffer, buffer->rgbBuffer, width * height);
-
                     frame = cv::Mat(height, width, CV_8UC3, (void *) buffer->rgbBuffer);
 
                     logger.debug("Mat: height: %d, width: %d.", frame.rows, frame.cols);
@@ -399,16 +416,6 @@ namespace camera {
                 dataMutex.unlock();
 
                 cond.notify_all();
-            }
-        }
-
-        void convertUYVYToRGB(const uint8_t *source, uint8_t *destination, int pixels) {
-            //todo this has to be speed up
-
-            for (int i = 0, j = 0; i < pixels * 3; i += 3, j += 2) {
-                destination[i] = source[j + 1];
-                destination[i + 1] = source[j + 1];
-                destination[i + 2] = source[j + 1];
             }
         }
 
