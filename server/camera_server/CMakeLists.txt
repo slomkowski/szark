@@ -20,7 +20,7 @@ include_directories(${LOG4CPP_INCLUDE_DIRS})
 
 include_directories("src")
 
-include_directories(../../external-libs/libpixfc/include)
+include_directories(../../lib/libpixfc/include)
 
 set(SOURCES
         src/CameraImageGrabber.cpp src/CameraImageGrabber.hpp
@@ -35,9 +35,9 @@ set(SOURCES
         )
 
 if (${CMAKE_SIZEOF_VOID_P} STREQUAL "8")
-    link_directories("../../external-libs/libpixfc/x86_64")
+    link_directories("../../lib/libpixfc/x86_64")
 else ()
-    link_directories("../../external-libs/libpixfc/x86")
+    link_directories("../../lib/libpixfc/x86")
 endif ()
 
 add_executable(szark_camserver_framegrabber ${SOURCES} src/main_framegrabber.cpp)
