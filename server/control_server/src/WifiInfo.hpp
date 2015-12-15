@@ -1,14 +1,13 @@
-#ifndef WIFIINFO_HPP_
-#define WIFIINFO_HPP_
+#pragma once
 
-#include <string>
-#include <stdexcept>
+#include "Configuration.hpp"
 
 #include <log4cpp/Category.hh>
 #include <wallaroo/registered.h>
 #include <boost/asio/ip/address.hpp>
 
-#include "Configuration.hpp"
+#include <string>
+#include <stdexcept>
 
 namespace os {
 
@@ -139,5 +138,3 @@ namespace os {
 
 
 } /* namespace os */
-
-#endif /* WIFIINFO_HPP_ */

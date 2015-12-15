@@ -1,4 +1,5 @@
 #include "WifiInfo.hpp"
+#include "utils.hpp"
 
 #include <netlink/genl/genl.h>
 #include <netlink/genl/family.h>
@@ -7,8 +8,9 @@
 #include <netlink/attr.h>
 #include <netlink/route/neighbour.h>
 #include <linux/nl80211.h>
-
 #include <pthread.h>
+
+#include <boost/format.hpp>
 
 #include <cmath>
 #include <chrono>
@@ -17,10 +19,6 @@
 #include <thread>
 #include <functional>
 #include <unordered_map>
-
-#include <boost/format.hpp>
-
-#include "utils.hpp"
 
 constexpr std::chrono::milliseconds DUMP_STATION_INTERVAL(100);
 
@@ -195,8 +193,7 @@ WifiLinkParams os::WifiInfo::getWifiLinkParams(asio::ip::address address) {
 
         auto params = impl->wifiLinkParamsMap.begin();
 
-        logger.info((format("Got link parameters for access point (%s).")
-                     % address.to_string() % params->first.toString()).str());
+        logger.info((format("Got link parameters for access point (%s).") % params->first.toString()).str());
 
         return params->second;
 
