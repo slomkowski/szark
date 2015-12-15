@@ -56,6 +56,13 @@ string os::WifiLinkParams::toString() const {
             % macAddress.toString() % signalStrength % txBitrate % rxBitrate).str();
 }
 
+const static std::map<nl80211_iftype, std::string> IFACE_TYPE_NAMES = {
+        {NL80211_IFTYPE_ADHOC,       "ad-hoc"},
+        {NL80211_IFTYPE_STATION,     "managed"},
+        {NL80211_IFTYPE_AP,          "AP"},
+        {NL80211_IFTYPE_UNSPECIFIED, "unspecified"}
+};
+
 namespace os {
     struct WifiInfoImpl {
         bool enabled = true;
@@ -81,6 +88,8 @@ namespace os {
         volatile bool acquireNetworkInformationThreadStop = false;
 
         log4cpp::Category *logger;
+
+        volatile nl80211_iftype interfaceType = NL80211_IFTYPE_UNSPECIFIED;
     };
 
 }
@@ -175,25 +184,45 @@ WifiLinkParams os::WifiInfo::getWifiLinkParams(asio::ip::address address) {
         throw WifiException("WifiInfo is disabled");
     }
 
-    unique_lock<mutex> iplk(impl->ipToMacMapMutex);
+    if (impl->interfaceType == NL80211_IFTYPE_STATION) {
+        // in managed mode there's only one station (the AP) we return the parameters for it
 
-    if (impl->ipToMacMap.find(address) == impl->ipToMacMap.end()) {
-        throw WifiException((format("could not find client with IP: %s") % address.to_string()).str());
+        unique_lock<mutex> wplk(impl->wifiLinkParamsMapMutex);
+
+        if (impl->wifiLinkParamsMap.size() == 0) {
+            throw WifiException("wifiLinkParamsMap is empty");
+        }
+
+        auto params = impl->wifiLinkParamsMap.begin();
+
+        logger.info((format("Got link parameters for access point (%s).")
+                     % address.to_string() % params->first.toString()).str());
+
+        return params->second;
+
+    } else {
+        // in case of Ad-Hoc mode, we return statistics for the peer
+
+        unique_lock<mutex> iplk(impl->ipToMacMapMutex);
+
+        if (impl->ipToMacMap.find(address) == impl->ipToMacMap.end()) {
+            throw WifiException((format("could not find client with IP: %s") % address.to_string()).str());
+        }
+
+        MacAddress mac = impl->ipToMacMap.at(address);
+
+        iplk.unlock();
+
+        unique_lock<mutex> wplk(impl->wifiLinkParamsMapMutex);
+
+        if (impl->wifiLinkParamsMap.find(mac) == impl->wifiLinkParamsMap.end()) {
+            throw WifiException((format("could not find link parameters for client %s") % mac.toString()).str());
+        }
+
+        logger.info((format("Got link parameters for %s(%s).") % address.to_string() % mac.toString()).str());
+
+        return impl->wifiLinkParamsMap.at(mac);
     }
-
-    MacAddress mac = impl->ipToMacMap.at(address);
-
-    iplk.unlock();
-
-    unique_lock<mutex> wplk(impl->wifiLinkParamsMapMutex);
-
-    if (impl->wifiLinkParamsMap.find(mac) == impl->wifiLinkParamsMap.end()) {
-        throw WifiException((format("could not find link parameters for client %s") % mac.toString()).str());
-    }
-
-    logger.info((format("Got link parameters for %s(%s).") % address.to_string() % mac.toString()).str());
-
-    return impl->wifiLinkParamsMap.at(mac);
 }
 
 
@@ -287,35 +316,35 @@ static int dumpCardInfoHandler(struct nl_msg *msg, void *arg) {
 
     nla_parse(tb, NL80211_ATTR_MAX, genlmsg_attrdata(gnlh, 0), genlmsg_attrlen(gnlh, 0), nullptr);
 
-    const char *indent = "";
+    std::stringstream report;
 
-    if (tb[NL80211_ATTR_IFNAME])
-        printf("%sInterface %s\n", indent, nla_get_string(tb[NL80211_ATTR_IFNAME]));
-    else
-        printf("%sUnnamed/non-netdev interface\n", indent);
-    if (tb[NL80211_ATTR_IFINDEX])
-        printf("%s\tifindex %d\n", indent, nla_get_u32(tb[NL80211_ATTR_IFINDEX]));
-    if (tb[NL80211_ATTR_WDEV])
-        printf("%s\twdev 0x%llx\n", indent,
-               (unsigned long long) nla_get_u64(tb[NL80211_ATTR_WDEV]));
+    report << "Read interface info: ";
+
+    if (tb[NL80211_ATTR_IFNAME]) {
+        report << nla_get_string(tb[NL80211_ATTR_IFNAME]);
+    }
+
     if (tb[NL80211_ATTR_MAC]) {
-        MacAddress a((char *) nla_data(tb[NL80211_ATTR_MAC]));
-        printf("%s\taddr %s\n", indent, a.toString().c_str());
+        MacAddress macAddress((char *) nla_data(tb[NL80211_ATTR_MAC]));
+        report << " (MAC: " << macAddress.toString() << ")";
     }
+
     if (tb[NL80211_ATTR_SSID]) {
-        printf("%s\tssid ", tb[NL80211_ATTR_SSID]);
-        printf("\n");
+        report << ", SSID: " << nla_data(tb[NL80211_ATTR_SSID]);
     }
+
     if (tb[NL80211_ATTR_IFTYPE]) {
         nl80211_iftype type = static_cast<nl80211_iftype>(nla_get_u32(tb[NL80211_ATTR_IFTYPE]));
-        std::map<nl80211_iftype, std::string> n = {
-                {NL80211_IFTYPE_ADHOC,       "Ad-Hoc"},
-                {NL80211_IFTYPE_STATION,     "managed"},
-                {NL80211_IFTYPE_AP,          "AP"},
-                {NL80211_IFTYPE_UNSPECIFIED, "unspecified"}
-        };
-        impl->logger->info("Interface type: %s.", n[type].c_str());
+
+        impl->interfaceType = type;
+
+        report << ", mode: " << IFACE_TYPE_NAMES.at(type);
     }
+
+    report << ".";
+
+    impl->logger->info(report.str());
+
     return NL_SKIP;
 }
 
