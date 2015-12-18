@@ -1,30 +1,30 @@
-#include <memory>
-#include <chrono>
-#include <thread>
+#include "RequestQueuer.hpp"
+#include "IRequestProcessor.hpp"
 
 #include <boost/test/unit_test.hpp>
 #include <wallaroo/catalog.h>
 
-#include "RequestQueuer.hpp"
-#include "IRequestProcessor.hpp"
+#include <memory>
+#include <chrono>
+#include <thread>
 
 class RequestProcessorMock : public processing::IRequestProcessor, public wallaroo::Device {
 public:
-	virtual void process(Json::Value &request, boost::asio::ip::address address, Json::Value &response);
+    virtual void process(Json::Value &request, boost::asio::ip::address address, Json::Value &response);
 };
 
 void RequestProcessorMock::process(Json::Value &request, boost::asio::ip::address address, Json::Value &response) {
 
-	response["lights"]["led"] = false;
-	response["lights"]["camera"] = true;
+    response["lights"]["led"] = false;
+    response["lights"]["camera"] = true;
 
-	std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
 }
 
 WALLAROO_REGISTER(RequestProcessorMock);
 
 static std::string requestWithNoSerial =
-		R"(
+        R"(
 {
      "timestamp" : "12:34:56,123",
      "control" : "stop"
@@ -32,7 +32,7 @@ static std::string requestWithNoSerial =
 )";
 
 static std::string validRequest =
-		R"(
+        R"(
 {
      "serial" : 55555555,
      "timestamp" : "02:34:56,123",
@@ -58,7 +58,7 @@ static std::string validRequest =
 )";
 
 static std::string validRequestWithLowerSerial =
-		R"(
+        R"(
 {
      "serial" : 11111111,
      "timestamp" : "12:34:56,123",
@@ -71,7 +71,7 @@ static std::string validRequestWithLowerSerial =
 })";
 
 static std::string validRequestWithZeroSerial =
-		R"(
+        R"(
 {
      "serial" : 0,
      "timestamp" : "12:34:56,123",
@@ -79,7 +79,7 @@ static std::string validRequestWithZeroSerial =
 })";
 
 static std::string validRequestWithHigherSerial =
-		R"(
+        R"(
 {
      "serial" : 55555556,
      "timestamp" : "12:34:56,123",
@@ -92,62 +92,62 @@ static std::string validRequestWithHigherSerial =
 })";
 
 static std::shared_ptr<processing::RequestQueuer> prepareBindings(wallaroo::Catalog &catalog) {
-	catalog.Create("rq", "RequestQueuer");
-	catalog.Create("mock1", "RequestProcessorMock");
-	wallaroo::use(catalog["mock1"]).as("requestProcessors").of(catalog["rq"]);
+    catalog.Create("rq", "RequestQueuer");
+    catalog.Create("mock1", "RequestProcessorMock");
+    wallaroo::use(catalog["mock1"]).as("requestProcessors").of(catalog["rq"]);
 
-	catalog.CheckWiring();
+    catalog.CheckWiring();
 
-	return catalog["rq"];
+    return catalog["rq"];
 }
 
 BOOST_AUTO_TEST_CASE(RequestQueuerTest_addRequest) {
-	wallaroo::Catalog catalog;
-	auto rq = prepareBindings(catalog);
+    wallaroo::Catalog catalog;
+    auto rq = prepareBindings(catalog);
 
-	BOOST_CHECK_EQUAL(rq->getNumOfProcessors(), 1);
+    BOOST_CHECK_EQUAL(rq->getNumOfProcessors(), 1);
 
-	std::pair<std::string, bool> tests[] = {
-			std::make_pair("invalid string", false),
-			std::make_pair(validRequest, true),
-			std::make_pair(requestWithNoSerial, false),
-			std::make_pair(validRequest, false),
-			std::make_pair(validRequestWithLowerSerial, false),
-			std::make_pair(validRequestWithHigherSerial, true),
-			std::make_pair(validRequestWithHigherSerial, false),
+    std::pair<std::string, bool> tests[] = {
+            std::make_pair("invalid string", false),
+            std::make_pair(validRequest, true),
+            std::make_pair(requestWithNoSerial, false),
+            std::make_pair(validRequest, false),
+            std::make_pair(validRequestWithLowerSerial, false),
+            std::make_pair(validRequestWithHigherSerial, true),
+            std::make_pair(validRequestWithHigherSerial, false),
 
-			std::make_pair(validRequestWithZeroSerial, true),
-			std::make_pair(validRequestWithZeroSerial, true),
-			std::make_pair(validRequestWithZeroSerial, true),
+            std::make_pair(validRequestWithZeroSerial, true),
+            std::make_pair(validRequestWithZeroSerial, true),
+            std::make_pair(validRequestWithZeroSerial, true),
 
-			std::make_pair(requestWithNoSerial, false),
-			std::make_pair(validRequest, true),
-			std::make_pair(validRequestWithLowerSerial, false),
-			std::make_pair(validRequestWithHigherSerial, true),
-			std::make_pair(validRequestWithHigherSerial, false)
-	};
+            std::make_pair(requestWithNoSerial, false),
+            std::make_pair(validRequest, true),
+            std::make_pair(validRequestWithLowerSerial, false),
+            std::make_pair(validRequestWithHigherSerial, true),
+            std::make_pair(validRequestWithHigherSerial, false)
+    };
 
-	for (auto t : tests) {
-		BOOST_CHECK_EQUAL(rq->addRequest(t.first, boost::asio::ip::address()), t.second);
-		std::this_thread::sleep_for(std::chrono::milliseconds(15));
-	}
+    for (auto t : tests) {
+        BOOST_CHECK_EQUAL(rq->addRequest(t.first, boost::asio::ip::address()), t.second);
+        std::this_thread::sleep_for(std::chrono::milliseconds(15));
+    }
 
-	catalog.Create("mock2", "RequestProcessorMock");
-	wallaroo::use(catalog["mock2"]).as("requestProcessors").of(catalog["rq"]);
+    catalog.Create("mock2", "RequestProcessorMock");
+    wallaroo::use(catalog["mock2"]).as("requestProcessors").of(catalog["rq"]);
 
-	catalog.CheckWiring();
+    catalog.CheckWiring();
 
-	BOOST_CHECK_EQUAL(rq->getNumOfProcessors(), 2);
+    BOOST_CHECK_EQUAL(rq->getNumOfProcessors(), 2);
 }
 
 BOOST_AUTO_TEST_CASE(RequestQueuerTest_requestProcessor) {
-	wallaroo::Catalog catalog;
-	auto rq = prepareBindings(catalog);
+    wallaroo::Catalog catalog;
+    auto rq = prepareBindings(catalog);
 
-	Json::Value req;
-	Json::Value resp;
+    Json::Value req;
+    Json::Value resp;
 
-	req["serial"] = 123;
+    req["serial"] = 123;
 
-	BOOST_CHECK_EQUAL(req["serial"].asInt(), resp["serial"].asInt());
+    BOOST_CHECK_EQUAL(req["serial"].asInt(), resp["serial"].asInt());
 }

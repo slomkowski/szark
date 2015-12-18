@@ -1,14 +1,11 @@
 #
 # CMake configuration for SZARK Control Server
-# (C) 2014 Michał Słomkowski
+# (C) 2014, 2015 Michał Słomkowski
 # License: GPL v3
 #
 
-cmake_minimum_required(VERSION 2.6)
+cmake_minimum_required(VERSION 2.8.4)
 project(SZARK_control_server)
-
-set(MAIN_EXECUTABLE szark_control_server)
-set(TEST_EXECUTABLE szark_control_server_test)
 
 INCLUDE("../common.cmake")
 
@@ -30,36 +27,50 @@ include_directories(${NETLINK_ROUTE_INCLUDE_DIRS})
 
 include_directories("src")
 
-file(GLOB src "src/*.hpp" "src/*.cpp")
-list(REMOVE_ITEM src "${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp")
+set(SOURCES
+        src/BridgeProcessor.cpp src/BridgeProcessor.hpp
+        src/InterfaceManager.cpp src/InterfaceManager.hpp
+        src/IRequestProcessor.hpp
+        src/NetServer.cpp src/NetServer.hpp
+        src/OSInformationProcessor.cpp src/OSInformationProcessor.hpp
+        src/RequestQueuer.cpp src/RequestQueuer.hpp
+        src/USBCommunicator.cpp src/USBCommunicator.hpp
+        src/WifiInfo.cpp src/WifiInfo.hpp
+        )
 
-file(GLOB main_file "src/main.cpp")
-add_executable(${MAIN_EXECUTABLE} ${src} ${main_file})
+add_executable(szark_control_server ${SOURCES} src/main.cpp)
 
-target_link_libraries(${MAIN_EXECUTABLE} ${COMMON_LIB})
-target_link_libraries(${MAIN_EXECUTABLE} ${LIBUSB_LIBRARIES})
-target_link_libraries(${MAIN_EXECUTABLE} ${LOG4CPP_LIBRARIES})
-target_link_libraries(${MAIN_EXECUTABLE} ${JSON_LIBRARIES})
-target_link_libraries(${MAIN_EXECUTABLE} ${NETLINK_GENL_LIBRARIES})
-target_link_libraries(${MAIN_EXECUTABLE} ${NETLINK_ROUTE_LIBRARIES})
-target_link_libraries(${MAIN_EXECUTABLE} ${Boost_LIBRARIES})
-target_link_libraries(${MAIN_EXECUTABLE} ${CMAKE_THREAD_LIBS_INIT})
-target_link_libraries(${MAIN_EXECUTABLE} rt)
+target_link_libraries(szark_control_server ${COMMON_LIB})
+target_link_libraries(szark_control_server ${LIBUSB_LIBRARIES})
+target_link_libraries(szark_control_server ${LOG4CPP_LIBRARIES})
+target_link_libraries(szark_control_server ${JSON_LIBRARIES})
+target_link_libraries(szark_control_server ${NETLINK_GENL_LIBRARIES})
+target_link_libraries(szark_control_server ${NETLINK_ROUTE_LIBRARIES})
+target_link_libraries(szark_control_server ${Boost_LIBRARIES})
+target_link_libraries(szark_control_server ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(szark_control_server rt)
 
 enable_testing()
 
-file(GLOB test_src "test/*.hpp" "test/*.cpp")
+set(TEST_SOURCES
+        test/BridgeProcessorTest.cpp
+        test/InterfaceManagerTest.cpp
+        test/NetServerTest.cpp
+        test/RequestQueuerTest.cpp
+        test/USBCommunicationTest.cpp
+        test/WifiInfoTest.cpp
+        )
 
-add_executable(${TEST_EXECUTABLE} ${src} ${test_src})
+add_executable(szark_control_server_test ${SOURCES} ${TEST_SOURCES} test/main.cpp)
 
-target_link_libraries(${TEST_EXECUTABLE} ${COMMON_LIB})
-target_link_libraries(${TEST_EXECUTABLE} ${LIBUSB_LIBRARIES})
-target_link_libraries(${TEST_EXECUTABLE} ${LOG4CPP_LIBRARIES})
-target_link_libraries(${TEST_EXECUTABLE} ${JSON_LIBRARIES})
-target_link_libraries(${TEST_EXECUTABLE} ${NETLINK_GENL_LIBRARIES})
-target_link_libraries(${TEST_EXECUTABLE} ${NETLINK_ROUTE_LIBRARIES})
-target_link_libraries(${TEST_EXECUTABLE} ${Boost_LIBRARIES})
-target_link_libraries(${TEST_EXECUTABLE} ${CMAKE_THREAD_LIBS_INIT})
-target_link_libraries(${TEST_EXECUTABLE} rt)
+target_link_libraries(szark_control_server_test ${COMMON_LIB})
+target_link_libraries(szark_control_server_test ${LIBUSB_LIBRARIES})
+target_link_libraries(szark_control_server_test ${LOG4CPP_LIBRARIES})
+target_link_libraries(szark_control_server_test ${JSON_LIBRARIES})
+target_link_libraries(szark_control_server_test ${NETLINK_GENL_LIBRARIES})
+target_link_libraries(szark_control_server_test ${NETLINK_ROUTE_LIBRARIES})
+target_link_libraries(szark_control_server_test ${Boost_LIBRARIES})
+target_link_libraries(szark_control_server_test ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(szark_control_server_test rt)
 
-add_test(SZARKControlServerTest ${TEST_EXECUTABLE})
+add_test(SZARKControlServerTest szark_control_server_test)

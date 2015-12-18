@@ -1,6 +1,6 @@
+#include "RequestQueuer.hpp"
 #include "utils.hpp"
 #include "IRequestProcessor.hpp"
-#include "RequestQueuer.hpp"
 
 #include <pthread.h>
 

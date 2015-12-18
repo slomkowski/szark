@@ -1,5 +1,12 @@
-#ifndef BRIDGEPROCESSOR_HPP_
-#define BRIDGEPROCESSOR_HPP_
+#pragma once
+
+#include "IRequestProcessor.hpp"
+#include "USBCommunicator.hpp"
+#include "InterfaceManager.hpp"
+
+#include <log4cpp/Category.hh>
+#include <wallaroo/device.h>
+#include <json/value.h>
 
 #include <memory>
 #include <thread>
@@ -7,63 +14,53 @@
 #include <chrono>
 #include <functional>
 
-#include <log4cpp/Category.hh>
-#include <wallaroo/device.h>
-#include <json/value.h>
-
-#include "IRequestProcessor.hpp"
-#include "USBCommunicator.hpp"
-#include "InterfaceManager.hpp"
-
 namespace bridge {
-	using namespace common::bridge;
+    using namespace common::bridge;
 
-	class BridgeProcessor : public processing::IRequestProcessor, public wallaroo::Device {
-	public:
-		BridgeProcessor();
+    class BridgeProcessor : public processing::IRequestProcessor, public wallaroo::Device {
+    public:
+        BridgeProcessor();
 
-		~BridgeProcessor();
+        ~BridgeProcessor();
 
-		virtual void process(Json::Value &request, boost::asio::ip::address address,
-				Json::Value &response) override;
+        virtual void process(Json::Value &request, boost::asio::ip::address address,
+                             Json::Value &response) override;
 
-	private:
-		log4cpp::Category &logger;
+    private:
+        log4cpp::Category &logger;
 
-		wallaroo::Plug<ICommunicator> usbComm;
-		wallaroo::Plug<IInterfaceManager> interfaceManager;
+        wallaroo::Plug<ICommunicator> usbComm;
+        wallaroo::Plug<IInterfaceManager> interfaceManager;
 
-		std::unique_ptr<std::thread> maintenanceThread;
-		std::mutex maintenanceMutex;
+        std::unique_ptr<std::thread> maintenanceThread;
+        std::mutex maintenanceMutex;
 
-		std::chrono::time_point<std::chrono::high_resolution_clock> lastProcessFunctionExecution;
+        std::chrono::time_point<std::chrono::high_resolution_clock> lastProcessFunctionExecution;
 
-		volatile bool finishCycleThread = false;
-		volatile bool firstMaintenanceTask = true;
+        volatile bool finishCycleThread = false;
+        volatile bool firstMaintenanceTask = true;
 
-		void Init();
+        void Init();
 
-		void maintenanceThreadFunction();
+        void maintenanceThreadFunction();
 
-		Interface &iface() {
-			return interfaceManager->iface();
-		}
+        Interface &iface() {
+            return interfaceManager->iface();
+        }
 
-		void createReport(Json::Value &r);
+        void createReport(Json::Value &r);
 
-		void parseRequest(Json::Value &r);
+        void parseRequest(Json::Value &r);
 
-		template<typename T>
-		void tryAssign(const Json::Value &key, std::function<void(T)> setter);
+        template<typename T>
+        void tryAssign(const Json::Value &key, std::function<void(T)> setter);
 
-		void tryAssignDirection(const Json::Value &key, std::function<void(Direction)> setter);
+        void tryAssignDirection(const Json::Value &key, std::function<void(Direction)> setter);
 
-		void fillAllDevices(
-				std::function<void(std::string name, Joint j)> fillArm,
-				std::function<void(std::string name, Motor m)> fillMotor,
-				std::function<void(std::string name, ExpanderDevice d)> fillExpander);
-	};
+        void fillAllDevices(
+                std::function<void(std::string name, Joint j)> fillArm,
+                std::function<void(std::string name, Motor m)> fillMotor,
+                std::function<void(std::string name, ExpanderDevice d)> fillExpander);
+    };
 
 } /* namespace bridge */
-
-#endif /* BRIDGEPROCESSOR_HPP_ */

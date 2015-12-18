@@ -68,7 +68,7 @@ set(TEST_SOURCES
         test/NetworkServerTest.cpp
         )
 
-add_executable(szark_camserver_test ${TEST_SOURCES} test/main.cpp)
+add_executable(szark_camserver_test ${SOURCES} ${TEST_SOURCES} test/main.cpp)
 target_link_libraries(szark_camserver_test ${COMMON_LIB})
 target_link_libraries(szark_camserver_test pixfc-sse)
 target_link_libraries(szark_camserver_test ${LOG4CPP_LIBRARIES})

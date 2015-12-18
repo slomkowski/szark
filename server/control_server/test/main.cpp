@@ -2,23 +2,23 @@
 #define BOOST_TEST_DYN_LINK
 #define BOOST_TEST_MAIN
 
+#include "Configuration.hpp"
+
 #include <log4cpp/PropertyConfigurator.hh>
 #include <boost/test/unit_test.hpp>
 
-#include "Configuration.hpp"
-
 class AllocatorSetup {
 public:
-	AllocatorSetup();
+    AllocatorSetup();
 
-	~AllocatorSetup();
+    ~AllocatorSetup();
 };
 
 BOOST_GLOBAL_FIXTURE(AllocatorSetup);
 
 AllocatorSetup::AllocatorSetup() {
-	std::string initFileName = "loggerTest.properties";
-	log4cpp::PropertyConfigurator::configure(initFileName);
+    std::string initFileName = "loggerTest.properties";
+    log4cpp::PropertyConfigurator::configure(initFileName);
 }
 
 AllocatorSetup::~AllocatorSetup() {
