@@ -23,7 +23,6 @@
 constexpr std::chrono::milliseconds DUMP_STATION_INTERVAL(100);
 
 using namespace os;
-using namespace boost;
 using namespace std;
 
 WALLAROO_REGISTER(WifiInfo);
@@ -41,7 +40,7 @@ bool os::MacAddress::operator<(const MacAddress &other) const {
 }
 
 string os::MacAddress::toString() const {
-    format fmt("%02x:%02x:%02x:%02x:%02x:%02x");
+    boost::format fmt("%02x:%02x:%02x:%02x:%02x:%02x");
 
     for (int i = 0; i != 6; ++i) {
         fmt % static_cast<unsigned int>(mac[i]);
@@ -50,7 +49,7 @@ string os::MacAddress::toString() const {
 }
 
 string os::WifiLinkParams::toString() const {
-    return (format("%s: sig: %2.0f dBm, tx: %2.0f, Mb/s, rx: %2.0f Mb/s")
+    return (boost::format("%s: sig: %2.0f dBm, tx: %2.0f, Mb/s, rx: %2.0f Mb/s")
             % macAddress.toString() % signalStrength % txBitrate % rxBitrate).str();
 }
 
@@ -76,7 +75,7 @@ namespace os {
         struct rtnl_neigh *neigh;
         struct nl_cache *neigh_cache;
 
-        map<asio::ip::address, MacAddress> ipToMacMap;
+        map<boost::asio::ip::address, MacAddress> ipToMacMap;
         mutex ipToMacMapMutex;
 
         map<MacAddress, WifiLinkParams> wifiLinkParamsMap;
@@ -158,7 +157,7 @@ void os::WifiInfo::Init() {
     impl->acquireNetworkInformationThread.reset(new thread(&WifiInfo::acquireNetworkInformationThreadFunction, this));
     int result = pthread_setname_np(impl->acquireNetworkInformationThread->native_handle(), "wifiInfo");
     if (result != 0) {
-        logger.error((format("Cannot set thread name: %s.") % strerror(result)).str());
+        logger.error("Cannot set thread name: %s.", strerror(result));
     }
 
     logger.notice("Instance created.");
@@ -177,7 +176,7 @@ os::WifiInfo::~WifiInfo() {
     logger.notice("Instance destroyed.");
 }
 
-WifiLinkParams os::WifiInfo::getWifiLinkParams(asio::ip::address address) {
+WifiLinkParams os::WifiInfo::getWifiLinkParams(boost::asio::ip::address address) {
     if (not impl->enabled) {
         throw WifiException("WifiInfo is disabled");
     }
@@ -193,7 +192,7 @@ WifiLinkParams os::WifiInfo::getWifiLinkParams(asio::ip::address address) {
 
         auto params = impl->wifiLinkParamsMap.begin();
 
-        logger.info((format("Got link parameters for access point (%s).") % params->first.toString()).str());
+        logger.info("Got link parameters for access point (%s).", params->first.toString().c_str());
 
         return params->second;
 
@@ -203,7 +202,7 @@ WifiLinkParams os::WifiInfo::getWifiLinkParams(asio::ip::address address) {
         unique_lock<mutex> iplk(impl->ipToMacMapMutex);
 
         if (impl->ipToMacMap.find(address) == impl->ipToMacMap.end()) {
-            throw WifiException((format("could not find client with IP: %s") % address.to_string()).str());
+            throw WifiException((boost::format("could not find client with IP: %s") % address.to_string()).str());
         }
 
         MacAddress mac = impl->ipToMacMap.at(address);
@@ -213,10 +212,10 @@ WifiLinkParams os::WifiInfo::getWifiLinkParams(asio::ip::address address) {
         unique_lock<mutex> wplk(impl->wifiLinkParamsMapMutex);
 
         if (impl->wifiLinkParamsMap.find(mac) == impl->wifiLinkParamsMap.end()) {
-            throw WifiException((format("could not find link parameters for client %s") % mac.toString()).str());
+            throw WifiException((boost::format("could not find link parameters for client %s") % mac.toString()).str());
         }
 
-        logger.info((format("Got link parameters for %s(%s).") % address.to_string() % mac.toString()).str());
+        logger.info("Got link parameters for %s(%s).", address.to_string().c_str(), mac.toString().c_str());
 
         return impl->wifiLinkParamsMap.at(mac);
     }
@@ -292,7 +291,7 @@ static int dumpStationHandler(struct nl_msg *msg, void *arg) {
 
     WifiLinkParams p(txBitrate, rxBitrate, signal, macAddress, string(dev));
 
-    impl->logger->info((format("Read client info: %s, avg: %2.0f dBm.") % p.toString() % signalAvg).str());
+    impl->logger->info("Read client info: %s, avg: %2.0f dBm.", p.toString().c_str(), signalAvg);
 
     unique_lock<mutex> iplk(impl->wifiLinkParamsMapMutex);
 
@@ -408,7 +407,7 @@ void os::WifiInfo::dumpCardAttributes() {
     return;
 
     nla_put_failure:
-    throw WifiException((format("failed to execute station dump: %d") % err).str());
+    throw WifiException((boost::format("failed to execute station dump: %d") % err).str());
 }
 
 void os::WifiInfo::dumpStation() {
@@ -456,7 +455,7 @@ void os::WifiInfo::dumpStation() {
     return;
 
     nla_put_failure:
-    throw WifiException((format("failed to execute station dump: %d") % err).str());
+    throw WifiException((boost::format("failed to execute station dump: %d") % err).str());
 }
 
 void os::WifiInfo::acquireNetworkInformationThreadFunction() {
@@ -465,15 +464,15 @@ void os::WifiInfo::acquireNetworkInformationThreadFunction() {
 
         int m = common::utils::measureTime<microseconds>(bind(&WifiInfo::dumpCardAttributes, this));
 
-        logger.debug((format("Card attributes dump completed in %d us.") % m).str());
+        logger.debug("Card attributes dump completed in %d us.", m);
 
         m = common::utils::measureTime<microseconds>(bind(&WifiInfo::dumpArp, this));
 
-        logger.debug((format("ARP table filled in %d us.") % m).str());
+        logger.debug("ARP table filled in %d us.", m);
 
         m = common::utils::measureTime<microseconds>(bind(&WifiInfo::dumpStation, this));
 
-        logger.debug((format("Station dump completed in %d us.") % m).str());
+        logger.debug("Station dump completed in %d us.", m);
 
         this_thread::sleep_for(DUMP_STATION_INTERVAL);
     }
@@ -502,15 +501,15 @@ static void arpTableDumpHanlder(struct nl_object *obj, void *arg) {
         throw WifiException("returned MAC address has invalid length");
     }
 
-    asio::ip::address_v4::bytes_type addrBytes;
+    boost::asio::ip::address_v4::bytes_type addrBytes;
     for (int i = 0; i < 4; i++) {
         addrBytes[i] = reinterpret_cast<char *>(nl_addr_get_binary_addr(ipRawAddr))[i];
     }
-    asio::ip::address_v4 ip(addrBytes);
+    boost::asio::ip::address_v4 ip(addrBytes);
 
     MacAddress mac(reinterpret_cast<char *>(nl_addr_get_binary_addr(macRawAddr)));
 
-    impl->logger->info((format("Got ARP table entry: %s -> %s.") % ip.to_string() % mac.toString()).str());
+    impl->logger->info("Got ARP table entry: %s -> %s.", ip.to_string().c_str(), mac.toString().c_str());
 
     unique_lock<mutex> iplk(impl->ipToMacMapMutex);
     if (impl->ipToMacMap.find(ip) == impl->ipToMacMap.end()) {

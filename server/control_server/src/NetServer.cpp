@@ -38,7 +38,7 @@ void processing::NetServer::Init() {
         udpPort = config->getInt("NetServer.port");
     }
 
-    logger.notice((format("Opening listener socket with port %u.") % udpPort).str());
+    logger.notice("Opening listener socket with port %u.", udpPort);
 
     system::error_code err;
     udpSocket.open(udp::v4());
@@ -56,8 +56,8 @@ void processing::NetServer::doReceive() {
     udpSocket.async_receive_from(asio::buffer(buff.get(), MAX_PACKET_SIZE), recvSenderEndpoint,
                                  [this](system::error_code ec, size_t bytes_recvd) {
                                      if (!ec && bytes_recvd > 0) {
-                                         logger.info((format("Received %d bytes from %s.") % bytes_recvd %
-                                                      recvSenderEndpoint.address().to_string()).str());
+                                         logger.info("Received %d bytes from %s.",
+                                                     bytes_recvd, recvSenderEndpoint.address().to_string().c_str());
 
                                          if (recvSenderEndpoint.protocol() != udp::v4()) {
                                              logger.error("Received address is not an IPv4 address: " +
@@ -69,12 +69,11 @@ void processing::NetServer::doReceive() {
                                              long id = reqQueuer->addRequest(msg, recvSenderEndpoint.address());
 
                                              if (id != INVALID_MESSAGE) {
-                                                 logger.debug((format("Adding key %ld to senders map.") % id).str());
+                                                 logger.debug("Adding key %ld to senders map.", id);
 
                                                  sendersMap[id] = recvSenderEndpoint;
 
-                                                 logger.debug((format("Senders map contains now %d keys.") %
-                                                               sendersMap.size()).str());
+                                                 logger.debug("Senders map contains now %d keys.", sendersMap.size());
                                              }
 
                                              namespace ph = std::placeholders;
@@ -84,9 +83,8 @@ void processing::NetServer::doReceive() {
                                                      bind(&NetServer::removeFromRequestMap, this, ph::_1));
                                          }
                                      } else {
-                                         logger.error(
-                                                 (format("Error when receiving packet (%u bytes): %s.") % bytes_recvd %
-                                                  ec.message()).str());
+                                         logger.error("Error when receiving packet (%u bytes): %s.", bytes_recvd,
+                                                      ec.message().c_str());
                                      }
                                      doReceive();
                                  });
@@ -106,8 +104,8 @@ void processing::NetServer::sendResponse(long id, std::string response, bool tra
 
         unsigned int responseLength = response.length();
 
-        logger.info((format("Sending response (length %d) to %s.") %
-                     responseLength % endpoint.address().to_string()).str());
+        logger.info("Sending response (length %d) to %s.",
+                    responseLength, endpoint.address().to_string().c_str());
 
         logger.debug(string("Sending data: ") + response);
 
@@ -129,15 +127,14 @@ void processing::NetServer::sendResponse(long id, std::string response, bool tra
 
 void processing::NetServer::removeFromRequestMap(long id) {
     ioService.post([id, this]() {
-        logger.debug((format("Removing key %ld from senders map.") % id).str());
+        logger.debug("Removing key %ld from senders map.", id);
         sendersMap.erase(id);
-        logger.debug((format("Senders map contains now %d keys.") % sendersMap.size()).str());
+        logger.debug("Senders map contains now %d keys.", sendersMap.size());
     });
 }
 
 void processing::NetServer::run() {
-    logger.notice(
-            (format("Starting UDP listener on port %u.") % udpPort).str());
+    logger.notice("Starting UDP listener on port %u.", udpPort);
 
     system::error_code err;
     ioService.run();

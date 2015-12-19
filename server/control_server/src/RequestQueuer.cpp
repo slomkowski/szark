@@ -1,12 +1,7 @@
 #include "RequestQueuer.hpp"
 #include "utils.hpp"
-#include "IRequestProcessor.hpp"
 
-#include <pthread.h>
-
-#include <chrono>
 #include <iomanip>
-#include <boost/format.hpp>
 
 using namespace std;
 using namespace boost;
@@ -34,7 +29,7 @@ void processing::RequestQueuer::Init() {
     requestProcessorExecutorThread.reset(new thread(&RequestQueuer::requestProcessorExecutorThreadFunction, this));
     int result = pthread_setname_np(requestProcessorExecutorThread->native_handle(), "reqProcExec");
     if (result != 0) {
-        logger.error((format("Cannot set thread name: %s.") % strerror(result)).str());
+        logger.error("Cannot set thread name: %s.", strerror(result));
     }
     logger.notice("Instance created.");
 }
@@ -56,10 +51,10 @@ processing::RequestQueuer::~RequestQueuer() {
 long processing::RequestQueuer::addRequest(string requestString, boost::asio::ip::address address) {
     unique_lock<mutex> lk(requestsMutex);
 
-    logger.debug((format("Received request with the size of %d bytes.") % requestString.length()).str());
+    logger.debug("Received request with the size of %d bytes.", requestString.length());
 
     if (requests.size() == REQUEST_QUEUE_MAX_SIZE and REQUEST_QUEUE_OVERFLOW_BEHAVIOR) {
-        logger.warn((format("Requests queue is full (%d). Skipping request.") % REQUEST_QUEUE_MAX_SIZE).str());
+        logger.warn("Requests queue is full (%d). Skipping request.", REQUEST_QUEUE_MAX_SIZE);
         return INVALID_MESSAGE;
     }
 
@@ -80,13 +75,12 @@ long processing::RequestQueuer::addRequest(string requestString, boost::asio::ip
     auto serial = req["serial"].asInt();
 
     if (serial != 0 and serial <= lastSerial) {
-        logger.warn((format("Request has too old serial (%d). Skipping.") % serial).str());
+        logger.warn("Request has too old serial (%d). Skipping.", serial);
         return INVALID_MESSAGE;
     }
 
     if (requests.size() == REQUEST_QUEUE_MAX_SIZE) {
-        logger.warn(
-                (format("Requests queue is full (%d). removing the oldest one.") % REQUEST_QUEUE_MAX_SIZE).str());
+        logger.warn("Requests queue is full (%d). removing the oldest one.", REQUEST_QUEUE_MAX_SIZE);
 
         long id;
 
@@ -113,8 +107,7 @@ long processing::RequestQueuer::addRequest(string requestString, boost::asio::ip
 
     requests.push(make_tuple(id, address, req));
 
-    logger.info(
-            (format("Pushed request with the serial %d. Queue size: %d.") % serial % requests.size()).str());
+    logger.info("Pushed request with the serial %d. Queue size: %d.", serial, requests.size());
 
     cv.notify_one();
 
@@ -162,13 +155,13 @@ void processing::RequestQueuer::requestProcessorExecutorThreadFunction() {
         auto serial = req["serial"].asInt();
 
         if (serial < lastSerial) {
-            logger.warn((format("Request has too old serial (%d). Skipping (from executor).") % serial).str());
+            logger.warn("Request has too old serial (%d). Skipping (from executor).", serial);
             continue;
         } else {
             lastSerial = serial;
         }
 
-        logger.info((format("Executing request with serial %d from %s.") % serial % addr.to_string()).str());
+        logger.info("Executing request with serial %d from %s.", serial, addr.to_string().c_str());
 
         Json::Value response;
 
@@ -182,7 +175,7 @@ void processing::RequestQueuer::requestProcessorExecutorThreadFunction() {
 
         response["timestamp"] = common::utils::getTimestamp();
 
-        logger.info((format("Request %d executed in %d us.") % serial % execTimeMicroseconds).str());
+        logger.info("Request %d executed in %d us.", serial, execTimeMicroseconds);
 
         bool skipResponse = req["skip_response"].asBool();
 

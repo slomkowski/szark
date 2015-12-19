@@ -14,7 +14,6 @@ using namespace std;
 using namespace bridge;
 using namespace common::bridge;
 
-using boost::format;
 using std::chrono::high_resolution_clock;
 
 /**
@@ -39,7 +38,7 @@ void bridge::BridgeProcessor::Init() {
         maintenanceThread.reset(new thread(&BridgeProcessor::maintenanceThreadFunction, this));
         int result = pthread_setname_np(maintenanceThread->native_handle(), "bMaintenance");
         if (result != 0) {
-            logger.error((format("Cannot set thread name: %s.") % strerror(result)).str());
+            logger.error("Cannot set thread name: %s.", strerror(result));
         }
     }
 

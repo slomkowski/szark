@@ -1,13 +1,9 @@
 #include "InterfaceManager.hpp"
 #include "utils.hpp"
 
-#include <boost/format.hpp>
 #include <boost/interprocess/managed_shared_memory.hpp>
 
-#include <cstring>
 #include <thread>
-#include <chrono>
-#include <tuple>
 #include <queue>
 
 using namespace std;
@@ -28,8 +24,7 @@ bridge::InterfaceManager::InterfaceManager()
 
     shared_memory_object::remove(SHARED_MEM_SEGMENT_NAME.c_str());
 
-    logger.info((format("Allocating %d bytes of shared memory with name '%s'.")
-                 % SHARED_MEM_SIZE % SHARED_MEM_SEGMENT_NAME).str());
+    logger.info("Allocating %d bytes of shared memory with name '%s'.", SHARED_MEM_SIZE, SHARED_MEM_SEGMENT_NAME);
 
     memorySegment = new managed_shared_memory(create_only, SHARED_MEM_SEGMENT_NAME.c_str(), SHARED_MEM_SIZE);
 
@@ -119,15 +114,13 @@ void bridge::InterfaceManager::syncWithDevice(BridgeSyncFunction syncFunction) {
 
     concatenated.push_back(USBCommands::MESSAGE_END);
 
-    logger.debug(
-            (format("Sending request to the device (%d bytes): %s.") % concatenated.size()
-             % common::utils::toString<uint8_t>(concatenated)).str());
+    logger.debug("Sending request to the device (%d bytes): %s.",
+                 concatenated.size(), common::utils::toString<uint8_t>(concatenated).c_str());
 
     auto response = syncFunction(concatenated);
 
-    logger.debug(
-            (format("Got response from device (%d bytes): %s.") % response.size() %
-             common::utils::toString<uint8_t>(response)).str());
+    logger.debug("Got response from device (%d bytes): %s.",
+                 response.size(), common::utils::toString<uint8_t>(response).c_str());
 
     interface->updateDataStructures(getterReqs.second, response);
 }
@@ -137,14 +130,14 @@ void bridge::InterfaceManager::syncWithDevice(BridgeSyncFunction syncFunction) {
 
     for (auto &newRequest : interface->getRequestMap()) {
         if (previousRequests.find(newRequest.first) == previousRequests.end()) {
-            logger.debug((format("Key '%s' not in the previous state. Adding.") % newRequest.first).str());
+            logger.debug("Key '%s' not in the previous state. Adding.", newRequest.first.c_str());
             diff[newRequest.first] = newRequest.second;
         }
         else {
             if (previousRequests[newRequest.first]->equals(*newRequest.second)) {
-                logger.debug((format("Key '%s' identical to the previous one. Skipping.") % newRequest.first).str());
+                logger.debug("Key '%s' identical to the previous one. Skipping.", newRequest.first.c_str());
             } else {
-                logger.debug((format("Key '%s' differs from previous state's one. Adding.") % newRequest.first).str());
+                logger.debug("Key '%s' differs from previous state's one. Adding.", newRequest.first.c_str());
                 diff[newRequest.first] = newRequest.second;
             }
         }
@@ -154,7 +147,7 @@ void bridge::InterfaceManager::syncWithDevice(BridgeSyncFunction syncFunction) {
     if (killSwitchActive) {
         for (auto &r : interface->getRequestMap()) {
             if (r.second->isKillSwitchDependent()) {
-                logger.debug((format("Removing key '%s' because kill switch is active.") % r.first).str());
+                logger.debug("Removing key '%s' because kill switch is active.", r.first.c_str());
                 diff.erase(r.first);
                 previousRequests.erase(r.first);
             }
