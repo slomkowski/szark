@@ -1,11 +1,6 @@
 #include "utils.hpp"
 #include "GripperImageSource.hpp"
 
-#include <opencv2/opencv.hpp>
-#include <boost/format.hpp>
-
-#include  <utility>
-
 using namespace camera;
 
 WALLAROO_REGISTER(GripperImageSource);
@@ -39,7 +34,7 @@ cv::Mat camera::GripperImageSource::getImage(bool drawHud) {
     bool newLeftIsFaster = leftFps > rightFps;
 
     if (newLeftIsFaster != leftCameraIsFaster) {
-        logger.debug((boost::format("Set %s camera as faster.") % (newLeftIsFaster ? "left" : "right")).str());
+        logger.debug("Set %s camera as faster.", (newLeftIsFaster ? "left" : "right"));
     }
 
     leftCameraIsFaster = newLeftIsFaster;
@@ -71,7 +66,7 @@ cv::Mat camera::GripperImageSource::getImage(bool drawHud) {
         result = im3;
     });
 
-    logger.info((boost::format("Combined image in %u us.") % us).str());
+    logger.info("Combined image in %u us.", us);
 
     if (drawHud) {
         result = hudPainter->drawContent(result, std::make_pair(leftFrameNo, rightFrameNo));

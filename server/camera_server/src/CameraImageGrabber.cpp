@@ -44,14 +44,13 @@ void ImageGrabber::Init() {
     setVideoCaptureProperty(CV_CAP_PROP_FRAME_WIDTH, "width");
     setVideoCaptureProperty(CV_CAP_PROP_FRAME_HEIGHT, "height");
 
-    logger.notice((format("Set '%s' frame size to %dx%d.") % prefix
-                   % videoCapture->get(CV_CAP_PROP_FRAME_WIDTH)
-                   % videoCapture->get(CV_CAP_PROP_FRAME_HEIGHT)).str());
+    logger.notice("Set '%s' frame size to %dx%d.", prefix.c_str(), videoCapture->get(CV_CAP_PROP_FRAME_WIDTH),
+                  videoCapture->get(CV_CAP_PROP_FRAME_HEIGHT));
 
     grabberThread.reset(new std::thread(&ImageGrabber::grabberThreadFunction, this));
     int result = pthread_setname_np(grabberThread->native_handle(), (prefix + "ImgGrab").c_str());
     if (result != 0) {
-        logger.error((format("Cannot set thread name: %s.") % strerror(result)).str());
+        logger.error("Cannot set thread name: %s.", strerror(result));
     }
 
     logger.notice("Instance created.");
@@ -99,7 +98,7 @@ void ImageGrabber::grabberThreadFunction() {
         double fps = captureTimesAvgBuffer.size() * 1000.0 /
                      (std::accumulate(captureTimesAvgBuffer.begin(), captureTimesAvgBuffer.end(), 0));
 
-        logger.info((format("Captured frame no %d in %d ms (%2.1f fps).") % currentFrameNo % elapsedTime % fps).str());
+        logger.info("Captured frame no %d in %d ms (%2.1f fps).", currentFrameNo, elapsedTime, fps);
 
         dataMutex.lock();
         this->currentFrame = frame;
@@ -132,7 +131,7 @@ void ImageGrabber::setVideoCaptureProperty(int prop, std::string confName) {
 //				% path % val % readVal).str());
 //	}
 
-    logger.info((format("Set property '%s' to value %d.") % path % val).str());
+    logger.info("Set property '%s' to value %d.", path.c_str(), val);
 }
 
 static int xioctl(int fd, int request, void *arg) {
@@ -340,7 +339,7 @@ namespace camera {
             grabberThread.reset(new std::thread(&Video4LinuxImageGrabber::grabberThreadFunction, this));
             int result = pthread_setname_np(grabberThread->native_handle(), (prefix + "ImgGrab").c_str());
             if (result != 0) {
-                logger.error((format("Cannot set thread name: %s.") % strerror(result)).str());
+                logger.error("Cannot set thread name: %s.", strerror(result));
             }
 
             logger.notice("Instance created.");
@@ -389,8 +388,7 @@ namespace camera {
                 double fps = captureTimesAvgBuffer.size() * 1000.0 /
                              (std::accumulate(captureTimesAvgBuffer.begin(), captureTimesAvgBuffer.end(), 0));
 
-                logger.info((format("Captured frame no %d in %d ms (%2.1f fps).") % currentFrameNo % elapsedTime %
-                             fps).str());
+                logger.info("Captured frame no %d in %d ms (%2.1f fps).", currentFrameNo, elapsedTime, fps);
 
                 cv::Mat frame;
 
@@ -404,8 +402,7 @@ namespace camera {
                     logger.debug("Mat: height: %d, width: %d.", frame.rows, frame.cols);
                 });
 
-                logger.info((format(
-                        "Converted frame %d from UYUV to RGB in %d us.") % currentFrameNo % elapsedTime).str());
+                logger.info("Converted frame %d from UYUV to RGB in %d us.", currentFrameNo, elapsedTime);
 
                 checkedXioctl(fd, VIDIOC_QBUF, &v4l2_buf, "error during querying buffer");
 

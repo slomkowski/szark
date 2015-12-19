@@ -25,7 +25,7 @@ unsigned int camera::OpenCvJpegEncoder::encodeImage(cv::Mat inputImage,
         cv::imencode(".jpg", inputImage, buffer, jpegEncoderParameters);
     });
 
-    logger.info((boost::format("Converted image to JPEG in %u us.") % us).str());
+    logger.info("Converted image to JPEG in %u us.", us);
 
     if (buffer.size() > maxOutputLength) {
         throw std::runtime_error("encoded JPEG greater than the available buffer");

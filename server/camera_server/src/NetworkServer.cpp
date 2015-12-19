@@ -42,7 +42,7 @@ void NetworkServer::Init() {
 
     recvBuffer.reset(new char[RECEIVED_DATA_MAX_LENGTH]);
 
-    logger.notice((format("Opening listener socket with port %u.") % port).str());
+    logger.notice("Opening listener socket with port %u.", port);
 
     system::error_code err;
     udpSocket.open(udp::v4());
@@ -77,8 +77,7 @@ void camera::NetworkServer::doReceive() {
 
                 bool drawHud = string(recvBuffer.get(), bytesReceived) == "HUD";
 
-                logger.info((format("Received request %s HUD.") %
-                             (drawHud ? "with" : "without")).str());
+                logger.info("Received request %s HUD.", (drawHud ? "with" : "without"));
 
                 auto img = imageSource->getImage(drawHud);
 
@@ -92,7 +91,7 @@ void camera::NetworkServer::doReceive() {
                             (format("not whole file sent (%u < %u)") % sentBytes % encodedLength).str());
                 }
 
-                logger.info((format("Sent file (%u bytes).") % encodedLength).str());
+                logger.info("Sent file (%u bytes).", encodedLength);
 
                 doReceive();
             });
