@@ -1,45 +1,42 @@
-#ifndef CONFIGURATION_HPP_
-#define CONFIGURATION_HPP_
+#pragma once
+
+#include <wallaroo/registered.h>
+
+#include <boost/noncopyable.hpp>
 
 #include <string>
 #include <stdexcept>
 
-#include <boost/noncopyable.hpp>
-
-#include <wallaroo/registered.h>
-
 namespace common {
-	namespace config {
+    namespace config {
 
-		class ConfigException : public std::runtime_error {
-		public:
-			ConfigException(const std::string &message)
-					: std::runtime_error(message) {
-			}
-		};
+        class ConfigException : public std::runtime_error {
+        public:
+            ConfigException(const std::string &message)
+                    : std::runtime_error(message) {
+            }
+        };
 
-		struct ConfigurationImpl;
+        struct ConfigurationImpl;
 
-		class Configuration : boost::noncopyable, public wallaroo::Device {
-		public:
-			Configuration();
+        class Configuration : boost::noncopyable, public wallaroo::Device {
+        public:
+            Configuration();
 
-			Configuration(const std::string fileName);
+            Configuration(const std::string fileName);
 
-			Configuration(const std::vector<std::string> fileNames);
+            Configuration(const std::vector<std::string> fileNames);
 
-			~Configuration();
+            ~Configuration();
 
-			int getInt(const std::string &property);
+            int getInt(const std::string &property);
 
-			bool getBool(const std::string &property);
+            bool getBool(const std::string &property);
 
-			std::string getString(const std::string &property);
+            std::string getString(const std::string &property);
 
-		private:
-			ConfigurationImpl *impl;
-		};
-	}
+        private:
+            ConfigurationImpl *impl;
+        };
+    }
 }
-
-#endif /* CONFIGURATION_HPP_ */

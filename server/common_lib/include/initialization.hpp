@@ -1,13 +1,10 @@
-#ifndef _INITIALIZATION_HPP_
-#define _INITIALIZATION_HPP_
+#pragma once
 
 #include <string>
 #include <vector>
 
 namespace common {
-	namespace init {
-		std::vector<std::string> initializeProgram(int argc, char *argv[], std::string banner);
-	}
+    namespace init {
+        std::vector<std::string> initializeProgram(int argc, char *argv[], std::string banner);
+    }
 }
-
-#endif

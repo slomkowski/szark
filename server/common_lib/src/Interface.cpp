@@ -1,18 +1,18 @@
+#include "Interface.hpp"
+#include "DataHolder.hpp"
+#include "convert.hpp"
+
+#include "usb-commands.hpp"
+
+#include <boost/algorithm/string.hpp>
+#include <boost/format.hpp>
+
 #include <cstdint>
 #include <cmath>
 #include <vector>
 #include <map>
 #include <algorithm>
 #include <memory>
-
-#include <boost/algorithm/string.hpp>
-#include <boost/format.hpp>
-
-#include "Interface.hpp"
-#include "DataHolder.hpp"
-#include "convert.hpp"
-
-#include "usb-commands.hpp"
 
 using namespace std;
 using namespace boost;

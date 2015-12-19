@@ -11,25 +11,25 @@
  *	published by the Free Software Foundation.
  */
 
-#include <boost/test/unit_test.hpp>
-
 #include "Configuration.hpp"
+
+#include <boost/test/unit_test.hpp>
 
 using namespace common;
 
 BOOST_AUTO_TEST_CASE(ConfigurationTest_Run) {
-	auto config = new config::Configuration();
+    auto config = new config::Configuration();
 
-	BOOST_CHECK_THROW(config->getInt("invalid_int"), config::ConfigException);
-	BOOST_CHECK_THROW(config->getBool("invalid_bool"), config::ConfigException);
-	BOOST_CHECK_THROW(config->getString("invalid_string"), config::ConfigException);
+    BOOST_CHECK_THROW(config->getInt("invalid_int"), config::ConfigException);
+    BOOST_CHECK_THROW(config->getBool("invalid_bool"), config::ConfigException);
+    BOOST_CHECK_THROW(config->getString("invalid_string"), config::ConfigException);
 
-	int port = config->getInt("szark.server.NetServer.port");
+    int port = config->getInt("szark.server.NetServer.port");
 
-	BOOST_TEST_MESSAGE(std::string("port: ") + std::to_string(port));
+    BOOST_TEST_MESSAGE(std::string("port: ") + std::to_string(port));
 
-	// TODO zrobić unit testa
+    // TODO zrobić unit testa
 
-	delete config;
+    delete config;
 }
 

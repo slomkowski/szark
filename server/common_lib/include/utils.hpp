@@ -10,8 +10,8 @@
  *	under the terms of the GNU General Public License version 3 as
  *	published by the Free Software Foundation.
  */
-#ifndef UTILS_HPP_
-#define UTILS_HPP_
+
+#pragma once
 
 #include <functional>
 #include <chrono>
@@ -20,32 +20,32 @@
 #include <sstream>
 
 namespace common {
-	namespace utils {
+    namespace utils {
 
 /**
 * Measure the execution time of the function.
 * @param func function object (pointer or lambda expression) matching the format void function()
 * @return number of microseconds
 */
-		template<typename TimeUnit>
-		int measureTime(std::function<void()> func) {
-			using std::chrono::duration_cast;
-			using std::chrono::high_resolution_clock;
+        template<typename TimeUnit>
+        int measureTime(std::function<void()> func) {
+            using std::chrono::duration_cast;
+            using std::chrono::high_resolution_clock;
 
-			auto timerBegin = high_resolution_clock::now();
+            auto timerBegin = high_resolution_clock::now();
 
-			func();
+            func();
 
-			auto timerEnd = high_resolution_clock::now();
+            auto timerEnd = high_resolution_clock::now();
 
-			return duration_cast<TimeUnit>(timerEnd - timerBegin).count();
-		}
+            return duration_cast<TimeUnit>(timerEnd - timerBegin).count();
+        }
 
 /**
 * Gets the formatted date&time string with milliseconds.
 * @return timestamp in format: 21:31:42.150
 */
-		std::string getTimestamp();
+        std::string getTimestamp();
 
 /**
 * Takes the vector of type given and returns the string with given format:
@@ -53,22 +53,20 @@ namespace common {
 * @param data vector of type T
 * @return
 */
-		template<typename T>
-		std::string toString(std::vector<T> &data) {
-			std::stringstream out;
+        template<typename T>
+        std::string toString(std::vector<T> &data) {
+            std::stringstream out;
 
-			out << "{";
+            out << "{";
 
-			for (T &elem : data) {
-				out << std::dec << (int) elem << ",";
-			}
+            for (T &elem : data) {
+                out << std::dec << (int) elem << ",";
+            }
 
-			out << "}";
+            out << "}";
 
-			return out.str();
-		}
+            return out.str();
+        }
 
-	}
+    }
 }
-
-#endif /* UTILS_HPP_ */

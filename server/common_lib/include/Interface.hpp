@@ -1,15 +1,14 @@
-#ifndef INTERFACE_HPP_
-#define INTERFACE_HPP_
+#pragma once
 
-#include <string>
-#include <map>
-#include <memory>
+#include "DataHolder.hpp"
 
 #include <boost/noncopyable.hpp>
 #include <boost/circular_buffer.hpp>
 #include <log4cpp/Category.hh>
 
-#include "DataHolder.hpp"
+#include <string>
+#include <map>
+#include <memory>
 
 namespace common {
     namespace bridge {
@@ -561,5 +560,3 @@ namespace common {
         };
     }
 }
-
-#endif
