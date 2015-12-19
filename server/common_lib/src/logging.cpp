@@ -9,8 +9,6 @@
 #include <boost/property_tree/ini_parser.hpp>
 #include <boost/algorithm/string.hpp>
 
-#include <map>
-
 
 static std::map<std::string, log4cpp::Priority::PriorityLevel> priorities = {
         {"debug",  log4cpp::Priority::DEBUG},

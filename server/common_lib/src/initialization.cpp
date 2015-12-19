@@ -3,15 +3,9 @@
 
 #include "initialization.hpp"
 
-#include <wallaroo/catalog.h>
 #include <boost/program_options.hpp>
 #include <boost/format.hpp>
 #include <boost/filesystem.hpp>
-
-#include <vector>
-#include <algorithm>
-#include <iostream>
-#include <cstdlib>
 
 using namespace std;
 namespace po = boost::program_options;

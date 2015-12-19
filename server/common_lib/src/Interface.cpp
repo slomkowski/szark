@@ -1,18 +1,9 @@
 #include "Interface.hpp"
-#include "DataHolder.hpp"
 #include "convert.hpp"
 
 #include "usb-commands.hpp"
 
 #include <boost/algorithm/string.hpp>
-#include <boost/format.hpp>
-
-#include <cstdint>
-#include <cmath>
-#include <vector>
-#include <map>
-#include <algorithm>
-#include <memory>
 
 using namespace std;
 using namespace boost;
@@ -176,13 +167,13 @@ void bridge::Interface::MotorClass::SingleMotor::setSpeed(unsigned int speed) {
     if (speed <= MOTOR_DRIVER_MAX_SPEED) {
         programmedSpeed = speed;
     } else {
-        logger.warn((format("Trying to set greater speed for %s than max: %d.") % devToString(motor) % speed).str());
+        logger.warn("Trying to set greater speed for %s than max: %d.", devToString(motor).c_str(), speed);
         programmedSpeed = MOTOR_DRIVER_MAX_SPEED;
     }
 
     createMotorState();
 
-    logger.info((format("Setting speed of %s to %d.") % devToString(motor) % (int) programmedSpeed).str());
+    logger.info("Setting speed of %s to %d.", devToString(motor).c_str(), (int) programmedSpeed);
 }
 
 void bridge::Interface::MotorClass::SingleMotor::setDirection(Direction dir) {
@@ -190,7 +181,7 @@ void bridge::Interface::MotorClass::SingleMotor::setDirection(Direction dir) {
 
     createMotorState();
 
-    logger.info((format("Setting direction of %s to %s.") % devToString(motor) % directionToString(dir)).str());
+    logger.info("Setting direction of %s to %s.", devToString(motor).c_str(), directionToString(dir).c_str());
 }
 
 void bridge::Interface::MotorClass::brake() {
@@ -262,9 +253,8 @@ void bridge::Interface::ArmClass::SingleJoint::setSpeed(unsigned int speed) {
     if (speed <= ARM_DRIVER_MAX_SPEED) {
         effectiveSpeed = speed;
     } else {
-        logger.warn(
-                (format("Trying to set greater speed for %s than max: %d.") % devToString(joint) %
-                 ARM_DRIVER_MAX_SPEED).str());
+        logger.warn("Trying to set greater speed for %s than max: %d.",
+                    devToString(joint).c_str(), ARM_DRIVER_MAX_SPEED);
         effectiveSpeed = ARM_DRIVER_MAX_SPEED;
     }
 
@@ -272,7 +262,7 @@ void bridge::Interface::ArmClass::SingleJoint::setSpeed(unsigned int speed) {
 
     createJointState();
 
-    logger.info((format("Setting speed of %s to %d.") % devToString(joint) % (int) effectiveSpeed).str());
+    logger.info("Setting speed of %s to %d.", devToString(joint).c_str(), (int) effectiveSpeed);
 }
 
 void bridge::Interface::ArmClass::SingleJoint::setDirection(Direction direction) {
@@ -289,7 +279,7 @@ void bridge::Interface::ArmClass::SingleJoint::setDirection(Direction direction)
 
     createJointState();
 
-    logger.info((format("Setting direction of %s to %s.") % devToString(joint) % directionToString(direction)).str());
+    logger.info("Setting direction of %s to %s.", devToString(joint).c_str(), directionToString(direction).c_str());
 }
 
 void bridge::Interface::ArmClass::SingleJoint::setPosition(unsigned int position) {
@@ -303,9 +293,8 @@ void bridge::Interface::ArmClass::SingleJoint::setPosition(unsigned int position
     if (position <= ARM_DRIVER_MAX_POSITION[joint]) {
         effectivePos = position;
     } else {
-        logger.warn(
-                (format("Trying to set greater position for %s than max: %d.") % devToString(joint)
-                 % ARM_DRIVER_MAX_POSITION[joint]).str());
+        logger.warn("Trying to set greater position for %s than max: %d.",
+                    devToString(joint).c_str(), ARM_DRIVER_MAX_POSITION[joint]);
         effectivePos = ARM_DRIVER_MAX_POSITION[joint];
     }
 
@@ -316,7 +305,7 @@ void bridge::Interface::ArmClass::SingleJoint::setPosition(unsigned int position
 
     createJointState();
 
-    logger.info((format("Setting position of %s to %d.") % devToString(joint) % (int) effectivePos).str());
+    logger.info("Setting position of %s to %d.", devToString(joint).c_str(), (int) effectivePos);
 }
 
 void bridge::Interface::ArmClass::brake() {
@@ -466,7 +455,7 @@ unsigned int bridge::Interface::MotorClass::SingleMotor::updateFields(USBCommand
 
     power = state->speed;
 
-    logger.info((format("Updating state motor %s power: %d.") % devToString(motorNo) % (int) power).str());
+    logger.info("Updating state motor %s power: %d.", devToString(motorNo).c_str(), (int) power);
 
     return sizeof(USBCommands::motor::SpecificMotorState);
 }
@@ -511,10 +500,8 @@ unsigned int bridge::Interface::ArmClass::SingleJoint::updateFields(USBCommands:
     speed = state->speed;
     position = state->position;
 
-    logger.info(
-            (format("Updating state joint %s: direction: %s, position: %d.") % devToString(jointNo)
-             % directionToString(direction)
-             % (int) position).str());
+    logger.info("Updating state joint %s: direction: %s, position: %d.",
+                devToString(jointNo).c_str(), directionToString(direction).c_str(), (int) position);
 
     return sizeof(USBCommands::arm::JointState);
 }
@@ -545,11 +532,10 @@ unsigned int bridge::Interface::updateFields(USBCommands::Request request, uint8
     rawCurrent.push_back(curr);
     rawVoltage.push_back(volt);
 
-    logger.debug((format("Raw voltage: %u, raw current: %u.") % volt % curr).str());
+    logger.debug("Raw voltage: %u, raw current: %u.", volt, curr);
 
-    logger.info(
-            (format("Updating state: kill switch: %d (by hardware: %d), battery: %.1fV, %.1fA") % killSwitchActive
-             % killSwitchCausedByHardware % getVoltage() % getCurrent()).str());
+    logger.info("Updating state: kill switch: %d (by hardware: %d), battery: %.1fV, %.1fA.",
+                killSwitchActive, killSwitchCausedByHardware, getVoltage(), getCurrent());
 
     return sizeof(USBCommands::bridge::State);
 }
