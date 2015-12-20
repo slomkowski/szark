@@ -1,17 +1,13 @@
 #include "Configuration.hpp"
 #include "Painter.hpp"
-#include "Interface.hpp"
+#include "SharedInterfaceProvider.hpp"
 
 #include <opencv2/opencv.hpp>
 #include <wallaroo/registered.h>
 #include <boost/format.hpp>
-#include <boost/interprocess/managed_shared_memory.hpp>
 #include <log4cpp/Category.hh>
 
-
 using namespace cv;
-
-const string SHARED_MEM_SEGMENT_NAME = "SZARK_Interface_shm";
 
 namespace camera {
     const Scalar GREEN(0x55, 0xD4, 0x19);
@@ -21,24 +17,8 @@ namespace camera {
     public:
         HeadHudPainter()
                 : logger(log4cpp::Category::getInstance("ImageGrabber")),
-                  config("config", RegistrationToken()) {
-
-            using namespace boost::interprocess;
-
-            logger.info("Opening shared memory for Interface with name '%s'.", SHARED_MEM_SEGMENT_NAME.c_str());
-
-            try {
-                memorySegment.reset(
-                        new managed_shared_memory(open_only, SHARED_MEM_SEGMENT_NAME.c_str()));
-
-                size_t interfaceSize;
-                std::tie(this->interface, interfaceSize) = memorySegment->find<common::bridge::Interface>("Interface");
-
-            } catch (interprocess_exception &exp) {
-                logger.error("Cannot initialize shared object Interface: %s. HUD will be disabled.", exp.what());
-                interface = nullptr;
-            }
-
+                  config("config", RegistrationToken()),
+                  interfaceProvider("interfaceProvider", RegistrationToken()) {
             logger.notice("Instance created.");
         }
 
@@ -58,7 +38,7 @@ namespace camera {
             putText(rawImage, (boost::format("%.1f") % fps).str().c_str(),
                     Point(30, 63), FONT_HERSHEY_SIMPLEX, 1, RED, 4);
 
-            if (interface != nullptr) {
+            if (interfaceProvider->isValid()) {
                 drawMotorInfo(rawImage);
             }
 
@@ -68,8 +48,7 @@ namespace camera {
     private:
         log4cpp::Category &logger;
         wallaroo::Plug<common::config::Configuration> config;
-        std::unique_ptr<boost::interprocess::managed_shared_memory> memorySegment;
-        common::bridge::Interface *interface = nullptr;
+        wallaroo::Plug<common::bridge::InterfaceProvider> interfaceProvider;
 
         void drawMotorInfo(cv::Mat &img) {
             using namespace common::bridge;
@@ -87,8 +66,8 @@ namespace camera {
                                 (float) motor.getSpeed() / MOTOR_DRIVER_MAX_SPEED, invert);
             };
 
-            drawMotorSpeed(interface->motor.left, Point(-120, 0), true);
-            drawMotorSpeed(interface->motor.right, Point(20, 0), false);
+            drawMotorSpeed(interfaceProvider->getInterface()->motor.left, Point(-120, 0), true);
+            drawMotorSpeed(interfaceProvider->getInterface()->motor.right, Point(20, 0), false);
         }
 
         void drawProgressBar(cv::Mat &img,

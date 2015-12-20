@@ -17,7 +17,7 @@ int main(int argc, char *argv[]) {
     c.Create("conf", "Configuration", configFiles);
 //    c.Create("imgGrabber", "ImageGrabber", string("head"));
     c.Create("imgGrabber", "Video4LinuxImageGrabber", string("head"));
-
+    c.Create("ifaceProvider", "InterfaceProvider", false);
     c.Create("imgCombiner", "HeadImageSource");
     c.Create("hudPainter", "HeadHudPainter");
     c.Create("srv", "NetworkServer");
@@ -32,6 +32,7 @@ int main(int argc, char *argv[]) {
 
         use("imgGrabber").as("cameraGrabber").of("imgCombiner");
         use("hudPainter").as("hudPainter").of("imgCombiner");
+        use("ifaceProvider").as("interfaceProvider").of("hudPainter");
         use("imgCombiner").as("imageSource").of("srv");
         use("jpegEncoder").as("jpegEncoder").of("srv");
     };

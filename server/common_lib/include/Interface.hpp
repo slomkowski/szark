@@ -113,6 +113,15 @@ namespace common {
             virtual ~Interface();
 
             /**
+             * Returns true if Interface object is constructed. Destructor sets it to false.
+             * This can be useful when Interface is stored in shared memory. Other processes
+             * have the way to known whether the object was destroyed.
+             */
+            bool isObjectActive() {
+                return objectActive;
+            }
+
+            /**
             * Returns actual main power supply voltage in volts.
             */
             double
@@ -176,9 +185,9 @@ namespace common {
             bool
                     isButtonPressed(Button button);
 
-        private
+        private:
+            bool objectActive;
 
-            :
             RequestMap requests;
 
             /**
@@ -192,9 +201,7 @@ namespace common {
 
             Category &logger;
 
-            boost
-
-            ::circular_buffer<unsigned int> rawVoltage;
+            boost::circular_buffer<unsigned int> rawVoltage;
             boost::circular_buffer<unsigned int> rawCurrent;
 
             std::string lcdText;

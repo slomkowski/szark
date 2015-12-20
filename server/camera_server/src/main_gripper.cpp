@@ -16,6 +16,7 @@ int main(int argc, char *argv[]) {
     c.Create("conf", "Configuration", configFiles);
     c.Create("imgGrabberLeft", "ImageGrabber", string("left"));
     c.Create("imgGrabberRight", "ImageGrabber", string("right"));
+    c.Create("ifaceProvider", "InterfaceProvider", false);
     c.Create("imgCombiner", "GripperImageSource");
     c.Create("hudPainter", "GripperHudPainter");
     c.Create("srv", "NetworkServer");

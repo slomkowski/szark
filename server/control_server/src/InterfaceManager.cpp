@@ -1,8 +1,6 @@
 #include "InterfaceManager.hpp"
 #include "utils.hpp"
 
-#include <boost/interprocess/managed_shared_memory.hpp>
-
 #include <thread>
 #include <queue>
 
@@ -14,33 +12,18 @@ using namespace common::bridge;
 
 WALLAROO_REGISTER(InterfaceManager);
 
-const string SHARED_MEM_SEGMENT_NAME = "SZARK_Interface_shm";
-const int SHARED_MEM_SIZE = 0xffff;
-
 bridge::InterfaceManager::InterfaceManager()
         : logger(log4cpp::Category::getInstance("InterfaceManager")),
-          config("config", RegistrationToken()) {
+          config("config", RegistrationToken()),
+          interfaceProvider("interfaceProvider", RegistrationToken()) {
+}
 
-    shared_memory_object::remove(SHARED_MEM_SEGMENT_NAME.c_str());
-
-    logger.info("Allocating %d bytes of shared memory with name '%s'.", SHARED_MEM_SIZE,
-                SHARED_MEM_SEGMENT_NAME.c_str());
-
-    memorySegment = new managed_shared_memory(create_only, SHARED_MEM_SEGMENT_NAME.c_str(), SHARED_MEM_SIZE);
-
-    interface = memorySegment->construct<Interface>("Interface")();
-
+void InterfaceManager::Init() {
+    interface = interfaceProvider->getInterface();
     logger.notice("Instance created.");
 }
 
 bridge::InterfaceManager::~InterfaceManager() {
-
-    memorySegment->destroy_ptr(interface);
-
-    delete memorySegment;
-
-    shared_memory_object::remove(SHARED_MEM_SEGMENT_NAME.c_str());
-
     logger.notice("Instance destroyed.");
 }
 
@@ -159,3 +142,4 @@ void bridge::InterfaceManager::syncWithDevice(BridgeSyncFunction syncFunction) {
 Interface &InterfaceManager::iface() {
     return *interface;
 }
+

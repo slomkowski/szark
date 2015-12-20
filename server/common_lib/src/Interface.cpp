@@ -28,7 +28,8 @@ enum Priority {
 };
 
 bridge::Interface::Interface()
-        : logger(log4cpp::Category::getInstance("Interface")),
+        : objectActive(false),
+          logger(log4cpp::Category::getInstance("Interface")),
           rawVoltage(VOLTAGE_ARRAY_SIZE),
           rawCurrent(CURRENT_ARRAY_SIZE),
           expander(requests, logger),
@@ -51,9 +52,13 @@ bridge::Interface::Interface()
     killSwitchActive = true;
     killSwitchCausedByHardware = false;
     setKillSwitch(true);
+
+    objectActive = true;
 }
 
 bridge::Interface::~Interface() {
+    objectActive = false;
+
     delete &arm;
     delete &motor;
     delete &expander;

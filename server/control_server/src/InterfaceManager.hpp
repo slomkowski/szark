@@ -3,6 +3,7 @@
 #include "Interface.hpp"
 #include "USBCommunicator.hpp"
 #include "Configuration.hpp"
+#include "SharedInterfaceProvider.hpp"
 
 #include <boost/interprocess/managed_shared_memory.hpp>
 #include <wallaroo/registered.h>
@@ -38,13 +39,15 @@ namespace bridge {
 
         wallaroo::Plug<common::config::Configuration> config;
 
-        boost::interprocess::managed_shared_memory *memorySegment;
+        wallaroo::Plug<common::bridge::InterfaceProvider> interfaceProvider;
 
         common::bridge::Interface *interface;
 
         std::pair<std::vector<uint8_t>, std::vector<USBCommands::Request>> generateGetRequests(bool killSwitchActive);
 
         common::bridge::RequestMap previousRequests;
+
+        virtual void Init();
 
         common::bridge::RequestMap generateDifferentialRequests(bool killSwitchActive);
     };
