@@ -14,6 +14,10 @@ namespace common {
     namespace bridge {
         using namespace log4cpp;
 
+        constexpr uint8_t MOTOR_DRIVER_MAX_SPEED = 11;
+
+        constexpr unsigned int ARM_DRIVER_MAX_SPEED = 255;
+
         /**
         * Direction used by motor driver and arm driver.
         */

@@ -85,13 +85,17 @@ void camera::NetworkServer::doReceive() {
 
                 auto encodedLength = jpegEncoder->encodeImage(img, buffer.data(), buffer.size());
 
-                auto sentBytes = udpSocket.send_to(asio::buffer(buffer.data(), encodedLength), endpoint);
-                if (sentBytes != encodedLength) {
-                    throw NetworkException(
-                            (format("not whole file sent (%u < %u)") % sentBytes % encodedLength).str());
-                }
+                try {
+                    auto sentBytes = udpSocket.send_to(asio::buffer(buffer.data(), encodedLength), endpoint);
 
-                logger.info("Sent file (%u bytes).", encodedLength);
+                    if (sentBytes != encodedLength) {
+                        logger.error("Not whole file sent (%u < %u).", sentBytes, encodedLength);
+                    } else {
+                        logger.info("Sent file (%u bytes).", encodedLength);
+                    }
+                } catch (boost::system::system_error &err) {
+                    logger.error("send_to error: %s", err.what());
+                }
 
                 doReceive();
             });

@@ -26,7 +26,7 @@ set(SOURCES
         src/CameraImageGrabber.cpp src/CameraImageGrabber.hpp
         src/Painter.hpp
         src/GripperHudPainter.cpp src/GripperHudPainter.hpp
-        src/HeadHudPainter.cpp src/HeadHudPainter.hpp
+        src/HeadHudPainter.cpp
         src/ImageSource.hpp
         src/GripperImageSource.cpp src/GripperImageSource.hpp
         src/HeadImageSource.cpp src/HeadImageSource.hpp

@@ -15,7 +15,6 @@ using namespace common::bridge;
 WALLAROO_REGISTER(InterfaceManager);
 
 const string SHARED_MEM_SEGMENT_NAME = "SZARK_Interface_shm";
-const string SHARED_MEM_INTERFACE_OBJECT_NAME = "Interface";
 const int SHARED_MEM_SIZE = 0xffff;
 
 bridge::InterfaceManager::InterfaceManager()
@@ -24,11 +23,12 @@ bridge::InterfaceManager::InterfaceManager()
 
     shared_memory_object::remove(SHARED_MEM_SEGMENT_NAME.c_str());
 
-    logger.info("Allocating %d bytes of shared memory with name '%s'.", SHARED_MEM_SIZE, SHARED_MEM_SEGMENT_NAME);
+    logger.info("Allocating %d bytes of shared memory with name '%s'.", SHARED_MEM_SIZE,
+                SHARED_MEM_SEGMENT_NAME.c_str());
 
     memorySegment = new managed_shared_memory(create_only, SHARED_MEM_SEGMENT_NAME.c_str(), SHARED_MEM_SIZE);
 
-    interface = memorySegment->construct<Interface>(SHARED_MEM_INTERFACE_OBJECT_NAME.c_str())();
+    interface = memorySegment->construct<Interface>("Interface")();
 
     logger.notice("Instance created.");
 }

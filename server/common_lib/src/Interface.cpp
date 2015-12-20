@@ -12,9 +12,6 @@ using namespace common;
 constexpr int VOLTAGE_ARRAY_SIZE = 5;
 constexpr int CURRENT_ARRAY_SIZE = 5;
 
-constexpr uint8_t MOTOR_DRIVER_MAX_SPEED = 11;
-constexpr unsigned int ARM_DRIVER_MAX_SPEED = 255;
-
 static map<bridge::Joint, unsigned int> ARM_DRIVER_MAX_POSITION = {
         {bridge::Joint::ELBOW,    105},
         {bridge::Joint::SHOULDER, 79},
