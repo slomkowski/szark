@@ -1,8 +1,7 @@
 #include "NetServer.hpp"
-
+#include "IoServiceProvider.hpp"
 #include "initialization.hpp"
 
-#include <memory>
 #include <wallaroo/catalog.h>
 
 using namespace wallaroo;
@@ -19,6 +18,7 @@ int main(int argc, char *argv[]) {
     c.Create("ifaceProvider", "InterfaceProvider", true);
     c.Create("ifaceMgr", "InterfaceManager");
     c.Create("wifiInfo", "WifiInfo");
+    c.Create("ioServiceProvider", "IoServiceProvider");
     c.Create("netServer", "NetServer");
     c.Create("reqQueuer", "RequestQueuer");
     c.Create("bridgeProc", "BridgeProcessor");
@@ -29,6 +29,7 @@ int main(int argc, char *argv[]) {
         use("conf").as("config").of("netServer");
         use("conf").as("config").of("osProc");
         use("conf").as("config").of("ifaceMgr");
+        use("ioServiceProvider").as("ioServiceProvider").of("netServer");
         use("ifaceProvider").as("interfaceProvider").of("ifaceMgr");
         use("ifaceMgr").as("interfaceManager").of("bridgeProc");
         use("wifiInfo").as("wifiInfo").of("osProc");
@@ -41,9 +42,7 @@ int main(int argc, char *argv[]) {
     c.CheckWiring();
     c.Init();
 
-    auto netServer = std::shared_ptr<processing::INetServer>(c["netServer"]);
-
-    netServer->run();
+    std::shared_ptr<common::IoServiceProvider>(c["ioServiceProvider"])->run();
 
     return 0;
 }

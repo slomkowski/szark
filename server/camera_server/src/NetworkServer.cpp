@@ -18,23 +18,20 @@ camera::NetworkServer::NetworkServer()
           config("config", RegistrationToken()),
           imageSource("imageSource", RegistrationToken()),
           jpegEncoder("jpegEncoder", RegistrationToken()),
-          ioService(),
-          port(0),
-          udpSocket(ioService) {
-}
+          ioServiceProvider("ioServiceProvider", RegistrationToken()),
+          port(0) { }
 
 camera::NetworkServer::NetworkServer(int port)
         : logger(log4cpp::Category::getInstance("NetworkServer")),
           config("config", RegistrationToken()),
           imageSource("imageSource", RegistrationToken()),
           jpegEncoder("jpegEncoder", RegistrationToken()),
-          ioService(),
-          port(port),
-          udpSocket(ioService) {
-}
+          ioServiceProvider("ioServiceProvider", RegistrationToken()),
+          port(port) { }
 
 void NetworkServer::Init() {
     using boost::asio::ip::udp;
+    udpSocket.reset(new udp::socket(ioServiceProvider->getIoService()));
 
     if (port == 0) {
         port = config->getInt("NetworkServer.port");
@@ -45,8 +42,8 @@ void NetworkServer::Init() {
     logger.notice("Opening listener socket with port %u.", port);
 
     system::error_code err;
-    udpSocket.open(udp::v4());
-    udpSocket.bind(udp::endpoint(udp::v4(), port), err);
+    udpSocket->open(udp::v4());
+    udpSocket->bind(udp::endpoint(udp::v4(), port), err);
     if (err) {
         throw NetworkException("error at binding socket: " + err.message());
     }
@@ -54,19 +51,15 @@ void NetworkServer::Init() {
     doReceive();
 
     logger.notice("Instance created.");
+    logger.notice("Starting UDP listener.");
 }
 
 camera::NetworkServer::~NetworkServer() {
     logger.notice("Instance destroyed.");
 }
 
-void camera::NetworkServer::run() {
-    logger.notice("Starting UDP listener.");
-    ioService.run();
-}
-
 void camera::NetworkServer::doReceive() {
-    udpSocket.async_receive_from(
+    udpSocket->async_receive_from(
             asio::buffer(recvBuffer.get(), RECEIVED_DATA_MAX_LENGTH),
             endpoint,
             [this](boost::system::error_code ec, std::size_t bytesReceived) {
@@ -86,7 +79,7 @@ void camera::NetworkServer::doReceive() {
                 auto encodedLength = jpegEncoder->encodeImage(img, buffer.data(), buffer.size());
 
                 try {
-                    auto sentBytes = udpSocket.send_to(asio::buffer(buffer.data(), encodedLength), endpoint);
+                    auto sentBytes = udpSocket->send_to(asio::buffer(buffer.data(), encodedLength), endpoint);
 
                     if (sentBytes != encodedLength) {
                         logger.error("Not whole file sent (%u < %u).", sentBytes, encodedLength);

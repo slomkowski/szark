@@ -57,13 +57,16 @@ BOOST_AUTO_TEST_CASE(NetServerTest_Run) {
 
     catalog.Create("rq", "RequestQueuerMock");
     catalog.Create("netServer", "NetServer");
+    catalog.Create("ioServiceProvider", "IoServiceProvider");
+
     wallaroo::use(catalog["rq"]).as("requestQueuer").of(catalog["netServer"]);
+    wallaroo::use(catalog["ioServiceProvider"]).as("ioServiceProvider").of(catalog["netServer"]);
 
     catalog.CheckWiring();
 
-    auto netServer = shared_ptr<INetServer>(catalog["netServer"]);
+    auto ioServiceProvider = std::shared_ptr<common::IoServiceProvider>(catalog["ioServiceProvider"]);
 
-    netServer->run();
+    ioServiceProvider->getIoService().run();
 
     this_thread::sleep_for(chrono::milliseconds(500));
 

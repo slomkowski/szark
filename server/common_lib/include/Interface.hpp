@@ -85,19 +85,16 @@ namespace common {
             * @return number of bytes taken by the message without request. If the request doesn't match,
             * return 0.
             */
-            virtual
-            unsigned int updateFields(USBCommands::Request request, uint8_t *data) = 0;
+            virtual unsigned int updateFields(USBCommands::Request request, uint8_t *data) = 0;
 
             /**
             * This method is called when kill switch is activated. It should set internal variables to 0, STOP etc. because
             * the external device is made into reset state.
             */
-            virtual
-            void onKillSwitchActivated() = 0;
+            virtual void onKillSwitchActivated() = 0;
 
         public:
-            virtual ~
-            IExternalDevice() = default;
+            virtual ~IExternalDevice() = default;
 
             friend class Interface;
         };
@@ -124,23 +121,19 @@ namespace common {
             /**
             * Returns actual main power supply voltage in volts.
             */
-            double
-                    getVoltage();
+            double getVoltage();
 
             /**
             * Returns actual overall current draw from the battery in amperes.
             */
-            double
-                    getCurrent();
+            double getCurrent();
 
             /**
             * Returns the text previously sent to on-board LCD display. It doesn't return actual LCD text
             * since bridge doesn't support this functionality. If you haven't send any text previously,
             * empty string will be returned.
             */
-            std
-            ::
-            string getLCDText() {
+            std::string getLCDText() {
                 return lcdText;
             }
 
@@ -149,8 +142,7 @@ namespace common {
             * be ignored. Every time you send the new text the old one will be cleared. You can't srequestsy append
             * to the existing one.
             */
-            void
-                    setLCDText(std::string text);
+            void setLCDText(std::string text);
 
             /**
             * Set the state of the kill switch feature. Activating kill switch forces immediate stop of all devices
@@ -158,32 +150,26 @@ namespace common {
             * The kill switch may be activated by hardware by pressing emergency stop button on the SHARK device.
             * In this case you have to reactivate it as well. It will fail if the kill switch is still toggled.
             */
-            void
-                    setKillSwitch(bool active);
+            void setKillSwitch(bool active);
 
             /**
             * Returns the kill switch state.
             */
-            bool
-            isKillSwitchActive() {
-                return
-                        killSwitchActive;
+            bool isKillSwitchActive() {
+                return killSwitchActive;
             }
 
             /**
             * Returns true if the kill switch was activated by pressing it.
             */
-            bool
-            isKillSwitchCausedByHardware() {
-                return
-                        killSwitchCausedByHardware;
+            bool isKillSwitchCausedByHardware() {
+                return killSwitchCausedByHardware;
             }
 
             /**
             * Returns true if the given button is pressed.
             */
-            bool
-                    isButtonPressed(Button button);
+            bool isButtonPressed(Button button);
 
         private:
             bool objectActive;
@@ -194,8 +180,7 @@ namespace common {
             * If the kill switch is requested by the user or detected by hardware, this function should be called.
             * It basically resets interface getter structures to match the actual state.
             */
-            void
-                    updateStructsWhenKillSwitchActivated();
+            void updateStructsWhenKillSwitchActivated();
 
             const std::string KILLSWITCH_STRING = "killswitch";
 
@@ -235,8 +220,7 @@ namespace common {
                     * Sets the motor speed.
                     * @param speed value from 0 to 12
                     */
-                    void
-                            setSpeed(unsigned int speed);
+                    void setSpeed(unsigned int speed);
 
                     /**
                     * Returns the actual PWM power delivered to the motor.
@@ -251,16 +235,14 @@ namespace common {
                     * @return Direction::FORWARD, Direction::BACKWARD or Direction::STOP.
                     */
                     Direction getDirection() {
-                        return
-                                direction;
+                        return direction;
                     }
 
                     /**
                     * Sets the motor's direction.
                     * @param direction one of Direction::FORWARD, Direction::BACKWARD or Direction::STOP.
                     */
-                    void
-                            setDirection(Direction dir);
+                    void setDirection(Direction dir);
 
                 private:
                     SingleMotor(RequestMap &requests, Motor motor, Category &logger)
@@ -459,36 +441,26 @@ namespace common {
 
             class ExpanderClass : public IExternalDevice {
             public:
-                class Device : boost::
-                               noncopyable {
+                class Device : boost::noncopyable {
                 public:
-                    void setEnabled(bool
-
-                                    enabled);
+                    void setEnabled(bool enabled);
 
                     bool isEnabled();
 
                 private:
                     Device(RequestMap &requests, uint8_t &expanderByte, ExpanderDevice device,
                            Category &logger)
-                            :
-                            logger(logger),
-                            requests(requests),
-                            device(device),
-                            expanderByte
-
-                                    (expanderByte) {
+                            : logger(logger),
+                              requests(requests),
+                              device(device),
+                              expanderByte(expanderByte) {
                     }
 
-                    Category &
-                            logger;
-                    RequestMap &
-                            requests;
+                    Category &logger;
+                    RequestMap &requests;
 
                     ExpanderDevice device;
-                    uint8_t &
-
-                            expanderByte;
+                    uint8_t &expanderByte;
 
                     friend class ExpanderClass;
                 };
@@ -497,58 +469,34 @@ namespace common {
                 Device lightLeft;
                 Device lightRight;
 
-                Device &operator[](
-
-                        ExpanderDevice
-                        device) {
+                Device &operator[](ExpanderDevice device) {
                     return *devices.at(device);
                 }
 
             private:
                 ExpanderClass(RequestMap &requests, Category &logger)
-                        : lightCamera(
-                        requests, expanderByte, ExpanderDevice::LIGHT_CAMERA, logger),
+                        : lightCamera(requests, expanderByte, ExpanderDevice::LIGHT_CAMERA, logger),
                           lightLeft(requests, expanderByte, ExpanderDevice::LIGHT_LEFT, logger),
-                          lightRight(requests,
-                                     expanderByte,
-                                     ExpanderDevice::LIGHT_RIGHT, logger),
-                          logger
-                                  (logger) {
+                          lightRight(requests, expanderByte, ExpanderDevice::LIGHT_RIGHT, logger),
+                          logger(logger) {
                     devices = {
-                            {
-                                    ExpanderDevice::LIGHT_CAMERA, &lightCamera},
-                            {
-
-                                    ExpanderDevice::LIGHT_LEFT,   &lightLeft},
-                            {       ExpanderDevice::LIGHT_RIGHT,  &
-
-                                                                          lightRight}
+                            {ExpanderDevice::LIGHT_CAMERA, &lightCamera},
+                            {ExpanderDevice::LIGHT_LEFT,   &lightLeft},
+                            {ExpanderDevice::LIGHT_RIGHT,  &lightRight}
                     };
                 }
 
-                unsigned int
+                unsigned int updateFields(USBCommands::Request request, uint8_t *data);
 
-                        updateFields(USBCommands::Request
+                void onKillSwitchActivated();
 
-                                     request, uint8_t *data);
-
-                void
-
-                        onKillSwitchActivated();
-
-                Category &
-
-                        logger;
+                Category &logger;
 
                 uint8_t expanderByte = 0;
 
-                std::map<
-                        ExpanderDevice,
+                std::map<ExpanderDevice, Device *> devices;
 
-                        Device *> devices;
-
-                friend
-                class Interface;
+                friend class Interface;
             };
 
         public:

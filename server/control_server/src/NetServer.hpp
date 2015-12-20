@@ -2,6 +2,7 @@
 
 #include "RequestQueuer.hpp"
 #include "Configuration.hpp"
+#include "IoServiceProvider.hpp"
 
 #include <log4cpp/Category.hh>
 #include <wallaroo/registered.h>
@@ -25,8 +26,6 @@ namespace processing {
     public:
         virtual void sendResponse(long id, std::string response, bool transmit) = 0;
 
-        virtual void run() = 0;
-
         virtual ~INetServer() = default;
     };
 
@@ -35,8 +34,6 @@ namespace processing {
         NetServer();
 
         NetServer(unsigned int port);
-
-        virtual void run();
 
         virtual void sendResponse(long id, std::string response, bool transmit);
 
@@ -47,14 +44,14 @@ namespace processing {
 
         wallaroo::Plug<common::config::Configuration> config;
         wallaroo::Plug<IRequestQueuer> reqQueuer;
+        wallaroo::Plug<common::IoServiceProvider> ioServiceProvider;
 
-        boost::asio::io_service ioService;
-        boost::asio::ip::udp::socket udpSocket;
+        std::unique_ptr<boost::asio::ip::udp::socket> udpSocket;
         boost::asio::ip::udp::endpoint recvSenderEndpoint;
 
         std::unordered_map<long, boost::asio::ip::udp::endpoint> sendersMap;
 
-        short udpPort;
+        unsigned int udpPort;
 
         std::unique_ptr<char> buff;
 

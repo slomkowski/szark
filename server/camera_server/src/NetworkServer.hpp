@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Configuration.hpp"
+#include "IoServiceProvider.hpp"
 #include "GripperImageSource.hpp"
 #include "JpegEncoder.hpp"
 
@@ -23,8 +24,6 @@ namespace camera {
 
     class INetworkServer : boost::noncopyable {
     public:
-        virtual void run() = 0;
-
         virtual ~INetworkServer() = default;
     };
 
@@ -36,18 +35,16 @@ namespace camera {
 
         ~NetworkServer();
 
-        virtual void run();
-
     private:
         log4cpp::Category &logger;
 
         wallaroo::Plug<common::config::Configuration> config;
         wallaroo::Plug<camera::IImageSource> imageSource;
         wallaroo::Plug<camera::IJpegEncoder> jpegEncoder;
+        wallaroo::Plug<common::IoServiceProvider> ioServiceProvider;
 
-        boost::asio::io_service ioService;
         int port;
-        boost::asio::ip::udp::socket udpSocket;
+        std::unique_ptr<boost::asio::ip::udp::socket> udpSocket;
         boost::asio::ip::udp::endpoint endpoint;
 
         std::unique_ptr<char> recvBuffer;

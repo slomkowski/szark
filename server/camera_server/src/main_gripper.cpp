@@ -1,4 +1,4 @@
-#include "NetworkServer.hpp"
+#include "IoServiceProvider.hpp"
 #include "initialization.hpp"
 
 #include <wallaroo/catalog.h>
@@ -19,6 +19,7 @@ int main(int argc, char *argv[]) {
     c.Create("ifaceProvider", "InterfaceProvider", false);
     c.Create("imgCombiner", "GripperImageSource");
     c.Create("hudPainter", "GripperHudPainter");
+    c.Create("ioServiceProvider", "IoServiceProvider");
     c.Create("srv", "NetworkServer");
     c.Create("jpegEncoder", "OpenCvJpegEncoder");
 
@@ -29,6 +30,7 @@ int main(int argc, char *argv[]) {
         use("conf").as("config").of("hudPainter");
         use("conf").as("config").of("srv");
 
+        use("ioServiceProvider").as("ioServiceProvider").of("srv");
         use("imgGrabberLeft").as("leftCameraGrabber").of("imgCombiner");
         use("imgGrabberRight").as("rightCameraGrabber").of("imgCombiner");
         use("hudPainter").as("hudPainter").of("imgCombiner");
@@ -39,9 +41,7 @@ int main(int argc, char *argv[]) {
     c.CheckWiring();
     c.Init();
 
-    shared_ptr<camera::INetworkServer> srv = c["srv"];
-
-    srv->run();
+    std::shared_ptr<common::IoServiceProvider>(c["ioServiceProvider"])->run();
 
     return 0;
 }

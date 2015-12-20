@@ -24,6 +24,7 @@ set(src
         src/DataHolder.cpp include/DataHolder.hpp
         src/Interface.cpp include/Interface.hpp
         src/SharedInterfaceProvider.cpp include/SharedInterfaceProvider.hpp
+        src/IoServiceProvider.cpp include/IoServiceProvider.hpp
         src/convert.cpp include/convert.hpp
         src/initialization.cpp include/initialization.hpp
         src/logging.cpp include/logging.hpp

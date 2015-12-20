@@ -23,13 +23,14 @@ BOOST_AUTO_TEST_CASE(NetworkServerTest_Run) {
     wallaroo::Catalog catalog;
     catalog.Create("dummyImageSource", "DummyImageSource");
     catalog.Create("srv", "NetworkServer");
+    catalog.Create("ioServiceProvider", "IoServiceProvider");
+
+    wallaroo::use(catalog["ioServiceProvider"]).as("ioServiceProvider").of(catalog["srv"]);
     wallaroo::use(catalog["dummyImageSource"]).as("imageSource").of(catalog["srv"]);
 
     catalog.CheckWiring();
 
-    shared_ptr<INetworkServer> srv = catalog["srv"];
-
-    srv->run();
+    std::shared_ptr<common::IoServiceProvider>(catalog["ioServiceProvider"])->run();
 
     BOOST_CHECK_EQUAL(1, 1);
 }

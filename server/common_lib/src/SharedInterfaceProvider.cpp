@@ -49,7 +49,9 @@ namespace common {
             }
 
             void closeSharedMemory() {
-                memorySegment->destroy_ptr(interface);
+                if (master) {
+                    memorySegment->destroy_ptr(interface);
+                }
 
                 delete memorySegment;
 

@@ -58,10 +58,6 @@ bridge::Interface::Interface()
 
 bridge::Interface::~Interface() {
     objectActive = false;
-
-    delete &arm;
-    delete &motor;
-    delete &expander;
 }
 
 double bridge::Interface::getVoltage() {
