@@ -257,8 +257,8 @@ public class MainWindowLogic extends MainWindowView {
 			status.motors.setSpeedLimit(5);
 		} else if (obj == speedLimit8) {
 			status.motors.setSpeedLimit(8);
-		} else if (obj == speedLimit12) {
-			status.motors.setSpeedLimit(12);
+		} else if (obj == speedLimit11) {
+			status.motors.setSpeedLimit(11);
 		}
 
 		if (obj == mWinMoveCtrl) {

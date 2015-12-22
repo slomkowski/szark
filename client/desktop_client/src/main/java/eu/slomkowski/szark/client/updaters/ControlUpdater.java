@@ -3,19 +3,26 @@ package eu.slomkowski.szark.client.updaters;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import eu.slomkowski.szark.client.HardcodedConfiguration;
+import eu.slomkowski.szark.client.gson.LocalTimeTypeAdapter;
 import eu.slomkowski.szark.client.gui.MainWindowLogic;
 import eu.slomkowski.szark.client.pad.PadStatusUpdater;
 import eu.slomkowski.szark.client.status.CalibrationStatus;
 import eu.slomkowski.szark.client.status.KillSwitchStatus;
 import eu.slomkowski.szark.client.status.Status;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.swing.*;
 import java.io.IOException;
 import java.net.*;
+import java.time.LocalTime;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class ControlUpdater extends SwingWorker<Void, Status> {
+    private Logger logger = LoggerFactory.getLogger(ControlUpdater.class);
+
     private final Gson gson;
     private final Status status;
     private final AtomicBoolean needToStop = new AtomicBoolean(false);
@@ -33,7 +40,10 @@ public class ControlUpdater extends SwingWorker<Void, Status> {
         this.status = status;
         this.padStatusUpdater = padStatusUpdater;
 
-        this.gson = new GsonBuilder().excludeFieldsWithoutExposeAnnotation().create();
+        this.gson = new GsonBuilder()
+                .excludeFieldsWithoutExposeAnnotation()
+                .registerTypeAdapter(LocalTime.class, new LocalTimeTypeAdapter())
+                .create();
 
         try {
             address = new InetSocketAddress(host, HardcodedConfiguration.CONTROL_SERVER_PORT);
@@ -46,6 +56,7 @@ public class ControlUpdater extends SwingWorker<Void, Status> {
     }
 
     private synchronized Status updateCycle() throws HardwareStoppedException, IOException {
+        status.setTimestamp(LocalTime.now());
         String output = gson.toJson(status);
 
         DatagramPacket packet = new DatagramPacket(output.getBytes(), output.length(), address);
@@ -56,7 +67,7 @@ public class ControlUpdater extends SwingWorker<Void, Status> {
         try {
             socket.receive(receivedPacket);
         } catch (final SocketTimeoutException e) {
-            System.err.println("Control receive timeout");
+            logger.warn("Control receive timeout.");
             status.setSerial(0);
             return null;
         }
@@ -68,6 +79,11 @@ public class ControlUpdater extends SwingWorker<Void, Status> {
 
         if (status.getSerial() == receivedStatus.getSerial()) {
             responseMatchesRequest = true;
+
+            long to = ChronoUnit.MILLIS.between(status.getTimestamp(), receivedStatus.getTimestamp());
+            long from = ChronoUnit.MILLIS.between(receivedStatus.getTimestamp(), LocalTime.now());
+
+            logger.debug("Trip: to {} ms, from {} ms.", to, from);
         }
 
         if (receivedStatus.joints.getCalStatus() == CalibrationStatus.IN_PROGRESS) {
@@ -109,17 +125,14 @@ public class ControlUpdater extends SwingWorker<Void, Status> {
                 }
 
             } catch (final IOException e) {
-                SwingUtilities.invokeAndWait(new Runnable() {
-                    @Override
-                    public void run() {
-                        mainWindow.performControlServerDisconnection(false);
+                SwingUtilities.invokeAndWait(() -> {
+                    mainWindow.performControlServerDisconnection(false);
 
-                        JOptionPane.showMessageDialog(mainWindow,
-                                String.format("Control communication error: %s. Disabling control.",
-                                        e.getMessage() != null ? e.getMessage() : e.getClass().getName()),
-                                "Network error",
-                                JOptionPane.ERROR_MESSAGE);
-                    }
+                    JOptionPane.showMessageDialog(mainWindow,
+                            String.format("Control communication error: %s. Disabling control.",
+                                    e.getMessage() != null ? e.getMessage() : e.getClass().getName()),
+                            "Network error",
+                            JOptionPane.ERROR_MESSAGE);
                 });
 
                 return null;

@@ -47,7 +47,7 @@ abstract class MainWindowView extends JFrame implements ActionListener, ChangeLi
 
 	protected final JRadioButton speedLimit5 = new JRadioButton("5     ");
 	protected final JRadioButton speedLimit8 = new JRadioButton("8      ");
-	protected final JRadioButton speedLimit12 = new JRadioButton("12");
+	protected final JRadioButton speedLimit11 = new JRadioButton("11");
 
 	protected final ArmVisualizer armVis = new ArmVisualizer();
 
@@ -202,13 +202,13 @@ abstract class MainWindowView extends JFrame implements ActionListener, ChangeLi
 		p.setBorder(new TitledBorder("Motors speed limiter:"));
 		p.add(speedLimit5);
 		p.add(speedLimit8);
-		p.add(speedLimit12);
+		p.add(speedLimit11);
 		mot.add(p, BorderLayout.SOUTH);
 		// group radio buttons
 		final ButtonGroup speedBg = new ButtonGroup();
 		speedBg.add(speedLimit5);
 		speedBg.add(speedLimit8);
-		speedBg.add(speedLimit12);
+		speedBg.add(speedLimit11);
 
 		lowerPanel.add(mot);
 
@@ -264,7 +264,7 @@ abstract class MainWindowView extends JFrame implements ActionListener, ChangeLi
 		lightCamera.addActionListener(this);
 
 		speedLimit8.addActionListener(this);
-		speedLimit12.addActionListener(this);
+		speedLimit11.addActionListener(this);
 		speedLimit5.addActionListener(this);
 
 		cameraSelectGripper.addActionListener(this);
@@ -298,7 +298,7 @@ abstract class MainWindowView extends JFrame implements ActionListener, ChangeLi
 		// speed limiter radios
 		speedLimit5.setEnabled(enable);
 		speedLimit8.setEnabled(enable);
-		speedLimit12.setEnabled(enable);
+		speedLimit11.setEnabled(enable);
 
 		// joints
 		statArmElbowSpeed.setEnabled(enable);

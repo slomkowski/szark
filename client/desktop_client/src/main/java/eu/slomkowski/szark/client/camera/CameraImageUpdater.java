@@ -1,6 +1,8 @@
 package eu.slomkowski.szark.client.camera;
 
 import eu.slomkowski.szark.client.HardcodedConfiguration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
@@ -13,163 +15,162 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class CameraImageUpdater extends JLabel {
+    private Logger logger = LoggerFactory.getLogger(CameraImageUpdater.class);
 
-	private UpdateTask updateTask = null;
-	private CameraType chosenCameraType = CameraType.HEAD;
-	private InetSocketAddress address;
-	private DatagramSocket socket;
-	private boolean enabled = false;
-	private CameraMode cameraMode = CameraMode.HUD;
+    private UpdateTask updateTask = null;
+    private CameraType chosenCameraType = CameraType.HEAD;
+    private InetSocketAddress address;
+    private DatagramSocket socket;
+    private boolean enabled = false;
+    private CameraMode cameraMode = CameraMode.HUD;
 
-	public void setChosenCameraType(CameraType chosenCameraType) {
-		if (chosenCameraType == this.chosenCameraType && enabled) {
-			return;
-		}
+    public void setChosenCameraType(CameraType chosenCameraType) {
+        if (chosenCameraType == this.chosenCameraType && enabled) {
+            return;
+        }
 
-		if (enabled) {
-			disableCameraView();
-		}
-		this.chosenCameraType = chosenCameraType;
-		enableCameraView(address.getAddress());
-	}
+        if (enabled) {
+            disableCameraView();
+        }
+        this.chosenCameraType = chosenCameraType;
+        enableCameraView(address.getAddress());
+    }
 
-	public void setCameraMode(CameraMode cameraMode) {
-		this.cameraMode = cameraMode;
-	}
+    public void setCameraMode(CameraMode cameraMode) {
+        this.cameraMode = cameraMode;
+    }
 
-	public void enableCameraView(InetAddress host) {
-		setIcon(null);
+    public void enableCameraView(InetAddress host) {
+        setIcon(null);
 
-		try {
-			socket = new DatagramSocket();
-			socket.setSoTimeout(HardcodedConfiguration.CAMERA_TIMEOUT);
+        try {
+            socket = new DatagramSocket();
+            socket.setSoTimeout(HardcodedConfiguration.CAMERA_TIMEOUT);
 
-			int port = chosenCameraType == CameraType.GRIPPER
-					? HardcodedConfiguration.CAMERA_PORT_GRIPPER
-					: HardcodedConfiguration.CAMERA_PORT_HEAD;
+            int port = chosenCameraType == CameraType.GRIPPER
+                    ? HardcodedConfiguration.CAMERA_PORT_GRIPPER
+                    : HardcodedConfiguration.CAMERA_PORT_HEAD;
 
-			this.address = new InetSocketAddress(host, port);
-		} catch (final IOException e) {
-			e.printStackTrace();
-			System.exit(1);
-		}
+            this.address = new InetSocketAddress(host, port);
+        } catch (final IOException e) {
+            e.printStackTrace();
+            System.exit(1);
+        }
 
-		enabled = true;
+        enabled = true;
 
-		updateTask = new UpdateTask();
-		updateTask.execute();
-	}
+        updateTask = new UpdateTask();
+        updateTask.execute();
+    }
 
-	public void disableCameraView() {
-		if (updateTask != null) {
-			updateTask.stopTask();
+    public void disableCameraView() {
+        if (updateTask != null) {
+            updateTask.stopTask();
 
-			updateTask = null;
-		}
+            updateTask = null;
+        }
 
-		enabled = false;
-		setIcon(new ImageIcon(getClass().getResource(HardcodedConfiguration.DEFAULT_LOGO)));
-		repaint();
-	}
+        enabled = false;
+        setIcon(new ImageIcon(getClass().getResource(HardcodedConfiguration.DEFAULT_LOGO)));
+        repaint();
+    }
 
-	@Override
-	protected void paintComponent(Graphics g) {
-		super.paintComponent(g);
+    @Override
+    protected void paintComponent(Graphics g) {
+        super.paintComponent(g);
 
-		if (updateTask == null) {
-			return;
-		}
+        if (updateTask == null) {
+            return;
+        }
 
-		g.drawImage(updateTask.getBufferedImage(), 0, 0, this);
-	}
+        g.drawImage(updateTask.getBufferedImage(), 0, 0, this);
+    }
 
-	private class UpdateTask extends SwingWorker<Void, BufferedImage> {
-		private byte[] inputBuffer = new byte[100000];
-		private AtomicBoolean needToStop = new AtomicBoolean(false);
-		private BufferedImage image = null;
+    private class UpdateTask extends SwingWorker<Void, BufferedImage> {
+        private byte[] inputBuffer = new byte[100000];
+        private AtomicBoolean needToStop = new AtomicBoolean(false);
+        private BufferedImage image = null;
 
-		@Override
-		protected Void doInBackground() throws Exception {
-			while (!needToStop.get()) {
-				try {
-					DatagramPacket sendPacket = new DatagramPacket(cameraMode.getMnemonic().getBytes(),
-							cameraMode.getMnemonic().length(), address);
+        @Override
+        protected Void doInBackground() throws Exception {
+            while (!needToStop.get()) {
+                try {
+                    DatagramPacket sendPacket = new DatagramPacket(cameraMode.getMnemonic().getBytes(),
+                            cameraMode.getMnemonic().length(), address);
 
-					socket.send(sendPacket);
+                    socket.send(sendPacket);
 
-					DatagramPacket receivedPacket = new DatagramPacket(inputBuffer, inputBuffer.length);
+                    DatagramPacket receivedPacket = new DatagramPacket(inputBuffer, inputBuffer.length);
 
-					try {
-						socket.receive(receivedPacket);
-					} catch (final SocketTimeoutException e) {
-						System.err.println("Camera receive timeout");
-						continue;
-					}
+                    try {
+                        socket.receive(receivedPacket);
+                    } catch (final SocketTimeoutException e) {
+                        logger.warn("Camera receive timeout.");
+                        continue;
+                    }
 
-					if (needToStop.get()) {
-						break;
-					}
+                    if (needToStop.get()) {
+                        break;
+                    }
 
-					ByteArrayInputStream stream = new ByteArrayInputStream(inputBuffer, 0, receivedPacket.getLength());
-					BufferedImage img = ImageIO.read(stream);
-					stream.close();
+                    ByteArrayInputStream stream = new ByteArrayInputStream(inputBuffer, 0, receivedPacket.getLength());
+                    BufferedImage img = ImageIO.read(stream);
+                    stream.close();
 
-					if (img == null) {
-						throw new Exception("could not parse image. Probably malformed response.");
-					}
+                    if (img == null) {
+                        throw new Exception("could not parse image. Probably malformed response.");
+                    }
 
-					publish(img);
+                    publish(img);
 
-				} catch (final Exception e) {
-					e.printStackTrace();
+                } catch (final Exception e) {
+                    e.printStackTrace();
 
-					SwingUtilities.invokeLater(new Runnable() {
-						@Override
-						public void run() {
-							disableCameraView();
+                    SwingUtilities.invokeLater(() -> {
+                        disableCameraView();
 
-							JOptionPane.showMessageDialog(CameraImageUpdater.this,
-									String.format("Camera communication error: %s. Disabling camera.",
-											e.getMessage() != null ? e.getMessage() : e.getClass().getName()),
-									"Network error",
-									JOptionPane.ERROR_MESSAGE);
-						}
-					});
+                        JOptionPane.showMessageDialog(CameraImageUpdater.this,
+                                String.format("Camera communication error: %s. Disabling camera.",
+                                        e.getMessage() != null ? e.getMessage() : e.getClass().getName()),
+                                "Network error",
+                                JOptionPane.ERROR_MESSAGE);
+                    });
 
-					return null;
-				}
-			}
+                    return null;
+                }
+            }
 
-			return null;
-		}
+            return null;
+        }
 
-		@Override
-		protected void done() {
-			try {
-				socket.close();
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-		}
+        @Override
+        protected void done() {
+            try {
+                socket.close();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
 
-		@Override
-		protected void process(List<BufferedImage> chunks) {
-			image = chunks.get(chunks.size() - 1);
-			CameraImageUpdater.this.repaint();
-		}
+        @Override
+        protected void process(List<BufferedImage> chunks) {
+            image = chunks.get(chunks.size() - 1);
+            CameraImageUpdater.this.setSize(image.getWidth(), image.getHeight());
+            CameraImageUpdater.this.repaint();
+        }
 
-		public void stopTask() {
-			needToStop.set(true);
+        public void stopTask() {
+            needToStop.set(true);
 
-			try {
-				this.get();
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-		}
+            try {
+                this.get();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
 
-		public BufferedImage getBufferedImage() {
-			return image;
-		}
-	}
+        public BufferedImage getBufferedImage() {
+            return image;
+        }
+    }
 }
