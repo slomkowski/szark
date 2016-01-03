@@ -3,6 +3,7 @@
 
 #include "usb-commands.hpp"
 
+#include <log4cpp/Category.hh>
 #include <boost/algorithm/string.hpp>
 
 using namespace std;
@@ -27,15 +28,16 @@ enum Priority {
     PRIORITY_LCD
 };
 
+static log4cpp::Category &logger = log4cpp::Category::getInstance("Interface");
+
 bridge::Interface::Interface(SharedRequestMapPtr requestMap)
         : IExternalDevice(requestMap),
           objectActive(false),
-          logger(log4cpp::Category::getInstance("Interface")),
           rawVoltage(VOLTAGE_ARRAY_SIZE),
           rawCurrent(CURRENT_ARRAY_SIZE),
-          expander(requests, logger),
-          motor(requests, logger),
-          arm(requests, logger) {
+          expander(requests),
+          motor(requests),
+          arm(requests) {
 
     rawVoltage.push_back(0);
     rawCurrent.push_back(0);
@@ -280,7 +282,8 @@ void bridge::Interface::ArmClass::SingleJoint::setDirection(Direction direction)
 
     createJointState();
 
-    logger.info("Setting direction of %s to %s.", devToString(joint).c_str(), directionToString(direction).c_str());
+    logger.info("Setting direction of %s to %s.", devToString(joint).c_str(),
+                directionToString(direction).c_str());
 }
 
 void bridge::Interface::ArmClass::SingleJoint::setPosition(unsigned int position) {

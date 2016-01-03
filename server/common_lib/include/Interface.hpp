@@ -9,16 +9,12 @@
 #include <boost/interprocess/allocators/allocator.hpp>
 #include <boost/interprocess/managed_shared_memory.hpp>
 
-#include <log4cpp/Category.hh>
-
 #include <string>
 #include <map>
 #include <memory>
 
 namespace common {
     namespace bridge {
-        using namespace log4cpp;
-
         constexpr uint8_t MOTOR_DRIVER_MAX_SPEED = 11;
 
         constexpr unsigned int ARM_DRIVER_MAX_SPEED = 255;
@@ -194,8 +190,6 @@ namespace common {
 
             const std::string KILLSWITCH_STRING = "killswitch";
 
-            Category &logger;
-
             boost::circular_buffer<unsigned int> rawVoltage;
             boost::circular_buffer<unsigned int> rawCurrent;
 
@@ -255,9 +249,8 @@ namespace common {
                     void setDirection(Direction dir);
 
                 private:
-                    SingleMotor(SharedRequestMapPtr requests, Motor motor, Category &logger)
+                    SingleMotor(SharedRequestMapPtr requests, Motor motor)
                             : IExternalDevice(requests),
-                              logger(logger),
                               motor(motor) {
                         direction = Direction::STOP;
                         programmedSpeed = 0;
@@ -276,7 +269,6 @@ namespace common {
 
                     void initStructure();
 
-                    Category &logger;
                     Motor motor;
 
                     Direction direction;
@@ -305,17 +297,14 @@ namespace common {
                 void brake();
 
             private:
-                MotorClass(SharedRequestMapPtr requests, Category &logger)
-                        : left(requests, Motor::LEFT, logger),
-                          right(requests, Motor::RIGHT, logger),
-                          logger(logger) {
+                MotorClass(SharedRequestMapPtr requests)
+                        : left(requests, Motor::LEFT),
+                          right(requests, Motor::RIGHT) {
                     motors = {
                             {Motor::LEFT,  &left},
                             {Motor::RIGHT, &right}
                     };
                 }
-
-                Category &logger;
 
                 std::map<Motor, SingleMotor *> motors;
 
@@ -352,10 +341,8 @@ namespace common {
                 private:
                     SingleJoint(SharedRequestMapPtr requests,
                                 Joint joint,
-                                Category &logger,
                                 ArmCalibrationStatus &calibrationStatus)
                             : IExternalDevice(requests),
-                              logger(logger),
                               joint(joint),
                               calibrationStatus(calibrationStatus) {
                         speed = 0;
@@ -378,7 +365,6 @@ namespace common {
                         return std::string("arm_") + std::to_string((int) joint);
                     }
 
-                    Category &logger;
                     Joint joint;
                     ArmCalibrationStatus &calibrationStatus;
 
@@ -412,12 +398,11 @@ namespace common {
                 }
 
             private:
-                ArmClass(SharedRequestMapPtr requests, Category &logger)
+                ArmClass(SharedRequestMapPtr requests)
                         : IExternalDevice(requests),
-                          shoulder(requests, Joint::SHOULDER, logger, calibrationStatus),
-                          elbow(requests, Joint::ELBOW, logger, calibrationStatus),
-                          gripper(requests, Joint::GRIPPER, logger, calibrationStatus),
-                          logger(logger) {
+                          shoulder(requests, Joint::SHOULDER, calibrationStatus),
+                          elbow(requests, Joint::ELBOW, calibrationStatus),
+                          gripper(requests, Joint::GRIPPER, calibrationStatus) {
 
                     joints = {
                             {Joint::ELBOW,    &elbow},
@@ -432,8 +417,6 @@ namespace common {
                 unsigned int updateFields(USBCommands::Request request, uint8_t *data);
 
                 void onKillSwitchActivated();
-
-                Category &logger;
 
                 std::map<Joint, SingleJoint *> joints;
 
@@ -453,15 +436,14 @@ namespace common {
                     bool isEnabled();
 
                 private:
-                    Device(SharedRequestMapPtr requests, ExpanderClass *expanderClass, ExpanderDevice device,
-                           Category &logger)
+                    Device(SharedRequestMapPtr requests,
+                           ExpanderClass *expanderClass,
+                           ExpanderDevice device)
                             : requests(requests),
-                              logger(logger),
                               device(device),
                               expanderClass(expanderClass) { }
 
                     SharedRequestMapPtr requests;
-                    Category &logger;
 
                     ExpanderDevice device;
                     ExpanderClass *expanderClass;
@@ -478,12 +460,11 @@ namespace common {
                 }
 
             private:
-                ExpanderClass(SharedRequestMapPtr requests, Category &logger)
+                ExpanderClass(SharedRequestMapPtr requests)
                         : IExternalDevice(requests),
-                          lightCamera(requests, this, ExpanderDevice::LIGHT_CAMERA, logger),
-                          lightLeft(requests, this, ExpanderDevice::LIGHT_LEFT, logger),
-                          lightRight(requests, this, ExpanderDevice::LIGHT_RIGHT, logger),
-                          logger(logger) {
+                          lightCamera(requests, this, ExpanderDevice::LIGHT_CAMERA),
+                          lightLeft(requests, this, ExpanderDevice::LIGHT_LEFT),
+                          lightRight(requests, this, ExpanderDevice::LIGHT_RIGHT) {
                     devices = {
                             {ExpanderDevice::LIGHT_CAMERA, &lightCamera},
                             {ExpanderDevice::LIGHT_LEFT,   &lightLeft},
@@ -494,8 +475,6 @@ namespace common {
                 unsigned int updateFields(USBCommands::Request request, uint8_t *data);
 
                 void onKillSwitchActivated();
-
-                Category &logger;
 
                 uint8_t expanderByte = 0;
 

@@ -1,5 +1,6 @@
 #include "SharedInterfaceProvider.hpp"
 
+#include <log4cpp/Category.hh>
 #include <boost/test/unit_test.hpp>
 #include <wallaroo/catalog.h>
 

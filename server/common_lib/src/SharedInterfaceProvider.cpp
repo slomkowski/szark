@@ -1,6 +1,6 @@
 #include "SharedInterfaceProvider.hpp"
 
-#include <boost/interprocess/managed_shared_memory.hpp>
+#include <log4cpp/Category.hh>
 
 namespace common {
     namespace bridge {
@@ -32,9 +32,7 @@ namespace common {
                                                                     SHARED_MEM_SIZE, (void *) SHARED_MEM_ADDR);
 
                     logger.info("Creating RequestMap object.");
-                    //allocInst.reset(new ShmemAllocator(memorySegment->get_segment_manager()));
                     allocInst.reset(new ShmemAllocator(memorySegment->get_segment_manager()));
-                    //ShmemAllocator allocInstf(memorySegment->get_segment_manager());
                     requestMap = memorySegment->construct<SharedRequestMap>("RequestMap")
                             (std::less<std::string>(), *allocInst);
 
