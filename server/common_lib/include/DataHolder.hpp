@@ -20,6 +20,11 @@ namespace common {
         class DataHolder {
         public:
             /**
+             * Creates empty request.
+             */
+            DataHolder();
+
+            /**
             * Creates single-byte request.
             * @param request
             * @param pr priority of the request
@@ -66,16 +71,6 @@ namespace common {
                        const std::vector<uint8_t> &vec);
 
             DataHolder &operator=(const DataHolder &dh);
-
-            /**
-            * Helper method, creates the \ref{DataHolder} instance and passes the arguments to the appropriate constructor.
-            * @param args
-            * @return shared_ptr to the \ref{DataHolder} instance.
-            */
-            template<typename ... ARGS>
-            static std::shared_ptr<DataHolder> create(ARGS ... args) {
-                return std::shared_ptr<DataHolder>(new DataHolder(args...));
-            }
 
             /**
             * Returns the contained data along with the request number.
@@ -138,8 +133,8 @@ namespace common {
 
         class DataHolderComparer {
         public:
-            bool operator()(std::shared_ptr<DataHolder> &lhs, std::shared_ptr<DataHolder> &rhs) const {
-                return lhs->getPriority() > rhs->getPriority();
+            bool operator()(DataHolder &lhs, DataHolder &rhs) const {
+                return lhs.getPriority() > rhs.getPriority();
             }
         };
     }

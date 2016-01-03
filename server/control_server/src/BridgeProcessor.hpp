@@ -40,7 +40,7 @@ namespace bridge {
         volatile bool finishCycleThread = false;
         volatile bool firstMaintenanceTask = true;
 
-        void Init();
+        void Init() override;
 
         void maintenanceThreadFunction();
 

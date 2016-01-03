@@ -42,6 +42,7 @@ enable_testing()
 
 set(test_src
         test/ConfigurationTest.cpp
+        test/SharedInterfaceProviderTest.cpp
         )
 
 add_executable(${TEST_EXECUTABLE} ${src} ${test_src} test/main.cpp)

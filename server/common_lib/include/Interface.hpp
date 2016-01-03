@@ -4,6 +4,11 @@
 
 #include <boost/noncopyable.hpp>
 #include <boost/circular_buffer.hpp>
+#include <boost/interprocess/offset_ptr.hpp>
+#include <boost/interprocess/containers/map.hpp>
+#include <boost/interprocess/allocators/allocator.hpp>
+#include <boost/interprocess/managed_shared_memory.hpp>
+
 #include <log4cpp/Category.hh>
 
 #include <string>
@@ -40,8 +45,7 @@ namespace common {
         /**
         * Motors of the motor driver.
         */
-        enum
-        class Motor {
+        enum class Motor {
             RIGHT = 'r', LEFT = 'l'
         };
         /**
@@ -49,14 +53,11 @@ namespace common {
         * and the joints moves respectively. If you send setPosition() command, the driver goes to positional
         * mode. You can go back to directional mode by sending setDirection() command. If you send calibrate()
         */
-        enum
-        class ArmDriverMode {
+        enum class ArmDriverMode {
             DIRECTIONAL, POSITIONAL, CALIBRATING
         };
 
-        enum
-
-        class ArmCalibrationStatus {
+        enum class ArmCalibrationStatus {
             NONE,
             IN_PROGRESS, DONE
         };
@@ -64,19 +65,26 @@ namespace common {
         * Devices connected to the I2C expander. The enum numbers must match the bit number of the pin the device
         * is connected.
         */
-        enum
-        class ExpanderDevice
+        enum class ExpanderDevice
                 : uint8_t {
             LIGHT_CAMERA = 4, LIGHT_LEFT = 2, LIGHT_RIGHT = 3
         };
-        typedef
 
-        std::map<std::string, std::shared_ptr<DataHolder>> RequestMap;
+        typedef std::pair<const std::string, DataHolder> ValueType;
+        typedef boost::interprocess::allocator<ValueType, boost::interprocess::fixed_managed_shared_memory::segment_manager>
+                ShmemAllocator;
+        typedef boost::interprocess::map<std::string, DataHolder, std::less<std::string>, ShmemAllocator> SharedRequestMap;
+        typedef std::map<const std::string, DataHolder> RequestMap;
 
-        class
+        typedef boost::interprocess::offset_ptr<SharedRequestMap> SharedRequestMapPtr;
 
-        IExternalDevice : boost::noncopyable {
+        class IExternalDevice : boost::noncopyable {
         private:
+            SharedRequestMapPtr requests;
+
+            IExternalDevice(SharedRequestMapPtr requests)
+                    : requests(requests) { }
+
             /**
             * This method is called when the device returns data requested by sending getters. Each device like arm driver
             * and motor driver classes implement it.
@@ -93,6 +101,11 @@ namespace common {
             */
             virtual void onKillSwitchActivated() = 0;
 
+            /**
+             * This is a convenience method to insert/update elements into requests map.
+             */
+            void insertRequest(std::string key, DataHolder value);
+
         public:
             virtual ~IExternalDevice() = default;
 
@@ -102,10 +115,9 @@ namespace common {
         /**
         * This class provides full interface to SHARK device. TODO write documentation for interface class
         */
-        class
-        Interface : public IExternalDevice {
+        class Interface : public IExternalDevice {
         public:
-            Interface();
+            Interface(SharedRequestMapPtr requestMap);
 
             virtual ~Interface();
 
@@ -173,8 +185,6 @@ namespace common {
 
         private:
             bool objectActive;
-
-            RequestMap requests;
 
             /**
             * If the kill switch is requested by the user or detected by hardware, this function should be called.
@@ -245,11 +255,10 @@ namespace common {
                     void setDirection(Direction dir);
 
                 private:
-                    SingleMotor(RequestMap &requests, Motor motor, Category &logger)
-                            :
-                            logger(logger),
-                            requests(requests),
-                            motor(motor) {
+                    SingleMotor(SharedRequestMapPtr requests, Motor motor, Category &logger)
+                            : IExternalDevice(requests),
+                              logger(logger),
+                              motor(motor) {
                         direction = Direction::STOP;
                         programmedSpeed = 0;
                         power = 0;
@@ -268,7 +277,6 @@ namespace common {
                     void initStructure();
 
                     Category &logger;
-                    RequestMap &requests;
                     Motor motor;
 
                     Direction direction;
@@ -297,11 +305,10 @@ namespace common {
                 void brake();
 
             private:
-                MotorClass(RequestMap &requests, Category &logger)
-                        :
-                        left(requests, Motor::LEFT, logger),
-                        right(requests, Motor::RIGHT, logger),
-                        logger(logger) {
+                MotorClass(SharedRequestMapPtr requests, Category &logger)
+                        : left(requests, Motor::LEFT, logger),
+                          right(requests, Motor::RIGHT, logger),
+                          logger(logger) {
                     motors = {
                             {Motor::LEFT,  &left},
                             {Motor::RIGHT, &right}
@@ -343,12 +350,12 @@ namespace common {
                     void setPosition(unsigned int position);
 
                 private:
-                    SingleJoint(RequestMap &requests,
+                    SingleJoint(SharedRequestMapPtr requests,
                                 Joint joint,
                                 Category &logger,
                                 ArmCalibrationStatus &calibrationStatus)
-                            : logger(logger),
-                              requests(requests),
+                            : IExternalDevice(requests),
+                              logger(logger),
                               joint(joint),
                               calibrationStatus(calibrationStatus) {
                         speed = 0;
@@ -372,7 +379,6 @@ namespace common {
                     }
 
                     Category &logger;
-                    RequestMap &requests;
                     Joint joint;
                     ArmCalibrationStatus &calibrationStatus;
 
@@ -406,12 +412,12 @@ namespace common {
                 }
 
             private:
-                ArmClass(RequestMap &requests, Category &logger)
-                        : shoulder(requests, Joint::SHOULDER, logger, calibrationStatus),
+                ArmClass(SharedRequestMapPtr requests, Category &logger)
+                        : IExternalDevice(requests),
+                          shoulder(requests, Joint::SHOULDER, logger, calibrationStatus),
                           elbow(requests, Joint::ELBOW, logger, calibrationStatus),
                           gripper(requests, Joint::GRIPPER, logger, calibrationStatus),
-                          logger(logger),
-                          requests(requests) {
+                          logger(logger) {
 
                     joints = {
                             {Joint::ELBOW,    &elbow},
@@ -430,7 +436,6 @@ namespace common {
                 Category &logger;
 
                 std::map<Joint, SingleJoint *> joints;
-                RequestMap &requests;
 
                 ArmDriverMode mode;
 
@@ -448,19 +453,18 @@ namespace common {
                     bool isEnabled();
 
                 private:
-                    Device(RequestMap &requests, uint8_t &expanderByte, ExpanderDevice device,
+                    Device(SharedRequestMapPtr requests, ExpanderClass *expanderClass, ExpanderDevice device,
                            Category &logger)
-                            : logger(logger),
-                              requests(requests),
+                            : requests(requests),
+                              logger(logger),
                               device(device),
-                              expanderByte(expanderByte) {
-                    }
+                              expanderClass(expanderClass) { }
 
+                    SharedRequestMapPtr requests;
                     Category &logger;
-                    RequestMap &requests;
 
                     ExpanderDevice device;
-                    uint8_t &expanderByte;
+                    ExpanderClass *expanderClass;
 
                     friend class ExpanderClass;
                 };
@@ -474,10 +478,11 @@ namespace common {
                 }
 
             private:
-                ExpanderClass(RequestMap &requests, Category &logger)
-                        : lightCamera(requests, expanderByte, ExpanderDevice::LIGHT_CAMERA, logger),
-                          lightLeft(requests, expanderByte, ExpanderDevice::LIGHT_LEFT, logger),
-                          lightRight(requests, expanderByte, ExpanderDevice::LIGHT_RIGHT, logger),
+                ExpanderClass(SharedRequestMapPtr requests, Category &logger)
+                        : IExternalDevice(requests),
+                          lightCamera(requests, this, ExpanderDevice::LIGHT_CAMERA, logger),
+                          lightLeft(requests, this, ExpanderDevice::LIGHT_LEFT, logger),
+                          lightRight(requests, this, ExpanderDevice::LIGHT_RIGHT, logger),
                           logger(logger) {
                     devices = {
                             {ExpanderDevice::LIGHT_CAMERA, &lightCamera},
@@ -504,7 +509,7 @@ namespace common {
             MotorClass motor;
             ArmClass arm;
 
-            RequestMap &getRequestMap() {
+            SharedRequestMapPtr getRequestMap() {
                 return requests;
             }
 

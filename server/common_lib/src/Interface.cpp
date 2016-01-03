@@ -27,8 +27,9 @@ enum Priority {
     PRIORITY_LCD
 };
 
-bridge::Interface::Interface()
-        : objectActive(false),
+bridge::Interface::Interface(SharedRequestMapPtr requestMap)
+        : IExternalDevice(requestMap),
+          objectActive(false),
           logger(log4cpp::Category::getInstance("Interface")),
           rawVoltage(VOLTAGE_ARRAY_SIZE),
           rawCurrent(CURRENT_ARRAY_SIZE),
@@ -93,7 +94,7 @@ void bridge::Interface::setLCDText(std::string text) {
 
     logger.info(string("Setting LCD text to: \"") + newString + "\"");
 
-    requests["lcdtext"] = DataHolder::create(USBCommands::BRIDGE_LCD_SET, PRIORITY_LCD, false, data);
+    insertRequest("lcdtext", DataHolder(USBCommands::BRIDGE_LCD_SET, PRIORITY_LCD, false, data));
 }
 
 void bridge::Interface::setKillSwitch(bool active) {
@@ -101,15 +102,17 @@ void bridge::Interface::setKillSwitch(bool active) {
         logger.info("Setting kill switch to active.");
         killSwitchActive = true;
         killSwitchCausedByHardware = false;
-        requests[KILLSWITCH_STRING] = DataHolder::create(USBCommands::BRIDGE_SET_KILLSWITCH, false,
-                                                         PRIORITY_KILL_SWITCH,
-                                                         USBCommands::bridge::ACTIVE);
+        insertRequest(KILLSWITCH_STRING, DataHolder(USBCommands::BRIDGE_SET_KILLSWITCH, false,
+                                                    PRIORITY_KILL_SWITCH,
+                                                    USBCommands::bridge::ACTIVE));
     } else {
         logger.info("Setting kill switch to inactive.");
-        requests[KILLSWITCH_STRING] = DataHolder::create(USBCommands::BRIDGE_SET_KILLSWITCH, false,
-                                                         PRIORITY_KILL_SWITCH,
-                                                         USBCommands::bridge::INACTIVE);
+        insertRequest(KILLSWITCH_STRING, DataHolder(USBCommands::BRIDGE_SET_KILLSWITCH, false,
+                                                    PRIORITY_KILL_SWITCH,
+                                                    USBCommands::bridge::INACTIVE));
     }
+
+    logger.info("ksa: %d", requests->at(KILLSWITCH_STRING).getPlainData()[1]);
 }
 
 bool bridge::Interface::isButtonPressed(Button button) {
@@ -123,7 +126,7 @@ void bridge::Interface::MotorClass::SingleMotor::onKillSwitchActivated() {
 }
 
 void bridge::Interface::MotorClass::SingleMotor::initStructure() {
-    if (requests.find(getKey()) == requests.end()) {
+    if (requests->find(getKey()) == requests->end()) {
         programmedSpeed = 0;
         direction = Direction::STOP;
         power = 0;
@@ -158,7 +161,7 @@ void bridge::Interface::MotorClass::SingleMotor::createMotorState() {
             break;
     };
 
-    requests[getKey()] = DataHolder::create(USBCommands::MOTOR_DRIVER_SET, PRIORITY_MOTOR_SET, true, mState);
+    insertRequest(getKey(), DataHolder(USBCommands::MOTOR_DRIVER_SET, PRIORITY_MOTOR_SET, true, mState));
 }
 
 void bridge::Interface::MotorClass::SingleMotor::setSpeed(unsigned int speed) {
@@ -195,7 +198,7 @@ void bridge::Interface::ArmClass::SingleJoint::onKillSwitchActivated() {
 }
 
 void bridge::Interface::ArmClass::SingleJoint::initStructure() {
-    if (requests.find(getKey()) == requests.end()) {
+    if (requests->find(getKey()) == requests->end()) {
         direction = Direction::STOP;
         speed = 0;
         settingPosition = false;
@@ -237,7 +240,7 @@ void bridge::Interface::ArmClass::SingleJoint::createJointState() {
     jState.position = programmedPosition;
     jState.setPosition = settingPosition;
 
-    requests[getKey()] = DataHolder::create(USBCommands::ARM_DRIVER_SET, PRIORITY_ARM_SET, true, jState);
+    insertRequest(getKey(), DataHolder(USBCommands::ARM_DRIVER_SET, PRIORITY_ARM_SET, true, jState));
 }
 
 void bridge::Interface::ArmClass::SingleJoint::setSpeed(unsigned int speed) {
@@ -307,8 +310,8 @@ void bridge::Interface::ArmClass::SingleJoint::setPosition(unsigned int position
 }
 
 void bridge::Interface::ArmClass::brake() {
-    requests["arm_addon"] = DataHolder::create(USBCommands::ARM_DRIVER_SET, PRIORITY_ARM_GENERAL_SET, true,
-                                               USBCommands::arm::BRAKE);
+    insertRequest("arm_addon", DataHolder(USBCommands::ARM_DRIVER_SET, PRIORITY_ARM_GENERAL_SET, true,
+                                          USBCommands::arm::BRAKE));
 
     logger.notice("Braking all joints.");
 }
@@ -317,8 +320,8 @@ void bridge::Interface::ArmClass::calibrate() {
     //TODO z tym coś zrobić, bo wysyła komendę za każdym razem
     if (calibrationStatus == ArmCalibrationStatus::NONE ||
         calibrationStatus == ArmCalibrationStatus::DONE) {
-        requests["arm_addon"] = DataHolder::create(USBCommands::ARM_DRIVER_SET, PRIORITY_ARM_GENERAL_SET, true,
-                                                   USBCommands::arm::CALIBRATE);
+        insertRequest("arm_addon", DataHolder(USBCommands::ARM_DRIVER_SET, PRIORITY_ARM_GENERAL_SET, true,
+                                              USBCommands::arm::CALIBRATE));
 
         calibrationStatus = ArmCalibrationStatus::IN_PROGRESS;
         mode = ArmDriverMode::CALIBRATING;
@@ -328,18 +331,20 @@ void bridge::Interface::ArmClass::calibrate() {
 
 void bridge::Interface::ExpanderClass::Device::setEnabled(bool enabled) {
     if (enabled) {
-        expanderByte |= (1 << int(device));
+        expanderClass->expanderByte |= (1 << int(device));
         logger.info(string("Enabling expander device ") + devToString(device) + ".");
     } else {
-        expanderByte &= ~(1 << int(device));
+        expanderClass->expanderByte &= ~(1 << int(device));
         logger.info(string("Disabling expander device ") + devToString(device) + ".");
     }
 
-    requests["expander"] = DataHolder::create(USBCommands::EXPANDER_SET, PRIORITY_EXPANDER_SET, true, expanderByte);
+    expanderClass->insertRequest("expander",
+                                 DataHolder(USBCommands::EXPANDER_SET, PRIORITY_EXPANDER_SET, true,
+                                            expanderClass->expanderByte));
 }
 
 bool bridge::Interface::ExpanderClass::Device::isEnabled() {
-    return ((1 << int(device)) & expanderByte);
+    return ((1 << int(device)) & expanderClass->expanderByte);
 }
 
 void bridge::Interface::updateDataStructures(std::vector<USBCommands::Request> getterRequests,
@@ -396,7 +401,7 @@ unsigned int bridge::Interface::ArmClass::updateFields(USBCommands::Request requ
 
     if (state->isCalibrated) {
         if (calibrationStatus == ArmCalibrationStatus::IN_PROGRESS) {
-            requests.erase("arm_addon");
+            requests->erase("arm_addon");
             logger.notice("Calibration finished.");
         }
         calibrationStatus = ArmCalibrationStatus::DONE;
@@ -545,7 +550,7 @@ void bridge::Interface::ArmClass::onKillSwitchActivated() {
         calibrationStatus = ArmCalibrationStatus::NONE;
     }
 
-    requests.erase("arm_addon");
+    requests->erase("arm_addon");
 }
 
 void bridge::Interface::ExpanderClass::onKillSwitchActivated() {
@@ -561,3 +566,11 @@ void bridge::Interface::onKillSwitchActivated() {
     lcdText = "";
 }
 
+void bridge::IExternalDevice::insertRequest(std::string key, bridge::DataHolder value) {
+    bool inserted;
+    SharedRequestMap::iterator iter;
+    std::tie(iter, inserted) = this->requests->insert(make_pair(key, value));
+    if (not inserted) {
+        iter->second = value;
+    }
+}

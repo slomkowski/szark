@@ -2,6 +2,12 @@
 
 using namespace common::bridge;
 
+common::bridge::DataHolder::DataHolder() {
+    this->length = 0;
+    this->priority = 0;
+    this->killswitchDependent = false;
+}
+
 common::bridge::DataHolder::DataHolder(const USBCommands::Request request, const int pr, bool killswitchDependent) {
     initData(request, pr, killswitchDependent, 0);
 }
@@ -75,4 +81,3 @@ void common::bridge::DataHolder::initData(USBCommands::Request request, const in
     data[0] = request;
     this->killswitchDependent = killswitchDependent;
 }
-

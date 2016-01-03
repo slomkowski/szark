@@ -79,7 +79,7 @@ pair<vector<uint8_t>, vector<USBCommands::Request>> bridge::InterfaceManager::ge
 void bridge::InterfaceManager::syncWithDevice(BridgeSyncFunction syncFunction) {
 
     vector<uint8_t> concatenated;
-    std::priority_queue<std::shared_ptr<DataHolder>, vector<std::shared_ptr<DataHolder>>, DataHolderComparer> sortedRequests;
+    std::priority_queue<DataHolder, vector<DataHolder>, DataHolderComparer> sortedRequests;
 
     auto diff = generateDifferentialRequests(interface->isKillSwitchActive());
 
@@ -88,7 +88,7 @@ void bridge::InterfaceManager::syncWithDevice(BridgeSyncFunction syncFunction) {
     }
 
     while (not sortedRequests.empty()) {
-        sortedRequests.top()->appendTo(concatenated);
+        sortedRequests.top().appendTo(concatenated);
         sortedRequests.pop();
     }
 
@@ -108,16 +108,16 @@ void bridge::InterfaceManager::syncWithDevice(BridgeSyncFunction syncFunction) {
     interface->updateDataStructures(getterReqs.second, response);
 }
 
-::RequestMap bridge::InterfaceManager::generateDifferentialRequests(bool killSwitchActive) {
-    ::RequestMap diff;
+RequestMap bridge::InterfaceManager::generateDifferentialRequests(bool killSwitchActive) {
+    RequestMap diff;
 
-    for (auto &newRequest : interface->getRequestMap()) {
+    for (auto &newRequest : *(interface->getRequestMap())) {
         if (previousRequests.find(newRequest.first) == previousRequests.end()) {
             logger.debug("Key '%s' not in the previous state. Adding.", newRequest.first.c_str());
             diff[newRequest.first] = newRequest.second;
         }
         else {
-            if (previousRequests[newRequest.first]->equals(*newRequest.second)) {
+            if (previousRequests[newRequest.first].equals(newRequest.second)) {
                 logger.debug("Key '%s' identical to the previous one. Skipping.", newRequest.first.c_str());
             } else {
                 logger.debug("Key '%s' differs from previous state's one. Adding.", newRequest.first.c_str());
@@ -126,10 +126,15 @@ void bridge::InterfaceManager::syncWithDevice(BridgeSyncFunction syncFunction) {
         }
     }
 
-    previousRequests = interface->getRequestMap();
+    previousRequests.clear();
+
+    for (auto req : *(interface->getRequestMap())) {
+        previousRequests.insert(req);
+    }
+
     if (killSwitchActive) {
-        for (auto &r : interface->getRequestMap()) {
-            if (r.second->isKillSwitchDependent()) {
+        for (auto &r : *(interface->getRequestMap())) {
+            if (r.second.isKillSwitchDependent()) {
                 logger.debug("Removing key '%s' because kill switch is active.", r.first.c_str());
                 diff.erase(r.first);
                 previousRequests.erase(r.first);
