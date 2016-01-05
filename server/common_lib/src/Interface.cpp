@@ -113,8 +113,6 @@ void bridge::Interface::setKillSwitch(bool active) {
                                                     PRIORITY_KILL_SWITCH,
                                                     USBCommands::bridge::INACTIVE));
     }
-
-    logger.info("ksa: %d", requests->at(KILLSWITCH_STRING).getPlainData()[1]);
 }
 
 bool bridge::Interface::isButtonPressed(Button button) {

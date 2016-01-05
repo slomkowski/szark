@@ -234,7 +234,7 @@ namespace camera {
                 throw ImageGrabberException(string("cannot open device ") + videoDevice);
             }
 
-            v4l2_capability caps = {0};
+            v4l2_capability caps = {};
             checkedXioctl(fd, VIDIOC_QUERYCAP, &caps, "cannot query capabilities");
 
             if (not (caps.capabilities & V4L2_CAP_STREAMING)) {
@@ -245,13 +245,13 @@ namespace camera {
                         caps.driver,
                         caps.card,
                         caps.bus_info,
-                        (caps.version >> 16) && 0xff, (caps.version >> 24) && 0xff,
+                        (caps.version >> 16) & 0xff, (caps.version >> 24) & 0xff,
                         caps.capabilities);
 
-            v4l2_fmtdesc fmtdesc = {0};
+            v4l2_fmtdesc fmtdesc = {};
             fmtdesc.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
 
-            char fourcc[5] = {0};
+            char fourcc[5] = {};
             logger.info("Supported formats:");
             while (0 == xioctl(fd, VIDIOC_ENUM_FMT, &fmtdesc)) {
                 strncpy(fourcc, (char *) &fmtdesc.pixelformat, 4);
@@ -263,7 +263,7 @@ namespace camera {
 
             width = getVideoCaptureProperty("width");
             height = getVideoCaptureProperty("height");
-            v4l2_format fmt = {0};
+            v4l2_format fmt = {};
             fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
             fmt.fmt.pix.width = width;
             fmt.fmt.pix.height = height;
@@ -280,7 +280,7 @@ namespace camera {
                           fmt.fmt.pix.field);
 
             logger.info("Available inputs:");
-            v4l2_input input = {0};
+            v4l2_input input = {};
             while (0 == xioctl(fd, VIDIOC_ENUMINPUT, &input)) {
                 logger.info(">> %d: %s.", input.index, input.name);
                 input.index++;
@@ -288,7 +288,7 @@ namespace camera {
 
             setInput(getVideoCaptureProperty("input"));
 
-            v4l2_requestbuffers req = {0};
+            v4l2_requestbuffers req = {};
             req.count = 16; // some high value
             req.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
             req.memory = V4L2_MEMORY_MMAP;
@@ -299,7 +299,7 @@ namespace camera {
             }
 
             for (unsigned int i = 0; i < req.count; ++i) {
-                v4l2_buffer buf = {0};
+                v4l2_buffer buf = {};
                 buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
                 buf.memory = V4L2_MEMORY_MMAP;
                 buf.index = i;
@@ -347,7 +347,7 @@ namespace camera {
 
         void queryAllBuffers() {
             for (unsigned int i = 0; i < buffers.size(); ++i) {
-                v4l2_buffer buf = {0};
+                v4l2_buffer buf = {};
                 buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
                 buf.memory = V4L2_MEMORY_MMAP;
                 buf.index = i;
@@ -358,7 +358,7 @@ namespace camera {
 
         void grabberThreadFunction() {
             while (!finishThread) {
-                v4l2_buffer v4l2_buf = {0};
+                v4l2_buffer v4l2_buf = {};
                 v4l2_buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
                 v4l2_buf.memory = V4L2_MEMORY_MMAP;
 
@@ -367,7 +367,7 @@ namespace camera {
                     fd_set fds;
                     FD_ZERO(&fds);
                     FD_SET(fd, &fds);
-                    timeval tv = {0};
+                    timeval tv = {};
                     tv.tv_sec = 2;
                     int r = select(fd + 1, &fds, nullptr, nullptr, &tv);
                     if (-1 == r) {
