@@ -8,6 +8,7 @@
 #include <boost/interprocess/containers/map.hpp>
 #include <boost/interprocess/allocators/allocator.hpp>
 #include <boost/interprocess/managed_shared_memory.hpp>
+#include <boost/interprocess/sync/interprocess_mutex.hpp>
 
 #include <string>
 #include <map>
@@ -73,6 +74,8 @@ namespace common {
         typedef std::map<const std::string, DataHolder> RequestMap;
 
         typedef boost::interprocess::offset_ptr<SharedRequestMap> SharedRequestMapPtr;
+
+        typedef boost::interprocess::scoped_lock<boost::interprocess::interprocess_mutex> SharedScopedMutex;
 
         class IExternalDevice : boost::noncopyable {
         private:
@@ -487,6 +490,8 @@ namespace common {
             ExpanderClass expander;
             MotorClass motor;
             ArmClass arm;
+
+            boost::interprocess::interprocess_mutex mutex;
 
             SharedRequestMapPtr getRequestMap() {
                 return requests;

@@ -16,6 +16,7 @@ BOOST_AUTO_TEST_CASE(SharedInterfaceProviderTest_Slave) {
 
     auto interfaceProvider = std::shared_ptr<common::bridge::InterfaceProvider>(c["ifaceProvider"]);
     auto *iface = interfaceProvider->getInterface();
+    common::bridge::SharedScopedMutex lk(iface->mutex);
 
     BOOST_CHECK(interfaceProvider != nullptr);
 

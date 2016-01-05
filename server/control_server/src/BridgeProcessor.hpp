@@ -33,7 +33,6 @@ namespace bridge {
         wallaroo::Plug<IInterfaceManager> interfaceManager;
 
         std::unique_ptr<std::thread> maintenanceThread;
-        std::mutex maintenanceMutex;
 
         std::chrono::time_point<std::chrono::high_resolution_clock> lastProcessFunctionExecution;
 

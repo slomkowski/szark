@@ -46,9 +46,7 @@ void bridge::BridgeProcessor::Init() {
 }
 
 bridge::BridgeProcessor::~BridgeProcessor() {
-    maintenanceMutex.lock();
     finishCycleThread = true;
-    maintenanceMutex.unlock();
 
     logger.notice("Waiting for maintenance task to stop.");
 
@@ -61,7 +59,7 @@ bridge::BridgeProcessor::~BridgeProcessor() {
 
 void bridge::BridgeProcessor::process(Json::Value &request, boost::asio::ip::address address,
                                       Json::Value &response) {
-    unique_lock<mutex> lk(maintenanceMutex);
+    SharedScopedMutex lk(iface().mutex);
 
     firstMaintenanceTask = true;
 
@@ -83,17 +81,16 @@ void bridge::BridgeProcessor::maintenanceThreadFunction() {
     while (true) {
         this_thread::sleep_for(MAINTENANCE_TASK_INTERVAL);
 
-        unique_lock<mutex> lk(maintenanceMutex);
-
         if (finishCycleThread) {
             break;
         }
 
         if ((not usbComm.WiringOk()) or ((high_resolution_clock::now() - lastProcessFunctionExecution) < TIMEOUT)) {
-            lk.unlock();
             this_thread::yield();
             continue;
         }
+
+        SharedScopedMutex lk(iface().mutex);
 
         if (firstMaintenanceTask) {
             logger.notice("No requests, starting performing maintenance task.");
