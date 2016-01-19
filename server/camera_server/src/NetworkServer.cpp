@@ -75,43 +75,43 @@ void camera::NetworkServer::doReceive() {
                 bool drawHud = false;
                 bool compress = false;
 
-                minijson::buffer_context ctx(recvBuffer.get(), RECEIVED_DATA_MAX_LENGTH);
-                minijson::parse_object(ctx, [&](const char *k, minijson::value v) {
-                    minijson::dispatch(k)
-                    << "serial" >> [&] { serial = v.as_long(); }
-                    << "drawHud" >> [&] { drawHud = v.as_bool(); }
-                    << "compress" >> [&] { compress = v.as_bool(); };
-                });
-
-                logger.info("Received request %d (%s HUD, %s).",
-                            serial,
-                            (drawHud ? "with" : "without"),
-                            (compress ? "compressed" : "not compressed"));
-
-                auto img = imageSource->getImage(drawHud);
-
-                std::array<unsigned char, 0x400000> buffer;
-
-                std::stringstream headerStream;
-                minijson::object_writer writer(headerStream);
-                writer.write("serial", serial);
-                writer.write("drawHud", drawHud);
-                writer.write("compress", false);
-                writer.close();
-
-                std::string header = headerStream.str();
-
-                std::memcpy(buffer.data(), header.c_str(), header.size());
-
-                buffer[header.size()] = 0;
-
-                auto encodedLength = jpegEncoder->encodeImage(img, buffer.data() + header.size() + 1,
-                                                              buffer.size() - header.size() - 1);
-
-                logger.debug("JPEG file length: %d B.", encodedLength);
-                auto packetLength = header.size() + 1 + encodedLength;
-
                 try {
+                    minijson::buffer_context ctx(recvBuffer.get(), RECEIVED_DATA_MAX_LENGTH);
+                    minijson::parse_object(ctx, [&](const char *k, minijson::value v) {
+                        minijson::dispatch(k)
+                        << "serial" >> [&] { serial = v.as_long(); }
+                        << "drawHud" >> [&] { drawHud = v.as_bool(); }
+                        << "compress" >> [&] { compress = v.as_bool(); };
+                    });
+
+                    logger.info("Received request %d (%s HUD, %s).",
+                                serial,
+                                (drawHud ? "with" : "without"),
+                                (compress ? "compressed" : "not compressed"));
+
+                    auto img = imageSource->getImage(drawHud);
+
+                    std::array<unsigned char, 0x400000> buffer;
+
+                    std::stringstream headerStream;
+                    minijson::object_writer writer(headerStream);
+                    writer.write("serial", serial);
+                    writer.write("drawHud", drawHud);
+                    writer.write("compress", false);
+                    writer.close();
+
+                    std::string header = headerStream.str();
+
+                    std::memcpy(buffer.data(), header.c_str(), header.size());
+
+                    buffer[header.size()] = 0;
+
+                    auto encodedLength = jpegEncoder->encodeImage(img, buffer.data() + header.size() + 1,
+                                                                  buffer.size() - header.size() - 1);
+
+                    logger.debug("JPEG file length: %d B.", encodedLength);
+                    auto packetLength = header.size() + 1 + encodedLength;
+
                     auto sentBytes = udpSocket->send_to(asio::buffer(buffer.data(), packetLength), endpoint);
 
                     if (sentBytes != packetLength) {
@@ -119,11 +119,13 @@ void camera::NetworkServer::doReceive() {
                     } else {
                         logger.info("Sent packet (%u B).", packetLength);
                     }
+
                 } catch (boost::system::system_error &err) {
                     logger.error("send_to error: %s", err.what());
+                } catch (minijson::parse_error &exp) {
+                    logger.error("Malformed request error: %s", exp.what());
                 }
 
                 doReceive();
             });
 }
-
