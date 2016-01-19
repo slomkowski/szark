@@ -1,16 +1,21 @@
 package eu.slomkowski.szark.client.camera;
 
+import com.google.gson.annotations.SerializedName;
+
 public enum CameraMode {
-	RAW("RAW"),
-	HUD("HUD");
+    @SerializedName("raw")
+    RAW("RAW"),
 
-	private String mnemonic;
+    @SerializedName("hud")
+    HUD("HUD");
 
-	private CameraMode(String mnemonic) {
-		this.mnemonic = mnemonic;
-	}
+    private String mnemonic;
 
-	public String getMnemonic() {
-		return mnemonic;
-	}
+    CameraMode(String mnemonic) {
+        this.mnemonic = mnemonic;
+    }
+
+    public String getMnemonic() {
+        return mnemonic;
+    }
 }

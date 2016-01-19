@@ -1,9 +1,8 @@
 package eu.slomkowski.szark.client.updaters;
 
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import eu.slomkowski.szark.client.HardcodedConfiguration;
-import eu.slomkowski.szark.client.gson.LocalTimeTypeAdapter;
+import eu.slomkowski.szark.client.gson.GsonFactory;
 import eu.slomkowski.szark.client.gui.MainWindowLogic;
 import eu.slomkowski.szark.client.pad.PadStatusUpdater;
 import eu.slomkowski.szark.client.status.CalibrationStatus;
@@ -23,7 +22,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class ControlUpdater extends SwingWorker<Void, Status> {
     private Logger logger = LoggerFactory.getLogger(ControlUpdater.class);
 
-    private final Gson gson;
+    private final Gson gson = GsonFactory.getGson();
     private final Status status;
     private final AtomicBoolean needToStop = new AtomicBoolean(false);
     private final MainWindowLogic mainWindow;
@@ -39,11 +38,6 @@ public class ControlUpdater extends SwingWorker<Void, Status> {
         this.mainWindow = mainWindow;
         this.status = status;
         this.padStatusUpdater = padStatusUpdater;
-
-        this.gson = new GsonBuilder()
-                .excludeFieldsWithoutExposeAnnotation()
-                .registerTypeAdapter(LocalTime.class, new LocalTimeTypeAdapter())
-                .create();
 
         try {
             address = new InetSocketAddress(host, HardcodedConfiguration.CONTROL_SERVER_PORT);

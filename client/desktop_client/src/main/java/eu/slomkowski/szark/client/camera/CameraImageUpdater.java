@@ -1,6 +1,8 @@
 package eu.slomkowski.szark.client.camera;
 
+import com.google.gson.Gson;
 import eu.slomkowski.szark.client.HardcodedConfiguration;
+import eu.slomkowski.szark.client.gson.GsonFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,6 +19,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class CameraImageUpdater extends JLabel {
     private Logger logger = LoggerFactory.getLogger(CameraImageUpdater.class);
 
+    private final Gson gson = GsonFactory.getGson();
     private UpdateTask updateTask = null;
     private CameraType chosenCameraType = CameraType.HEAD;
     private InetSocketAddress address;
@@ -90,13 +93,18 @@ public class CameraImageUpdater extends JLabel {
         private byte[] inputBuffer = new byte[100000];
         private AtomicBoolean needToStop = new AtomicBoolean(false);
         private BufferedImage image = null;
+        private CameraParams cameraParams = new CameraParams();
 
         @Override
         protected Void doInBackground() throws Exception {
             while (!needToStop.get()) {
                 try {
-                    DatagramPacket sendPacket = new DatagramPacket(cameraMode.getMnemonic().getBytes(),
-                            cameraMode.getMnemonic().length(), address);
+                    cameraParams.setCompressed(false);//todo
+                    cameraParams.setDrawHud(cameraMode == CameraMode.HUD);
+                    cameraParams.setSerial(333);//todo
+
+                    String sendPacketPayload = gson.toJson(cameraParams);
+                    DatagramPacket sendPacket = new DatagramPacket(sendPacketPayload.getBytes(), sendPacketPayload.length(), address);
 
                     socket.send(sendPacket);
 
@@ -113,7 +121,18 @@ public class CameraImageUpdater extends JLabel {
                         break;
                     }
 
-                    ByteArrayInputStream stream = new ByteArrayInputStream(inputBuffer, 0, receivedPacket.getLength());
+                    int headerEnd = 0;
+                    for (int i = 0; i < inputBuffer.length; ++i) {
+                        if (inputBuffer[i] == 0) {
+                            headerEnd = i;
+                            break;
+                        }
+                    }
+
+                    String json = new String(inputBuffer, 0, headerEnd);
+                    CameraParams status = gson.fromJson(json, CameraParams.class);
+
+                    ByteArrayInputStream stream = new ByteArrayInputStream(inputBuffer, headerEnd + 1, receivedPacket.getLength() - headerEnd - 1);
                     BufferedImage img = ImageIO.read(stream);
                     stream.close();
 
@@ -128,6 +147,8 @@ public class CameraImageUpdater extends JLabel {
 
                     SwingUtilities.invokeLater(() -> {
                         disableCameraView();
+
+                        logger.error("Camera communication error:", e.getMessage(), e);
 
                         JOptionPane.showMessageDialog(CameraImageUpdater.this,
                                 String.format("Camera communication error: %s. Disabling camera.",
