@@ -489,25 +489,52 @@ static void arpTableDumpHanlder(struct nl_object *obj, void *arg) {
         return;
     }
 
-    if (nl_addr_get_family(ipRawAddr) != AF_INET) {
+    if (nl_addr_get_family(macRawAddr) != AF_LLC) {
         return;
     }
 
-    if (nl_addr_get_len(ipRawAddr) != 4) {
-        throw WifiException("returned IP address has invalid length");
-    }
-
     if (nl_addr_get_len(macRawAddr) != 6) {
-        throw WifiException("returned MAC address has invalid length");
+        throw WifiException(
+                (boost::format("returned MAC address has invalid length: %d") % nl_addr_get_len(macRawAddr)).str());
     }
-
-    boost::asio::ip::address_v4::bytes_type addrBytes;
-    for (int i = 0; i < 4; i++) {
-        addrBytes[i] = reinterpret_cast<char *>(nl_addr_get_binary_addr(ipRawAddr))[i];
-    }
-    boost::asio::ip::address_v4 ip(addrBytes);
 
     MacAddress mac(reinterpret_cast<char *>(nl_addr_get_binary_addr(macRawAddr)));
+
+
+    boost::asio::ip::address ip;
+
+    if (nl_addr_get_family(ipRawAddr) == AF_INET) {
+
+        if (nl_addr_get_len(ipRawAddr) != 4) {
+            throw WifiException(
+                    (boost::format("returned IPv4 address has invalid length: %d") %
+                     nl_addr_get_len(macRawAddr)).str());
+        }
+
+        boost::asio::ip::address_v4::bytes_type addrBytes;
+        unsigned char *addrBytesArray = reinterpret_cast<unsigned char *>(nl_addr_get_binary_addr(ipRawAddr));
+        for (int i = 0; i < 4; i++) {
+            addrBytes[i] = addrBytesArray[i];
+        }
+        ip = boost::asio::ip::address_v4(addrBytes);
+
+    } else if (nl_addr_get_family(ipRawAddr) == AF_INET6) {
+        if (nl_addr_get_len(ipRawAddr) != 16) {
+            throw WifiException(
+                    (boost::format("returned IPv6 address has invalid length: %d") %
+                     nl_addr_get_len(macRawAddr)).str());
+        }
+
+        boost::asio::ip::address_v6::bytes_type addrBytes;
+        unsigned char *addrBytesArray = reinterpret_cast<unsigned char *>(nl_addr_get_binary_addr(ipRawAddr));
+        for (int i = 0; i < 16; i++) {
+            addrBytes[i] = addrBytesArray[i];
+        }
+        ip = boost::asio::ip::address_v6(addrBytes);
+
+    } else {
+        return;
+    }
 
     impl->logger->info("Got ARP table entry: %s -> %s.", ip.to_string().c_str(), mac.toString().c_str());
 
