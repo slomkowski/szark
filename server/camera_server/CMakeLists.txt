@@ -22,6 +22,9 @@ include_directories("src")
 
 include_directories(../../lib/libpixfc/include)
 
+include_directories(../../external-libs/minijson_reader)
+include_directories(../../external-libs/minijson_writer)
+
 set(SOURCES
         src/CameraImageGrabber.cpp src/CameraImageGrabber.hpp
         src/Painter.hpp

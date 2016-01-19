@@ -1,6 +1,9 @@
 #include "NetworkServer.hpp"
 #include "Configuration.hpp"
 
+#include <minijson_reader.hpp>
+#include <minijson_writer.hpp>
+
 #include <boost/format.hpp>
 
 using namespace std;
@@ -8,7 +11,7 @@ using namespace boost;
 using namespace camera;
 
 namespace camera {
-    const int RECEIVED_DATA_MAX_LENGTH = 10;
+    const int RECEIVED_DATA_MAX_LENGTH = 256;
 }
 
 WALLAROO_REGISTER(NetworkServer);
@@ -68,23 +71,53 @@ void camera::NetworkServer::doReceive() {
                             (format("error at receiving request: %s") % ec.message()).str());
                 }
 
-                bool drawHud = string(recvBuffer.get(), bytesReceived) == "HUD";
+                long serial = 0;
+                bool drawHud = false;
+                bool compress = false;
 
-                logger.info("Received request %s HUD.", (drawHud ? "with" : "without"));
+                minijson::buffer_context ctx(recvBuffer.get(), RECEIVED_DATA_MAX_LENGTH);
+                minijson::parse_object(ctx, [&](const char *k, minijson::value v) {
+                    minijson::dispatch(k)
+                    << "serial" >> [&] { serial = v.as_long(); }
+                    << "drawHud" >> [&] { drawHud = v.as_bool(); }
+                    << "compress" >> [&] { compress = v.as_bool(); };
+                });
+
+                logger.info("Received request %d (%s HUD, %s).",
+                            serial,
+                            (drawHud ? "with" : "without"),
+                            (compress ? "compressed" : "not compressed"));
 
                 auto img = imageSource->getImage(drawHud);
 
-                std::array<unsigned char, 0x200000> buffer;
+                std::array<unsigned char, 0x400000> buffer;
 
-                auto encodedLength = jpegEncoder->encodeImage(img, buffer.data(), buffer.size());
+                std::stringstream headerStream;
+                minijson::object_writer writer(headerStream);
+                writer.write("serial", serial);
+                writer.write("drawHud", drawHud);
+                writer.write("compress", false);
+                writer.close();
+
+                std::string header = headerStream.str();
+
+                std::memcpy(buffer.data(), header.c_str(), header.size());
+
+                buffer[header.size()] = 0;
+
+                auto encodedLength = jpegEncoder->encodeImage(img, buffer.data() + header.size() + 1,
+                                                              buffer.size() - header.size() - 1);
+
+                logger.debug("JPEG file length: %d B.", encodedLength);
+                auto packetLength = header.size() + 1 + encodedLength;
 
                 try {
-                    auto sentBytes = udpSocket->send_to(asio::buffer(buffer.data(), encodedLength), endpoint);
+                    auto sentBytes = udpSocket->send_to(asio::buffer(buffer.data(), packetLength), endpoint);
 
-                    if (sentBytes != encodedLength) {
-                        logger.error("Not whole file sent (%u < %u).", sentBytes, encodedLength);
+                    if (sentBytes != packetLength) {
+                        logger.error("Not whole packet sent (%u < %u).", sentBytes, packetLength);
                     } else {
-                        logger.info("Sent file (%u bytes).", encodedLength);
+                        logger.info("Sent packet (%u B).", packetLength);
                     }
                 } catch (boost::system::system_error &err) {
                     logger.error("send_to error: %s", err.what());
