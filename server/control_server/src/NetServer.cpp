@@ -38,55 +38,60 @@ void processing::NetServer::Init() {
     logger.notice("Opening listener socket with port %u.", udpPort);
 
     system::error_code err;
-    udpSocket->open(udp::v4());
-    udpSocket->bind(udp::endpoint(udp::v4(), udpPort), err);
+    bool ipv6enabled = config->getBool("NetServer.enable_ipv6");
+
+    if (ipv6enabled) {
+        udpSocket->open(udp::v6());
+        udpSocket->bind(udp::endpoint(udp::v6(), udpPort), err);
+    } else {
+        udpSocket->open(udp::v4());
+        udpSocket->bind(udp::endpoint(udp::v4(), udpPort), err);
+    }
+
     if (err) {
         throw NetException("error at binding socket: " + err.message());
     }
 
     doReceive();
 
-    logger.notice("Started UDP listener on port %u.", udpPort);
+    logger.notice("Started UDP listener on port %u%s.", udpPort, ipv6enabled ? " (IPv6 enabled)" : "");
 
     logger.notice("Instance created.");
 }
 
 void processing::NetServer::doReceive() {
-    udpSocket->async_receive_from(asio::buffer(buff.get(), MAX_PACKET_SIZE), recvSenderEndpoint,
-                                  [this](system::error_code ec, size_t bytes_recvd) {
-                                      if (!ec && bytes_recvd > 0) {
-                                          logger.info("Received %d bytes from %s.",
-                                                      bytes_recvd, recvSenderEndpoint.address().to_string().c_str());
+    udpSocket->async_receive_from(
+            asio::buffer(buff.get(), MAX_PACKET_SIZE),
+            recvSenderEndpoint,
+            [this](system::error_code ec, size_t bytes_recvd) {
+                if (!ec && bytes_recvd > 0) {
+                    logger.info("Received %d bytes from %s.",
+                                bytes_recvd, recvSenderEndpoint.address().to_string().c_str());
 
-                                          if (recvSenderEndpoint.protocol() != udp::v4()) {
-                                              logger.error("Received address is not an IPv4 address: " +
-                                                           recvSenderEndpoint.address().to_string());
-                                          } else {
-                                              auto msg = string(buff.get(), 0, bytes_recvd);
-                                              logger.debug(string("Received data: ") + msg);
+                    auto msg = string(buff.get(), 0, bytes_recvd);
+                    logger.debug(string("Received data: ") + msg);
 
-                                              long id = reqQueuer->addRequest(msg, recvSenderEndpoint.address());
+                    long id = reqQueuer->addRequest(msg, recvSenderEndpoint.address());
 
-                                              if (id != INVALID_MESSAGE) {
-                                                  logger.debug("Adding key %ld to senders map.", id);
+                    if (id != INVALID_MESSAGE) {
+                        logger.debug("Adding key %ld to senders map.", id);
 
-                                                  sendersMap[id] = recvSenderEndpoint;
+                        sendersMap[id] = recvSenderEndpoint;
 
-                                                  logger.debug("Senders map contains now %d keys.", sendersMap.size());
-                                              }
+                        logger.debug("Senders map contains now %d keys.", sendersMap.size());
+                    }
 
-                                              namespace ph = std::placeholders;
-                                              reqQueuer->setResponseSender(
-                                                      bind(&NetServer::sendResponse, this, ph::_1, ph::_2, ph::_3));
-                                              reqQueuer->setRejectedRequestRemover(
-                                                      bind(&NetServer::removeFromRequestMap, this, ph::_1));
-                                          }
-                                      } else {
-                                          logger.error("Error when receiving packet (%u bytes): %s.", bytes_recvd,
-                                                       ec.message().c_str());
-                                      }
-                                      doReceive();
-                                  });
+                    namespace ph = std::placeholders;
+                    reqQueuer->setResponseSender(
+                            bind(&NetServer::sendResponse, this, ph::_1, ph::_2, ph::_3));
+                    reqQueuer->setRejectedRequestRemover(
+                            bind(&NetServer::removeFromRequestMap, this, ph::_1));
+                } else {
+                    logger.error("Error when receiving packet (%u bytes): %s.", bytes_recvd,
+                                 ec.message().c_str());
+                }
+                doReceive();
+            });
 }
 
 void processing::NetServer::sendResponse(long id, std::string response, bool transmit) {

@@ -45,16 +45,25 @@ void NetworkServer::Init() {
     logger.notice("Opening listener socket with port %u.", port);
 
     system::error_code err;
-    udpSocket->open(udp::v4());
-    udpSocket->bind(udp::endpoint(udp::v4(), port), err);
+    bool ipv6enabled = config->getBool("NetworkServer.enable_ipv6");
+
+    if (ipv6enabled) {
+        udpSocket->open(udp::v6());
+        udpSocket->bind(udp::endpoint(udp::v6(), port), err);
+    } else {
+        udpSocket->open(udp::v4());
+        udpSocket->bind(udp::endpoint(udp::v4(), port), err);
+    }
+
     if (err) {
         throw NetworkException("error at binding socket: " + err.message());
     }
 
     doReceive();
 
+    logger.notice("Started UDP listener on port %u%s.", port, ipv6enabled ? " (IPv6 enabled)" : "");
+
     logger.notice("Instance created.");
-    logger.notice("Starting UDP listener.");
 }
 
 camera::NetworkServer::~NetworkServer() {
@@ -84,7 +93,8 @@ void camera::NetworkServer::doReceive() {
                         << "compress" >> [&] { compress = v.as_bool(); };
                     });
 
-                    logger.info("Received request %d (%s HUD, %s).",
+                    logger.info("Received request from %s: serial %d, %s HUD, %s.",
+                                endpoint.address().to_string().c_str(),
                                 serial,
                                 (drawHud ? "with" : "without"),
                                 (compress ? "compressed" : "not compressed"));
