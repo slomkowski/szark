@@ -25,6 +25,8 @@ include_directories(${JSON_INCLUDE_DIRS})
 include_directories(${NETLINK_GENL_INCLUDE_DIRS})
 include_directories(${NETLINK_ROUTE_INCLUDE_DIRS})
 
+include_directories(../../external-libs/minijson_writer)
+
 include_directories("src")
 
 set(SOURCES

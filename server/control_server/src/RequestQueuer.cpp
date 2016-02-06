@@ -1,6 +1,10 @@
 #include "RequestQueuer.hpp"
 #include "utils.hpp"
 
+#include <minijson_writer.hpp>
+
+#include <boost/interprocess/streams/bufferstream.hpp>
+
 #include <iomanip>
 
 using namespace std;
@@ -163,9 +167,13 @@ void processing::RequestQueuer::requestProcessorExecutorThreadFunction() {
 
         logger.info("Executing request with serial %d from %s.", serial, addr.to_string().c_str());
 
-        Json::Value response;
+        char responseBuffer[1024];
+        std::memset(responseBuffer, 0, 1024);
+        boost::interprocess::bufferstream responseStream(responseBuffer, 1024);
 
-        response["serial"] = serial;
+        minijson::object_writer response(responseStream);
+
+        response.write("serial", serial);
 
         auto execTimeMicroseconds = common::utils::measureTime<chrono::microseconds>([&]() {
             for (auto proc : requestProcessors) {
@@ -173,7 +181,9 @@ void processing::RequestQueuer::requestProcessorExecutorThreadFunction() {
             }
         });
 
-        response["timestamp"] = common::utils::getTimestamp();
+        response.write("timestamp", common::utils::getTimestamp());
+
+        response.close();
 
         logger.info("Request %d executed in %d us.", serial, execTimeMicroseconds);
 
@@ -182,13 +192,13 @@ void processing::RequestQueuer::requestProcessorExecutorThreadFunction() {
         if (skipResponse) {
             logger.debug("Skipping response sending.");
         } else {
-            logger.debug(string("Response in JSON: ") + jsonWriter.write(response));
+            logger.debug(string("Response in JSON: ") + responseBuffer);
         }
 
         if (responseSender == nullptr) {
             logger.error("Cannot send response. No ResponseSender set.");
         } else {
-            responseSender(id, jsonWriter.write(response), not skipResponse);
+            responseSender(id, responseBuffer, not skipResponse);
         }
     }
 }

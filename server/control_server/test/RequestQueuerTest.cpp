@@ -10,13 +10,17 @@
 
 class RequestProcessorMock : public processing::IRequestProcessor, public wallaroo::Device {
 public:
-    virtual void process(Json::Value &request, boost::asio::ip::address address, Json::Value &response);
+    virtual void process(Json::Value &request, boost::asio::ip::address address,
+                         minijson::object_writer &response) override;
 };
 
-void RequestProcessorMock::process(Json::Value &request, boost::asio::ip::address address, Json::Value &response) {
+void RequestProcessorMock::process(Json::Value &request, boost::asio::ip::address address,
+                                   minijson::object_writer &response) {
 
-    response["lights"]["led"] = false;
-    response["lights"]["camera"] = true;
+    auto lights = response.nested_object("lights");
+    lights.write("led", false);
+    lights.write("camera", true);
+    lights.close();
 
     std::this_thread::sleep_for(std::chrono::milliseconds(1));
 }

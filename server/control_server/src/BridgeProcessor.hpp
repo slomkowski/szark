@@ -7,6 +7,7 @@
 #include <log4cpp/Category.hh>
 #include <wallaroo/device.h>
 #include <json/value.h>
+#include <minijson_writer.hpp>
 
 #include <memory>
 #include <thread>
@@ -24,7 +25,7 @@ namespace bridge {
         ~BridgeProcessor();
 
         virtual void process(Json::Value &request, boost::asio::ip::address address,
-                             Json::Value &response) override;
+                             minijson::object_writer &response) override;
 
     private:
         log4cpp::Category &logger;
@@ -47,7 +48,7 @@ namespace bridge {
             return interfaceManager->iface();
         }
 
-        void createReport(Json::Value &r);
+        void createReport(minijson::object_writer &r);
 
         void parseRequest(Json::Value &r);
 

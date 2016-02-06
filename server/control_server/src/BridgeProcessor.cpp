@@ -58,7 +58,7 @@ bridge::BridgeProcessor::~BridgeProcessor() {
 }
 
 void bridge::BridgeProcessor::process(Json::Value &request, boost::asio::ip::address address,
-                                      Json::Value &response) {
+                                      minijson::object_writer &response) {
     SharedScopedMutex lk(iface().mutex);
 
     firstMaintenanceTask = true;
@@ -210,49 +210,89 @@ void bridge::BridgeProcessor::parseRequest(Json::Value &r) {
     fillAllDevices(fillArm, fillMotor, fillExpander);
 }
 
-void bridge::BridgeProcessor::createReport(Json::Value &r) {
+void bridge::BridgeProcessor::createReport(minijson::object_writer &r) {
 
-    auto fillExpander = [&](string name, ExpanderDevice d) {
-        r["light"][name] = iface().expander[d].isEnabled();
-    };
+    {
+        auto light = r.nested_object("light");
+        auto fillExpander = [&](const char *name, ExpanderDevice d) {
+            light.write(name, iface().expander[d].isEnabled());
+        };
 
-    auto fillButtons = [&](string name, Button d) {
-        if (iface().isButtonPressed(d)) {
-            r["button"].append(name);
-        }
-    };
+        fillExpander("right", ExpanderDevice::LIGHT_RIGHT);
+        fillExpander("left", ExpanderDevice::LIGHT_LEFT);
+        fillExpander("camera", ExpanderDevice::LIGHT_CAMERA);
 
-    auto fillMotor = [&](string name, Motor m) {
-        r["motor"][name]["speed"] = iface().motor[m].getSpeed();
-        r["motor"][name]["dir"] = directionToString(iface().motor[m].getDirection());
-    };
+        light.close();
+    }
 
-    auto fillArm = [&](string name, Joint j) {
-        r["arm"][name]["speed"] = iface().arm[j].getSpeed();
-        r["arm"][name]["pos"] = iface().arm[j].getPosition();
-        r["arm"][name]["dir"] = directionToString(iface().arm[j].getDirection());
-    };
+    {
+        auto motor = r.nested_object("motor");
 
-    r["arm"]["cal_st"] = armCalibrationStatusToString(iface().arm.getCalibrationStatus());
-    r["arm"]["mode"] = armDriverModeToString(iface().arm.getMode());
+        auto fillMotor = [&](const char *name, Motor m) {
+            auto specificMotor = motor.nested_object(name);
+            specificMotor.write("speed", iface().motor[m].getSpeed());
+            specificMotor.write("dir", directionToString(iface().motor[m].getDirection()));
+            specificMotor.close();
+        };
 
-    fillAllDevices(fillArm, fillMotor, fillExpander);
+        fillMotor("left", Motor::LEFT);
+        fillMotor("right", Motor::RIGHT);
 
-    fillButtons("up", Button::UP);
-    fillButtons("down", Button::DOWN);
-    fillButtons("enter", Button::ENTER);
+        motor.close();
+    }
 
-    r["batt"]["volt"] = iface().getVoltage();
-    r["batt"]["curr"] = iface().getCurrent();
+    {
+        auto arm = r.nested_object("arm");
+
+        auto fillArm = [&](const char *name, Joint j) {
+            auto joint = arm.nested_object(name);
+            joint.write("speed", iface().arm[j].getSpeed());
+            joint.write("pos", iface().arm[j].getPosition());
+            joint.write("dir", directionToString(iface().arm[j].getDirection()));
+            joint.close();
+        };
+
+        fillArm("shoulder", Joint::SHOULDER);
+        fillArm("elbow", Joint::ELBOW);
+        fillArm("gripper", Joint::GRIPPER);
+
+        arm.write("cal_st", armCalibrationStatusToString(iface().arm.getCalibrationStatus()));
+        arm.write("mode", armDriverModeToString(iface().arm.getMode()));
+
+        arm.close();
+    }
+
+    {
+        auto button = r.nested_array("button");
+
+        auto fillButtons = [&](string name, Button d) {
+            if (iface().isButtonPressed(d)) {
+                button.write(name);
+            }
+        };
+
+        fillButtons("up", Button::UP);
+        fillButtons("down", Button::DOWN);
+        fillButtons("enter", Button::ENTER);
+
+        button.close();
+    }
+
+    {
+        auto batt = r.nested_object("batt");
+        batt.write("volt", iface().getVoltage());
+        batt.write("curr", iface().getCurrent());
+        batt.close();
+    }
 
     if (iface().isKillSwitchActive()) {
         if (iface().isKillSwitchCausedByHardware()) {
-            r["ks_stat"] = "hardware";
+            r.write("ks_stat", "hardware");
         } else {
-            r["ks_stat"] = "software";
+            r.write("ks_stat", "software");
         }
     } else {
-        r["ks_stat"] = "inactive";
+        r.write("ks_stat", "inactive");
     }
 }
 

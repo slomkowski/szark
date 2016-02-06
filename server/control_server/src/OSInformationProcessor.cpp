@@ -17,19 +17,26 @@ os::OSInformationProcessor::~OSInformationProcessor() {
 
 void os::OSInformationProcessor::process(Json::Value &request,
                                          boost::asio::ip::address address,
-                                         Json::Value &response) {
+                                         minijson::object_writer &response) {
     logger.info("Processing request.");
 
     try {
         auto linkParams = wifiInfo->getWifiLinkParams(address);
 
-        response["wifi"]["s"] = linkParams.getSignalStrength();
+        auto wifiWriter = response.nested_object("wifi");
+        wifiWriter.write("b", linkParams.getSignalStrength());
+        wifiWriter.write("s", 0);
+        wifiWriter.close();
+
         logger.info("Wi-Fi params for %s: %2.0f dBm",
                     address.to_string().c_str(), linkParams.getSignalStrength());
         //TODO add isEnabled to WifiInfo
     } catch (WifiException &e) {
         logger.info(std::string("Error reading Wi-Fi information: ") + e.what());
-        response["wifi"]["b"] = 0;
-        response["wifi"]["s"] = 0;
+
+        auto wifiWriter = response.nested_object("wifi");
+        wifiWriter.write("b", 0);
+        wifiWriter.write("s", 0);
+        wifiWriter.close();
     }
 }
