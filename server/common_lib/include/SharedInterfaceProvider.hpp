@@ -18,7 +18,7 @@ namespace common {
 
         struct _InterfaceProviderImpl;
 
-        class InterfaceProvider : boost::noncopyable, public wallaroo::Device {
+        class InterfaceProvider : boost::noncopyable, public wallaroo::Part {
         public:
             InterfaceProvider(const bool &isMaster);
 

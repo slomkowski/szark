@@ -19,7 +19,7 @@ namespace common {
 
         struct ConfigurationImpl;
 
-        class Configuration : boost::noncopyable, public wallaroo::Device {
+        class Configuration : boost::noncopyable, public wallaroo::Part {
         public:
             Configuration();
 

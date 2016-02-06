@@ -6,7 +6,7 @@
 #include <boost/noncopyable.hpp>
 #include <opencv2/opencv.hpp>
 #include <log4cpp/Category.hh>
-#include <wallaroo/device.h>
+#include <wallaroo/part.h>
 
 #include <turbojpeg.h>
 
@@ -24,7 +24,7 @@ namespace camera {
                                          unsigned int maxOutputLength) = 0;
     };
 
-    class OpenCvJpegEncoder : public IJpegEncoder, public wallaroo::Device {
+    class OpenCvJpegEncoder : public IJpegEncoder, public wallaroo::Part {
     public:
 
         unsigned int encodeImage(cv::Mat inputImage,
@@ -35,7 +35,7 @@ namespace camera {
         log4cpp::Category &logger = log4cpp::Category::getInstance("OpenCvJpegEncoder");
     };
 
-    class TurboJpegEncoder : public IJpegEncoder, public wallaroo::Device {
+    class TurboJpegEncoder : public IJpegEncoder, public wallaroo::Part {
     public:
         TurboJpegEncoder();
 

@@ -6,7 +6,7 @@
 #include <boost/circular_buffer.hpp>
 #include <opencv2/opencv.hpp>
 #include <log4cpp/Category.hh>
-#include <wallaroo/device.h>
+#include <wallaroo/part.h>
 #include <wallaroo/registered.h>
 
 #include <thread>
@@ -31,7 +31,7 @@ namespace camera {
         virtual std::tuple<long, double, cv::Mat> getFrame(bool wait) = 0;
     };
 
-    class ImageGrabber : public IImageGrabber, public wallaroo::Device {
+    class ImageGrabber : public IImageGrabber, public wallaroo::Part {
     public:
         ImageGrabber(const std::string &prefix);
 
@@ -44,7 +44,7 @@ namespace camera {
 
         log4cpp::Category &logger;
 
-        wallaroo::Plug<common::config::Configuration> config;
+        wallaroo::Collaborator<common::config::Configuration> config;
 
         boost::circular_buffer<double> captureTimesAvgBuffer;
 

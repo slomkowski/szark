@@ -9,7 +9,7 @@
 using namespace std;
 using namespace camera;
 
-class DummyImageSource : public camera::IImageSource, public wallaroo::Device {
+class DummyImageSource : public camera::IImageSource, public wallaroo::Part {
 public:
     cv::Mat getImage(bool drawHud) {
         this_thread::sleep_for(chrono::milliseconds(100));

@@ -1,6 +1,6 @@
 #include "JpegEncoder.hpp"
 
-#include <wallaroo/class.h>
+#include <wallaroo/registered.h>
 
 
 using namespace camera;

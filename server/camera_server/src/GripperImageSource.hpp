@@ -7,12 +7,12 @@
 #include <Configuration.hpp>
 
 #include <opencv2/opencv.hpp>
-#include <wallaroo/device.h>
+#include <wallaroo/part.h>
 #include <log4cpp/Category.hh>
 
 namespace camera {
 
-    class GripperImageSource : public IImageSource, public wallaroo::Device {
+    class GripperImageSource : public IImageSource, public wallaroo::Part {
     public:
         GripperImageSource();
 
@@ -25,10 +25,10 @@ namespace camera {
 
         bool leftCameraIsFaster;
 
-        wallaroo::Plug<common::config::Configuration> config;
-        wallaroo::Plug<IImageGrabber> leftCameraGrabber;
-        wallaroo::Plug<IImageGrabber> rightCameraGrabber;
+        wallaroo::Collaborator<common::config::Configuration> config;
+        wallaroo::Collaborator<IImageGrabber> leftCameraGrabber;
+        wallaroo::Collaborator<IImageGrabber> rightCameraGrabber;
 
-        wallaroo::Plug<IPainter> hudPainter;
+        wallaroo::Collaborator<IPainter> hudPainter;
     };
 }

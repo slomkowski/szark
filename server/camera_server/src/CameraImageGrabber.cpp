@@ -160,7 +160,7 @@ namespace camera {
         uint8_t *rgbBuffer;
     };
 
-    class Video4LinuxImageGrabber : public IImageGrabber, public wallaroo::Device {
+    class Video4LinuxImageGrabber : public IImageGrabber, public wallaroo::Part {
     public:
         Video4LinuxImageGrabber(const std::string &prefix)
                 : prefix(prefix),
@@ -202,7 +202,7 @@ namespace camera {
 
         log4cpp::Category &logger;
 
-        wallaroo::Plug<common::config::Configuration> config;
+        wallaroo::Collaborator<common::config::Configuration> config;
 
         boost::circular_buffer<double> captureTimesAvgBuffer;
 

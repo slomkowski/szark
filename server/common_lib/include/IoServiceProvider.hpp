@@ -5,7 +5,7 @@
 #include <boost/asio.hpp>
 
 namespace common {
-    class IoServiceProvider : boost::noncopyable, public wallaroo::Device {
+    class IoServiceProvider : boost::noncopyable, public wallaroo::Part {
     public:
         IoServiceProvider();
 

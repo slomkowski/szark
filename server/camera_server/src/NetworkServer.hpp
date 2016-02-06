@@ -8,7 +8,7 @@
 #include <boost/noncopyable.hpp>
 #include <boost/asio.hpp>
 #include <log4cpp/Category.hh>
-#include <wallaroo/device.h>
+#include <wallaroo/part.h>
 
 #include <stdexcept>
 #include <memory>
@@ -27,7 +27,7 @@ namespace camera {
         virtual ~INetworkServer() = default;
     };
 
-    class NetworkServer : public wallaroo::Device, public INetworkServer {
+    class NetworkServer : public wallaroo::Part, public INetworkServer {
     public:
         NetworkServer();
 
@@ -38,10 +38,10 @@ namespace camera {
     private:
         log4cpp::Category &logger;
 
-        wallaroo::Plug<common::config::Configuration> config;
-        wallaroo::Plug<camera::IImageSource> imageSource;
-        wallaroo::Plug<camera::IJpegEncoder> jpegEncoder;
-        wallaroo::Plug<common::IoServiceProvider> ioServiceProvider;
+        wallaroo::Collaborator<common::config::Configuration> config;
+        wallaroo::Collaborator<camera::IImageSource> imageSource;
+        wallaroo::Collaborator<camera::IJpegEncoder> jpegEncoder;
+        wallaroo::Collaborator<common::IoServiceProvider> ioServiceProvider;
 
         int port;
         std::unique_ptr<boost::asio::ip::udp::socket> udpSocket;

@@ -6,12 +6,12 @@
 #include <Configuration.hpp>
 
 #include <opencv2/opencv.hpp>
-#include <wallaroo/device.h>
+#include <wallaroo/part.h>
 #include <log4cpp/Category.hh>
 
 namespace camera {
 
-    class HeadImageSource : public IImageSource, public wallaroo::Device {
+    class HeadImageSource : public IImageSource, public wallaroo::Part {
     public:
         HeadImageSource();
 
@@ -22,9 +22,9 @@ namespace camera {
     private:
         log4cpp::Category &logger;
 
-        wallaroo::Plug<common::config::Configuration> config;
-        wallaroo::Plug<IImageGrabber> cameraGrabber;
+        wallaroo::Collaborator<common::config::Configuration> config;
+        wallaroo::Collaborator<IImageGrabber> cameraGrabber;
 
-        wallaroo::Plug<IPainter> hudPainter;
+        wallaroo::Collaborator<IPainter> hudPainter;
     };
 }

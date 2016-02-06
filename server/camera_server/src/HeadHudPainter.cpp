@@ -13,7 +13,7 @@ namespace camera {
     const Scalar GREEN(0x55, 0xD4, 0x19);
     const Scalar RED(0x19, 0x1B, 0xD4);
 
-    class HeadHudPainter : public IPainter, public wallaroo::Device {
+    class HeadHudPainter : public IPainter, public wallaroo::Part {
     public:
         HeadHudPainter()
                 : logger(log4cpp::Category::getInstance("ImageGrabber")),
@@ -47,8 +47,8 @@ namespace camera {
 
     private:
         log4cpp::Category &logger;
-        wallaroo::Plug<common::config::Configuration> config;
-        wallaroo::Plug<common::bridge::InterfaceProvider> interfaceProvider;
+        wallaroo::Collaborator<common::config::Configuration> config;
+        wallaroo::Collaborator<common::bridge::InterfaceProvider> interfaceProvider;
 
         void drawMotorInfo(cv::Mat &img) {
             using namespace common::bridge;
