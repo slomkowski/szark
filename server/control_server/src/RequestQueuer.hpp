@@ -88,7 +88,6 @@ namespace processing {
         volatile bool finishCycleThread = false;
 
         Json::Reader jsonReader;
-        Json::FastWriter jsonWriter;
 
         ResponseSender responseSender;
         RejectedRequestRemover rejectedRequestRemover;

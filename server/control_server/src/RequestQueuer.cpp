@@ -21,6 +21,9 @@ constexpr int REQUEST_QUEUE_MAX_SIZE = 100;
 */
 constexpr bool REQUEST_QUEUE_OVERFLOW_BEHAVIOR = false;
 
+constexpr int REQUEST_MAX_LENGTH = 1024;
+constexpr int RESPONSE_MAX_LENGTH = 512;
+
 WALLAROO_REGISTER(RequestQueuer);
 
 processing::RequestQueuer::RequestQueuer()
@@ -44,7 +47,7 @@ processing::RequestQueuer::~RequestQueuer() {
     requestsMutex.unlock();
 
     logger.notice("Waiting for processor thread to be stopped.");
-    cv.notify_one();
+    cv.notify_all();
     if (requestProcessorExecutorThread.get() != nullptr) {
         requestProcessorExecutorThread->join();
     }
@@ -167,9 +170,9 @@ void processing::RequestQueuer::requestProcessorExecutorThreadFunction() {
 
         logger.info("Executing request with serial %d from %s.", serial, addr.to_string().c_str());
 
-        char responseBuffer[1024];
-        std::memset(responseBuffer, 0, 1024);
-        boost::interprocess::bufferstream responseStream(responseBuffer, 1024);
+        char responseBuffer[RESPONSE_MAX_LENGTH];
+        std::memset(responseBuffer, 0, RESPONSE_MAX_LENGTH);
+        boost::interprocess::bufferstream responseStream(responseBuffer, RESPONSE_MAX_LENGTH);
 
         minijson::object_writer response(responseStream);
 

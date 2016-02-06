@@ -97,13 +97,17 @@ void bridge::InterfaceManager::syncWithDevice(BridgeSyncFunction syncFunction) {
 
     concatenated.push_back(USBCommands::MESSAGE_END);
 
-    logger.debug("Sending request to the device (%d bytes): %s.",
-                 concatenated.size(), common::utils::toString<uint8_t>(concatenated).c_str());
+    logger.info("Sending request to the device (%d bytes).", concatenated.size());
+    if (logger.getPriority() >= log4cpp::Priority::DEBUG) {
+        logger.debug("Request: %s.", common::utils::toString<uint8_t>(concatenated).c_str());
+    }
 
     auto response = syncFunction(concatenated);
 
-    logger.debug("Got response from device (%d bytes): %s.",
-                 response.size(), common::utils::toString<uint8_t>(response).c_str());
+    logger.info("Got response from device (%d bytes): %s.", response.size());
+    if (logger.getPriority() >= log4cpp::Priority::DEBUG) {
+        logger.debug("Response: %s.", common::utils::toString<uint8_t>(response).c_str());
+    }
 
     interface->updateDataStructures(getterReqs.second, response);
 }

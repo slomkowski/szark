@@ -121,7 +121,10 @@ void bridge::USBCommunicator::sendData(vector<uint8_t> &data) {
     });
 
     logger.info(string("Sending data in ") + to_string(microseconds) + " us.");
-    logger.debug(string("Sending data: ") + common::utils::toString<uint8_t>(data));
+
+    if (logger.getPriority() >= log4cpp::Priority::DEBUG) {
+        logger.debug(string("Sending data: ") + common::utils::toString<uint8_t>(data));
+    }
 
     if (transferred != USB_SETTINGS_HOST_TO_DEVICE_DATAPACKET_SIZE) {
         throw CommException(
@@ -161,7 +164,9 @@ vector<uint8_t> bridge::USBCommunicator::receiveData() {
 
     vec.assign(data, data + transferred);
 
-    logger.debug(string("Received data: ") + common::utils::toString<uint8_t>(vec));
+    if (logger.getPriority() >= log4cpp::Priority::DEBUG) {
+        logger.debug(string("Received data: ") + common::utils::toString<uint8_t>(vec));
+    }
 
     return vec;
 }
