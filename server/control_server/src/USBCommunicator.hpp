@@ -37,7 +37,7 @@ namespace bridge {
         virtual std::vector<uint8_t> receiveData() = 0;
     };
 
-    class USBCommunicator : public ICommunicator, public wallaroo::Device {
+    class USBCommunicator : public ICommunicator, public wallaroo::Part {
     public:
         USBCommunicator();
 

@@ -54,7 +54,7 @@ namespace processing {
         }
     };
 
-    class RequestQueuer : public wallaroo::Device, public IRequestQueuer {
+    class RequestQueuer : public wallaroo::Part, public IRequestQueuer {
     public:
         RequestQueuer();
 
@@ -77,7 +77,7 @@ namespace processing {
     private:
         log4cpp::Category &logger;
 
-        wallaroo::Plug<IRequestProcessor, wallaroo::collection> requestProcessors;
+        wallaroo::Collaborator<IRequestProcessor, wallaroo::collection> requestProcessors;
 
         std::mutex requestsMutex;
         std::priority_queue<Request, std::vector<Request>, RequestValueComparer> requests;

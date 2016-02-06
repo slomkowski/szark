@@ -5,7 +5,7 @@
 #include "InterfaceManager.hpp"
 
 #include <log4cpp/Category.hh>
-#include <wallaroo/device.h>
+#include <wallaroo/part.h>
 #include <json/value.h>
 #include <minijson_writer.hpp>
 
@@ -18,7 +18,7 @@
 namespace bridge {
     using namespace common::bridge;
 
-    class BridgeProcessor : public processing::IRequestProcessor, public wallaroo::Device {
+    class BridgeProcessor : public processing::IRequestProcessor, public wallaroo::Part {
     public:
         BridgeProcessor();
 
@@ -30,8 +30,8 @@ namespace bridge {
     private:
         log4cpp::Category &logger;
 
-        wallaroo::Plug<ICommunicator> usbComm;
-        wallaroo::Plug<IInterfaceManager> interfaceManager;
+        wallaroo::Collaborator<ICommunicator> usbComm;
+        wallaroo::Collaborator<IInterfaceManager> interfaceManager;
 
         std::unique_ptr<std::thread> maintenanceThread;
 

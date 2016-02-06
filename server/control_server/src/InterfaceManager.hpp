@@ -24,7 +24,7 @@ namespace bridge {
         virtual common::bridge::Interface &iface() = 0;
     };
 
-    class InterfaceManager : public IInterfaceManager, public wallaroo::Device {
+    class InterfaceManager : public IInterfaceManager, public wallaroo::Part {
     public:
         InterfaceManager();
 
@@ -37,9 +37,9 @@ namespace bridge {
     private:
         log4cpp::Category &logger;
 
-        wallaroo::Plug<common::config::Configuration> config;
+        wallaroo::Collaborator<common::config::Configuration> config;
 
-        wallaroo::Plug<common::bridge::InterfaceProvider> interfaceProvider;
+        wallaroo::Collaborator<common::bridge::InterfaceProvider> interfaceProvider;
 
         common::bridge::Interface *interface;
 

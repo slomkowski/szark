@@ -9,7 +9,7 @@
 using namespace std;
 using namespace processing;
 
-class RequestQueuerMock : public wallaroo::Device, public processing::IRequestQueuer {
+class RequestQueuerMock : public wallaroo::Part, public processing::IRequestQueuer {
 public:
     virtual long addRequest(std::string request, boost::asio::ip::address address) {
         id++;

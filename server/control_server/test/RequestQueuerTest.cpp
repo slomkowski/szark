@@ -8,7 +8,7 @@
 #include <chrono>
 #include <thread>
 
-class RequestProcessorMock : public processing::IRequestProcessor, public wallaroo::Device {
+class RequestProcessorMock : public processing::IRequestProcessor, public wallaroo::Part {
 public:
     virtual void process(Json::Value &request, boost::asio::ip::address address,
                          minijson::object_writer &response) override;

@@ -103,7 +103,7 @@ namespace os {
     struct WifiInfoImpl;
 
 
-    class WifiInfo : public IWifiInfo, public wallaroo::Device {
+    class WifiInfo : public IWifiInfo, public wallaroo::Part {
     public:
         /*
          * The constructor checks if the device is valid.
@@ -121,7 +121,7 @@ namespace os {
 
     private:
         log4cpp::Category &logger;
-        wallaroo::Plug<common::config::Configuration> config;
+        wallaroo::Collaborator<common::config::Configuration> config;
 
         WifiInfoImpl *impl;
 

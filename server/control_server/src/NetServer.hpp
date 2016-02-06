@@ -29,7 +29,7 @@ namespace processing {
         virtual ~INetServer() = default;
     };
 
-    class NetServer : public wallaroo::Device, public INetServer {
+    class NetServer : public wallaroo::Part, public INetServer {
     public:
         NetServer();
 
@@ -42,9 +42,9 @@ namespace processing {
     private:
         log4cpp::Category &logger;
 
-        wallaroo::Plug<common::config::Configuration> config;
-        wallaroo::Plug<IRequestQueuer> reqQueuer;
-        wallaroo::Plug<common::IoServiceProvider> ioServiceProvider;
+        wallaroo::Collaborator<common::config::Configuration> config;
+        wallaroo::Collaborator<IRequestQueuer> reqQueuer;
+        wallaroo::Collaborator<common::IoServiceProvider> ioServiceProvider;
 
         std::unique_ptr<boost::asio::ip::udp::socket> udpSocket;
         boost::asio::ip::udp::endpoint recvSenderEndpoint;

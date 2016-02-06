@@ -7,7 +7,7 @@
 #include <minijson_writer.hpp>
 
 namespace os {
-    class OSInformationProcessor : public processing::IRequestProcessor, public wallaroo::Device {
+    class OSInformationProcessor : public processing::IRequestProcessor, public wallaroo::Part {
     public:
         OSInformationProcessor();
 
@@ -19,7 +19,7 @@ namespace os {
     private:
         log4cpp::Category &logger;
 
-        wallaroo::Plug<common::config::Configuration> config;
-        wallaroo::Plug<IWifiInfo> wifiInfo;
+        wallaroo::Collaborator<common::config::Configuration> config;
+        wallaroo::Collaborator<IWifiInfo> wifiInfo;
     };
 }
