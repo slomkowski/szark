@@ -13,7 +13,7 @@
 
 namespace bridge {
 
-    typedef std::function<std::vector<uint8_t>(std::vector<uint8_t>)> BridgeSyncFunction;
+    typedef std::function<std::vector<uint8_t>(std::vector<uint8_t> &)> BridgeSyncFunction;
 
     class IInterfaceManager : boost::noncopyable {
     public:
@@ -30,7 +30,7 @@ namespace bridge {
 
         ~InterfaceManager();
 
-        void syncWithDevice(BridgeSyncFunction syncFunction);
+        void syncWithDevice(BridgeSyncFunction syncFunction) override;
 
         common::bridge::Interface &iface();
 

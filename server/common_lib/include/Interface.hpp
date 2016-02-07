@@ -255,13 +255,15 @@ namespace common {
                     SingleMotor(SharedRequestMapPtr requests, Motor motor)
                             : IExternalDevice(requests),
                               motor(motor) {
+                        std::string keyString = "motor_" + std::to_string(static_cast<int>(motor));
+                        strcpy(key, keyString.c_str());
                         direction = Direction::STOP;
                         programmedSpeed = 0;
                         power = 0;
                     }
 
-                    std::string getKey() {
-                        return std::string("motor_") + std::to_string(static_cast<int>(motor));
+                    const char *getKey() {
+                        return key;
                     }
 
                     unsigned int updateFields(USBCommands::Request request, uint8_t *data);
@@ -278,6 +280,8 @@ namespace common {
                     uint8_t programmedSpeed;
 
                     uint8_t power;
+
+                    char key[30];
 
                     friend class MotorClass;
                 };
@@ -348,6 +352,8 @@ namespace common {
                             : IExternalDevice(requests),
                               joint(joint),
                               calibrationStatus(calibrationStatus) {
+                        std::string keyString = "arm_" + std::to_string(static_cast<int>(joint));
+                        strcpy(key, keyString.c_str());
                         speed = 0;
                         direction = Direction::STOP;
                         position = 0;
@@ -364,8 +370,8 @@ namespace common {
 
                     void createJointState();
 
-                    std::string getKey() {
-                        return std::string("arm_") + std::to_string(static_cast<int>(joint));
+                    const char *getKey() {
+                        return key;
                     }
 
                     Joint joint;
@@ -376,6 +382,8 @@ namespace common {
                     uint8_t position;
                     uint8_t programmedPosition;
                     bool settingPosition;
+
+                    char key[30];
 
                     friend class ArmClass;
                 };

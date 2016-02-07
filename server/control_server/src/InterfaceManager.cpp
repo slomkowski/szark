@@ -104,7 +104,7 @@ void bridge::InterfaceManager::syncWithDevice(BridgeSyncFunction syncFunction) {
 
     auto response = syncFunction(concatenated);
 
-    logger.info("Got response from device (%d bytes): %s.", response.size());
+    logger.info("Got response from device (%d bytes).", response.size());
     if (logger.getPriority() >= log4cpp::Priority::DEBUG) {
         logger.debug("Response: %s.", common::utils::toString<uint8_t>(response).c_str());
     }

@@ -34,7 +34,7 @@ namespace bridge {
 
         virtual void sendData(std::vector<uint8_t> &data) = 0;
 
-        virtual std::vector<uint8_t> receiveData() = 0;
+        virtual std::vector<uint8_t> &receiveData() = 0;
     };
 
     class USBCommunicator : public ICommunicator, public wallaroo::Part {
@@ -43,11 +43,13 @@ namespace bridge {
 
         virtual ~USBCommunicator();
 
-        void sendData(std::vector<uint8_t> &data);
+        void sendData(std::vector<uint8_t> &data) override;
 
-        std::vector<uint8_t> receiveData();
+        std::vector<uint8_t> &receiveData() override;
 
     private:
+        std::vector<uint8_t> response;
+
         log4cpp::Category &logger;
         libusb_device_handle *devHandle;
     };

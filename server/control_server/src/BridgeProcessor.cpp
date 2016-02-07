@@ -1,6 +1,9 @@
+#define WALLAROO_REMOVE_DEPRECATED
+
 #include "BridgeProcessor.hpp"
 #include "Interface.hpp"
 #include "convert.hpp"
+#include "utils.hpp"
 
 #include <boost/format.hpp>
 #include <json/value.h>
@@ -67,7 +70,7 @@ void bridge::BridgeProcessor::process(Json::Value &request, boost::asio::ip::add
 
     parseRequest(request);
 
-    interfaceManager->syncWithDevice([&](vector<uint8_t> r) {
+    interfaceManager->syncWithDevice([&](vector<uint8_t> &r) {
         usbComm->sendData(r);
         return usbComm->receiveData();
     });
@@ -85,7 +88,9 @@ void bridge::BridgeProcessor::maintenanceThreadFunction() {
             break;
         }
 
-        if ((not usbComm.WiringOk()) or ((high_resolution_clock::now() - lastProcessFunctionExecution) < TIMEOUT)) {
+        if ((not usbComm.WiringOk())
+            or (not interfaceManager.WiringOk())
+            or ((high_resolution_clock::now() - lastProcessFunctionExecution) < TIMEOUT)) {
             this_thread::yield();
             continue;
         }
@@ -100,7 +105,7 @@ void bridge::BridgeProcessor::maintenanceThreadFunction() {
         logger.info("Performing maintenance task.");
         // TODO dodać - jeżeli przez 2s nie ma sygnału, to zatrzymaj wszystko
 
-        interfaceManager->syncWithDevice([&](vector<uint8_t> r) {
+        interfaceManager->syncWithDevice([&](vector<uint8_t> &r) {
             usbComm->sendData(r);
             return usbComm->receiveData();
         });

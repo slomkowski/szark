@@ -21,6 +21,8 @@ bridge::USBCommunicator::USBCommunicator()
         : logger(log4cpp::Category::getInstance("USBCommunicator")) {
     devHandle = nullptr;
 
+    response.reserve(BUFFER_SIZE * 2);
+
     bool deviceFound = false;
 
     libusb_init(nullptr);
@@ -139,7 +141,7 @@ void bridge::USBCommunicator::sendData(vector<uint8_t> &data) {
     }
 }
 
-vector<uint8_t> bridge::USBCommunicator::receiveData() {
+vector<uint8_t> &bridge::USBCommunicator::receiveData() {
     uint8_t data[BUFFER_SIZE];
 
     int transferred, status;
@@ -162,14 +164,12 @@ vector<uint8_t> bridge::USBCommunicator::receiveData() {
         throw CommException((format("error at receiving data from the device (%s)") % libusb_error_name(status)).str());
     }
 
-    vector<uint8_t> vec(BUFFER_SIZE);
-
-    vec.assign(data, data + transferred);
+    response.assign(data, data + transferred);
 
     if (logger.getPriority() >= log4cpp::Priority::DEBUG) {
-        logger.debug(string("Received data: ") + common::utils::toString<uint8_t>(vec));
+        logger.debug(string("Received data: ") + common::utils::toString<uint8_t>(response));
     }
 
-    return vec;
+    return response;
 }
 

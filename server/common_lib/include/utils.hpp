@@ -19,6 +19,8 @@
 #include <string>
 #include <sstream>
 
+#define LINE_DBG() {logger.debug("__ " __FILE__ ":%d", __LINE__);}
+
 namespace common {
     namespace utils {
 
