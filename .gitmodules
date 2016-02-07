@@ -10,3 +10,6 @@
 [submodule "external-libs/minijson_reader"]
 	path = external-libs/minijson_reader
 	url = https://github.com/giacomodrago/minijson_reader.git
+[submodule "external-libs/backward-cpp"]
+	path = external-libs/backward-cpp
+	url = https://github.com/bombela/backward-cpp.git

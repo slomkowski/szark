@@ -1,12 +1,16 @@
+#define BACKWARD_HAS_DW 1
+
 #include "IoServiceProvider.hpp"
 #include "initialization.hpp"
 
+#include <backward.hpp>
 #include <wallaroo/catalog.h>
 
 using namespace std;
 using namespace wallaroo;
 
 int main(int argc, char *argv[]) {
+    backward::SignalHandling sh;
 
     const char *banner = "SZARK Camera Server\n(C) Michał Słomkowski\nCompilation: " __DATE__;
 

@@ -6,7 +6,7 @@ Autonomic robot platform. Work in progress.
 
 Requred packages for Ubuntu:
 ```bash
-apt-get install clang cmake git libboost-all-dev libjsoncpp-dev liblog4cpp5-dev libnl-genl-3-dev libnl-route-3-dev libopencv-dev libusb-1.0-0-dev
+apt-get install clang cmake git libboost-all-dev libjsoncpp-dev liblog4cpp5-dev libnl-genl-3-dev libnl-route-3-dev libopencv-dev libusb-1.0-0-dev libdw-dev 
 ```
 
 Steps to clone the repository:

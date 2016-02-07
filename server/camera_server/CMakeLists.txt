@@ -15,13 +15,16 @@ find_package(PkgConfig REQUIRED)
 find_package(Threads REQUIRED)
 
 pkg_check_modules(LOG4CPP "log4cpp")
+pkg_check_modules(DW "libdw")
 
 include_directories(${LOG4CPP_INCLUDE_DIRS})
+include_directories(${DW_INCLUDE_DIRS})
 
 include_directories("src")
 
 include_directories(../../lib/libpixfc/include)
 
+include_directories(../../external-libs/backward-cpp)
 include_directories(../../external-libs/minijson_reader)
 include_directories(../../external-libs/minijson_writer)
 
@@ -50,6 +53,7 @@ target_link_libraries(szark_camserver_framegrabber ${LOG4CPP_LIBRARIES})
 target_link_libraries(szark_camserver_framegrabber ${Boost_LIBRARIES})
 target_link_libraries(szark_camserver_framegrabber ${OpenCV_LIBRARIES})
 target_link_libraries(szark_camserver_framegrabber ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(szark_camserver_framegrabber ${DW_LIBRARIES})
 target_link_libraries(szark_camserver_framegrabber rt)
 target_link_libraries(szark_camserver_framegrabber turbojpeg)
 
@@ -60,6 +64,7 @@ target_link_libraries(szark_camserver_gripper ${LOG4CPP_LIBRARIES})
 target_link_libraries(szark_camserver_gripper ${Boost_LIBRARIES})
 target_link_libraries(szark_camserver_gripper ${OpenCV_LIBRARIES})
 target_link_libraries(szark_camserver_gripper ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(szark_camserver_gripper ${DW_LIBRARIES})
 target_link_libraries(szark_camserver_gripper rt)
 target_link_libraries(szark_camserver_gripper turbojpeg)
 
@@ -78,6 +83,7 @@ target_link_libraries(szark_camserver_test ${LOG4CPP_LIBRARIES})
 target_link_libraries(szark_camserver_test ${Boost_LIBRARIES})
 target_link_libraries(szark_camserver_test ${OpenCV_LIBRARIES})
 target_link_libraries(szark_camserver_test ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(szark_camserver_test ${DW_LIBRARIES})
 target_link_libraries(szark_camserver_test rt)
 target_link_libraries(szark_camserver_test turbojpeg)
 
