@@ -174,7 +174,7 @@ void bridge::Interface::MotorClass::SingleMotor::setSpeed(unsigned int speed) {
 
     createMotorState();
 
-    logger.info("Setting speed of %s to %d.", devToString(motor).c_str(), (int) programmedSpeed);
+    logger.info("Setting speed of %s to %d.", devToString(motor).c_str(), static_cast<int>(programmedSpeed));
 }
 
 void bridge::Interface::MotorClass::SingleMotor::setDirection(Direction dir) {
@@ -263,7 +263,7 @@ void bridge::Interface::ArmClass::SingleJoint::setSpeed(unsigned int speed) {
 
     createJointState();
 
-    logger.info("Setting speed of %s to %d.", devToString(joint).c_str(), (int) effectiveSpeed);
+    logger.info("Setting speed of %s to %d.", devToString(joint).c_str(), static_cast<int>(effectiveSpeed));
 }
 
 void bridge::Interface::ArmClass::SingleJoint::setDirection(Direction direction) {
@@ -307,7 +307,7 @@ void bridge::Interface::ArmClass::SingleJoint::setPosition(unsigned int position
 
     createJointState();
 
-    logger.info("Setting position of %s to %d.", devToString(joint).c_str(), (int) effectivePos);
+    logger.info("Setting position of %s to %d.", devToString(joint).c_str(), static_cast<int>(effectivePos));
 }
 
 void bridge::Interface::ArmClass::brake() {
@@ -459,7 +459,7 @@ unsigned int bridge::Interface::MotorClass::SingleMotor::updateFields(USBCommand
 
     power = state->speed;
 
-    logger.info("Updating state motor %s power: %d.", devToString(motorNo).c_str(), (int) power);
+    logger.info("Updating state motor %s power: %d.", devToString(motorNo).c_str(), static_cast<int>(power));
 
     return sizeof(USBCommands::motor::SpecificMotorState);
 }
@@ -505,7 +505,7 @@ unsigned int bridge::Interface::ArmClass::SingleJoint::updateFields(USBCommands:
     position = state->position;
 
     logger.info("Updating state joint %s: direction: %s, position: %d.",
-                devToString(jointNo).c_str(), directionToString(direction).c_str(), (int) position);
+                devToString(jointNo).c_str(), directionToString(direction).c_str(), static_cast<int>(position));
 
     return sizeof(USBCommands::arm::JointState);
 }

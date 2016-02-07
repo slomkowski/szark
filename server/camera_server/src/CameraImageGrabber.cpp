@@ -134,14 +134,14 @@ void ImageGrabber::setVideoCaptureProperty(int prop, std::string confName) {
     logger.info("Set property '%s' to value %d.", path.c_str(), val);
 }
 
-static int xioctl(int fd, int request, void *arg) {
+static int xioctl(int fd, unsigned long request, void *arg) {
     int r;
     do r = ioctl(fd, request, arg);
     while (-1 == r && EINTR == errno);
     return r;
 }
 
-static void checkedXioctl(int fd, int request, void *arg, string errorMessage) {
+static void checkedXioctl(int fd, unsigned long request, void *arg, string errorMessage) {
     int status;
     do {
         status = ioctl(fd, request, arg);
@@ -251,10 +251,10 @@ namespace camera {
             v4l2_fmtdesc fmtdesc = {};
             fmtdesc.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
 
-            char fourcc[5] = {};
+            char fourcc[5] = {0};
             logger.info("Supported formats:");
             while (0 == xioctl(fd, VIDIOC_ENUM_FMT, &fmtdesc)) {
-                strncpy(fourcc, (char *) &fmtdesc.pixelformat, 4);
+                memcpy(fourcc, &fmtdesc.pixelformat, 4);
                 char c = fmtdesc.flags & 1 ? 'C' : ' ';
                 char e = fmtdesc.flags & 2 ? 'E' : ' ';
                 logger.info(">>  %s: %c%c %s.", fourcc, c, e, fmtdesc.description);
@@ -272,7 +272,7 @@ namespace camera {
 
             checkedXioctl(fd, VIDIOC_S_FMT, &fmt, "cannot set pixel format");
 
-            strncpy(fourcc, (char *) &fmt.fmt.pix.pixelformat, 4);
+            memcpy(fourcc, &fmt.fmt.pix.pixelformat, 4);
             logger.notice("Camera mode: width: %d, height: %d, pixel format: %s, field: %d.",
                           fmt.fmt.pix.width,
                           fmt.fmt.pix.height,
@@ -397,7 +397,7 @@ namespace camera {
 
                     pixfc->convert(pixfc, buffer->video4linuxBuffer, buffer->rgbBuffer);
                     // todo timecode can be used
-                    frame = cv::Mat(height, width, CV_8UC3, (void *) buffer->rgbBuffer);
+                    frame = cv::Mat(height, width, CV_8UC3, buffer->rgbBuffer);
 
                     logger.debug("Mat: height: %d, width: %d.", frame.rows, frame.cols);
                 });

@@ -47,10 +47,12 @@ bridge::USBCommunicator::USBCommunicator()
             char vendorString[BUFFER_SIZE] = "", productString[BUFFER_SIZE] = "";
 
             if ((desc.iManufacturer > 0) && (desc.iProduct > 0)) {
-                libusb_get_string_descriptor_ascii(devHandle, desc.iManufacturer, (unsigned char *) vendorString,
+                libusb_get_string_descriptor_ascii(devHandle, desc.iManufacturer,
+                                                   reinterpret_cast<unsigned char *>(vendorString),
                                                    sizeof(vendorString));
 
-                libusb_get_string_descriptor_ascii(devHandle, desc.iProduct, (unsigned char *) productString,
+                libusb_get_string_descriptor_ascii(devHandle, desc.iProduct,
+                                                   reinterpret_cast<unsigned char *>( productString),
                                                    sizeof(productString));
             }
 

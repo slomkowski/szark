@@ -8,7 +8,7 @@ using namespace wallaroo;
 
 int main(int argc, char *argv[]) {
 
-    const char *banner = "SZARK Camera Server\n(C) Michał Słomkowski\nCompilation: " __DATE__;
+    std::string banner = "SZARK Camera Server\n(C) Michał Słomkowski\nCompilation: " __DATE__;
 
     auto configFiles = common::init::initializeProgram(argc, argv, banner);
 

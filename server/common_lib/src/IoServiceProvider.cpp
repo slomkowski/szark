@@ -3,7 +3,7 @@
 #include <iostream>
 
 namespace common {
-    WALLAROO_REGISTER(IoServiceProvider);
+    WALLAROO_REGISTER(IoServiceProvider)
 
     IoServiceProvider::IoServiceProvider()
             : signals(ioService, SIGINT, SIGTERM) {

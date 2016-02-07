@@ -60,7 +60,7 @@ namespace common {
             out << "{";
 
             for (T &elem : data) {
-                out << std::dec << (int) elem << ",";
+                out << std::dec << static_cast<unsigned int>(elem) << ",";
             }
 
             out << "}";

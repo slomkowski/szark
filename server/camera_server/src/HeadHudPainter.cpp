@@ -63,7 +63,7 @@ namespace camera {
                 auto color = motor.getDirection() == Direction::BACKWARD ? RED : GREEN;
 
                 drawProgressBar(img, pivot + offset, size, color,
-                                (float) motor.getSpeed() / MOTOR_DRIVER_MAX_SPEED, invert);
+                                static_cast<float>(motor.getSpeed()) / MOTOR_DRIVER_MAX_SPEED, invert);
             };
 
             drawMotorSpeed(interfaceProvider->getInterface()->motor.left, Point(-120, 0), true);

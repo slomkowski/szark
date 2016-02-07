@@ -281,8 +281,8 @@ static int dumpStationHandler(struct nl_msg *msg, void *arg) {
         throw WifiException("could not read average signal strength");
     }
 
-    double signal = (int8_t) nla_get_u8(sinfo[NL80211_STA_INFO_SIGNAL]);
-    double signalAvg = (int8_t) nla_get_u8(sinfo[NL80211_STA_INFO_SIGNAL_AVG]);
+    double signal = static_cast<int8_t>(nla_get_u8(sinfo[NL80211_STA_INFO_SIGNAL]));
+    double signalAvg = static_cast<int8_t>( nla_get_u8(sinfo[NL80211_STA_INFO_SIGNAL_AVG]));
     double txBitrate = parseBitrate(sinfo[NL80211_STA_INFO_TX_BITRATE]);
     double rxBitrate = parseBitrate(sinfo[NL80211_STA_INFO_RX_BITRATE]);
 
@@ -321,7 +321,7 @@ static int dumpCardInfoHandler(struct nl_msg *msg, void *arg) {
     }
 
     if (tb[NL80211_ATTR_MAC]) {
-        MacAddress macAddress((char *) nla_data(tb[NL80211_ATTR_MAC]));
+        MacAddress macAddress(static_cast<char *>( nla_data(tb[NL80211_ATTR_MAC])));
         report << " (MAC: " << macAddress.toString() << ")";
     }
 

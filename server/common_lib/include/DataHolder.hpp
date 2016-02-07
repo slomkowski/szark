@@ -55,7 +55,7 @@ namespace common {
 
                 initData(request, pr, killswitchDependent, sizeof(TYPE));
 
-                std::memcpy(data + 1, &structure, sizeof(TYPE));
+                std::memcpy(this->_data + 1, &structure, sizeof(TYPE));
             }
 
             DataHolder(const USBCommands::Request request, const int pr, bool killswitchDependent, void *data,
@@ -77,7 +77,7 @@ namespace common {
             * @return pointer to the stored data.
             */
             const uint8_t *getPlainData() const {
-                return data;
+                return _data;
             }
 
             /**
@@ -86,23 +86,23 @@ namespace common {
             */
             template<typename TYPE>
             TYPE *getPayload() const {
-                return reinterpret_cast<TYPE *>(data + 1);
+                return reinterpret_cast<TYPE *>(_data + 1);
             }
 
-            const USBCommands::Request getRequest() const {
-                return static_cast<const USBCommands::Request>(data[0]);
+            USBCommands::Request getRequest() const {
+                return static_cast<const USBCommands::Request>(_data[0]);
             }
 
             unsigned int getSize() const {
-                return length;
+                return _length;
             }
 
             int getPriority() const {
-                return priority;
+                return _priority;
             }
 
             bool isKillSwitchDependent() const {
-                return killswitchDependent;
+                return _killswitchDependent;
             }
 
             /**
@@ -110,7 +110,7 @@ namespace common {
             * @param vec existing std::vector<uint8_t> instance.
             */
             void appendTo(std::vector<uint8_t> &vec) const {
-                vec.insert(vec.end(), data, data + length);
+                vec.insert(vec.end(), _data, _data + _length);
             }
 
             /**
@@ -121,10 +121,10 @@ namespace common {
             bool equals(const DataHolder &right);
 
         private:
-            mutable uint8_t data[DATAHOLDER_MAX_DATA_SIZE];
-            unsigned int length = 0;
-            int priority = 0;
-            bool killswitchDependent = false;
+            mutable uint8_t _data[DATAHOLDER_MAX_DATA_SIZE];
+            unsigned int _length = 0;
+            int _priority = 0;
+            bool _killswitchDependent = false;
 
             static_assert(DATAHOLDER_MAX_DATA_SIZE >= 2, "Should be at least one byte.");
 

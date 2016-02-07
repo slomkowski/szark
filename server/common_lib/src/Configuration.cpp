@@ -5,7 +5,7 @@
 
 using namespace common::config;
 
-WALLAROO_REGISTER(Configuration, std::vector<std::string>);
+WALLAROO_REGISTER(Configuration, std::vector<std::string>)
 
 namespace common {
     namespace config {

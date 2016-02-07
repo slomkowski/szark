@@ -24,7 +24,7 @@ namespace os {
 
     public:
         MacAddress(char *addr);
-
+        
         std::string toString() const;
 
         unsigned char *getMac() {

@@ -261,7 +261,7 @@ namespace common {
                     }
 
                     std::string getKey() {
-                        return std::string("motor_") + std::to_string((int) motor);
+                        return std::string("motor_") + std::to_string(static_cast<int>(motor));
                     }
 
                     unsigned int updateFields(USBCommands::Request request, uint8_t *data);
@@ -365,7 +365,7 @@ namespace common {
                     void createJointState();
 
                     std::string getKey() {
-                        return std::string("arm_") + std::to_string((int) joint);
+                        return std::string("arm_") + std::to_string(static_cast<int>(joint));
                     }
 
                     Joint joint;

@@ -8,7 +8,7 @@ namespace common {
         constexpr int SHARED_MEM_SIZE = 0xffff;
         constexpr int SHARED_MEM_ADDR = 0x30000000;
 
-        WALLAROO_REGISTER(InterfaceProvider, bool);
+        WALLAROO_REGISTER(InterfaceProvider, bool)
 
         using namespace boost::interprocess;
 
@@ -29,7 +29,8 @@ namespace common {
                                 SHARED_MEM_SIZE, SHARED_MEM_SEGMENT_NAME.c_str());
 
                     memorySegment = new fixed_managed_shared_memory(create_only, SHARED_MEM_SEGMENT_NAME.c_str(),
-                                                                    SHARED_MEM_SIZE, (void *) SHARED_MEM_ADDR);
+                                                                    SHARED_MEM_SIZE,
+                                                                    reinterpret_cast<void *> (SHARED_MEM_ADDR));
 
                     logger.info("Creating RequestMap object.");
                     allocInst.reset(new ShmemAllocator(memorySegment->get_segment_manager()));
@@ -41,7 +42,7 @@ namespace common {
                 } else {
                     try {
                         memorySegment = new fixed_managed_shared_memory(open_only, SHARED_MEM_SEGMENT_NAME.c_str(),
-                                                                        (void *) SHARED_MEM_ADDR);
+                                                                        reinterpret_cast<void *> (SHARED_MEM_ADDR));
 
                         size_t interfaceSize;
                         logger.info("Opening shared object '%s'.", OBJECT_NAME);
