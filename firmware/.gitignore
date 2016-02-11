@@ -36,3 +36,7 @@
 .cproject
 .project
 .pydevproject
+
+# IntelliJ
+.idea/
+*.iml
