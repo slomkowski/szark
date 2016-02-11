@@ -62,7 +62,9 @@ namespace common {
                     memorySegment->destroy_ptr(requestMap);
                 }
 
-                delete memorySegment;
+                if (memorySegment != nullptr) {
+                    delete memorySegment;
+                }
 
                 if (master) {
                     logger.notice("Removing shared memory segment '%s' from system.",
@@ -75,7 +77,7 @@ namespace common {
             const bool master;
             Interface *interface;
             SharedRequestMap *requestMap;
-            fixed_managed_shared_memory *memorySegment;
+            fixed_managed_shared_memory *memorySegment = nullptr;
             std::unique_ptr<ShmemAllocator> allocInst;
         };
 

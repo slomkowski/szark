@@ -16,7 +16,7 @@ namespace camera {
     class HeadHudPainter : public IPainter, public wallaroo::Part {
     public:
         HeadHudPainter()
-                : logger(log4cpp::Category::getInstance("ImageGrabber")),
+                : logger(log4cpp::Category::getInstance("HeadHudPainter")),
                   config("config", RegistrationToken()),
                   interfaceProvider("interfaceProvider", RegistrationToken()) {
             logger.notice("Instance created.");

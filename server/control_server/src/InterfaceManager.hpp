@@ -32,7 +32,7 @@ namespace bridge {
 
         void syncWithDevice(BridgeSyncFunction syncFunction) override;
 
-        common::bridge::Interface &iface();
+        common::bridge::Interface &iface() override;
 
     private:
         log4cpp::Category &logger;
@@ -47,7 +47,7 @@ namespace bridge {
 
         common::bridge::RequestMap previousRequests;
 
-        virtual void Init();
+        virtual void Init() override;
 
         common::bridge::RequestMap generateDifferentialRequests(bool killSwitchActive);
     };

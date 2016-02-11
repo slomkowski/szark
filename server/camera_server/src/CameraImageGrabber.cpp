@@ -170,6 +170,12 @@ namespace camera {
                   currentFrameNo(1) { }
 
         virtual ~ Video4LinuxImageGrabber() {
+            finishThread = true;
+
+            if (grabberThread.get() != nullptr) {
+                grabberThread->join();
+            }
+
             //todo close v4l
 
             destroy_pixfc(pixfc);
