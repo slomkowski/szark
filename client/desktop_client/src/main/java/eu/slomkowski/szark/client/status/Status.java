@@ -40,11 +40,11 @@ public class Status {
 
     @Expose(serialize = true, deserialize = false)
     @SerializedName("tss")
-    private LocalTime timestamp = LocalTime.now();
+    private LocalTime sendTimestamp = LocalTime.now();
 
     @Expose(serialize = false, deserialize = true)
     @SerializedName("tsr")
-    private LocalTime receivedTimestamp;
+    private LocalTime receiveTimestamp;
 
     @Expose(serialize = false, deserialize = true)
     @SerializedName("tspb")
@@ -94,12 +94,12 @@ public class Status {
         return receivedKillSwitchStatus;
     }
 
-    public LocalTime getTimestamp() {
-        return timestamp;
+    public LocalTime getSendTimestamp() {
+        return sendTimestamp;
     }
 
-    public void setTimestamp(LocalTime timestamp) {
-        this.timestamp = timestamp;
+    public void setSendTimestamp(LocalTime sendTimestamp) {
+        this.sendTimestamp = sendTimestamp;
     }
 
     public LocalTime getEndProcessingTimestamp() {
@@ -118,11 +118,11 @@ public class Status {
         this.beginProcessingTimestamp = beginProcessingTimestamp;
     }
 
-    public LocalTime getReceivedTimestamp() {
-        return receivedTimestamp;
+    public LocalTime getReceiveTimestamp() {
+        return receiveTimestamp;
     }
 
-    public void setReceivedTimestamp(LocalTime receivedTimestamp) {
-        this.receivedTimestamp = receivedTimestamp;
+    public void setReceiveTimestamp(LocalTime receiveTimestamp) {
+        this.receiveTimestamp = receiveTimestamp;
     }
 }

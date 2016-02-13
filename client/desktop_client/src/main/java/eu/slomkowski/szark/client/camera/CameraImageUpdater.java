@@ -13,6 +13,8 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.*;
+import java.time.LocalTime;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -98,13 +100,16 @@ public class CameraImageUpdater extends JLabel {
         private BufferedImage image = null;
         private CameraParams cameraParams = new CameraParams();
 
+        private int serial = 1;
+
         @Override
         protected Void doInBackground() throws Exception {
             while (!needToStop.get()) {
                 try {
                     cameraParams.setQuality(JPEG_QUALITY);
                     cameraParams.setDrawHud(cameraMode == CameraMode.HUD);
-                    cameraParams.setSerial(333);//todo
+                    cameraParams.setSerial(serial);
+                    cameraParams.setSendTimestamp(LocalTime.now());
 
                     String sendPacketPayload = gson.toJson(cameraParams);
                     DatagramPacket sendPacket = new DatagramPacket(sendPacketPayload.getBytes(), sendPacketPayload.length(), address);
@@ -135,6 +140,15 @@ public class CameraImageUpdater extends JLabel {
                     String json = new String(inputBuffer, 0, headerEnd);
                     CameraParams status = gson.fromJson(json, CameraParams.class);
 
+                    if (cameraParams.getSerial() == status.getSerial()) {
+
+                        long to = ChronoUnit.MILLIS.between(cameraParams.getSendTimestamp(), status.getReceiveTimestamp());
+                        long from = ChronoUnit.MILLIS.between(status.getSendResponseTimestamp(), LocalTime.now());
+                        long processingTime = ChronoUnit.MILLIS.between(status.getReceiveTimestamp(), status.getSendResponseTimestamp());
+
+                        logger.info("Trip: to {} ms, from {} ms, process: {} ms.", to, from, processingTime);
+                    }
+
                     ByteArrayInputStream stream = new ByteArrayInputStream(inputBuffer, headerEnd + 1, receivedPacket.getLength() - headerEnd - 1);
                     BufferedImage img = ImageIO.read(stream);
                     stream.close();
@@ -142,6 +156,8 @@ public class CameraImageUpdater extends JLabel {
                     if (img == null) {
                         throw new Exception("could not parse image. Probably malformed response.");
                     }
+
+                    serial++;
 
                     publish(img);
 

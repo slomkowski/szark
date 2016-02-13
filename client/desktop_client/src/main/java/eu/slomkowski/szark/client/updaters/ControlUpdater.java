@@ -50,7 +50,7 @@ public class ControlUpdater extends SwingWorker<Void, Status> {
     }
 
     private synchronized Status updateCycle() throws HardwareStoppedException, IOException {
-        status.setTimestamp(LocalTime.now());
+        status.setSendTimestamp(LocalTime.now());
         String output = gson.toJson(status);
 
         DatagramPacket packet = new DatagramPacket(output.getBytes(), output.length(), address);
@@ -74,10 +74,10 @@ public class ControlUpdater extends SwingWorker<Void, Status> {
         if (status.getSerial() == receivedStatus.getSerial()) {
             responseMatchesRequest = true;
 
-            long to = ChronoUnit.MILLIS.between(status.getTimestamp(), receivedStatus.getReceivedTimestamp());
+            long to = ChronoUnit.MILLIS.between(status.getSendTimestamp(), receivedStatus.getReceiveTimestamp());
             long from = ChronoUnit.MILLIS.between(receivedStatus.getEndProcessingTimestamp(), LocalTime.now());
             long processingTime = ChronoUnit.MILLIS.between(receivedStatus.getBeginProcessingTimestamp(), receivedStatus.getEndProcessingTimestamp());
-            long queueTime = ChronoUnit.MILLIS.between(receivedStatus.getReceivedTimestamp(), receivedStatus.getBeginProcessingTimestamp());
+            long queueTime = ChronoUnit.MILLIS.between(receivedStatus.getReceiveTimestamp(), receivedStatus.getBeginProcessingTimestamp());
 
             logger.info("Trip: to {} ms, from {} ms, queue: {} ms, process: {} ms.", to, from, queueTime, processingTime);
         }
