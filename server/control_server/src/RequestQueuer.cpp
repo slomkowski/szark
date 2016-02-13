@@ -83,6 +83,8 @@ long processing::RequestQueuer::addRequest(string requestString, boost::asio::ip
         return INVALID_MESSAGE;
     }
 
+    req["tsr"] = common::utils::getTimestamp();
+
     if (requests.size() == REQUEST_QUEUE_MAX_SIZE) {
         logger.warn("Requests queue is full (%d). removing the oldest one.", REQUEST_QUEUE_MAX_SIZE);
 
@@ -175,13 +177,18 @@ void processing::RequestQueuer::requestProcessorExecutorThreadFunction() {
 
         response.write("serial", serial);
 
+        response.write("tss", req["tss"].asString());
+        response.write("tsr", req["tsr"].asString());
+
+        response.write("tspb", common::utils::getTimestamp());
+
         auto execTimeMicroseconds = common::utils::measureTime<chrono::microseconds>([&]() {
             for (auto proc : requestProcessors) {
                 std::shared_ptr<IRequestProcessor>(proc)->process(req, addr, response);
             }
         });
 
-        response.write("timestamp", common::utils::getTimestamp());
+        response.write("tspe", common::utils::getTimestamp());
 
         response.close();
 

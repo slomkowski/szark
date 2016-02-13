@@ -11,7 +11,7 @@ class CameraParams {
     private boolean drawHud = false;
 
     @Expose
-    private boolean compressed = false;
+    private int quality;
 
     public int getSerial() {
         return serial;
@@ -29,11 +29,11 @@ class CameraParams {
         this.drawHud = drawHud;
     }
 
-    public boolean isCompressed() {
-        return compressed;
+    public int getQuality() {
+        return quality;
     }
 
-    public void setCompressed(boolean compressed) {
-        this.compressed = compressed;
+    public void setQuality(int quality) {
+        this.quality = quality;
     }
 }

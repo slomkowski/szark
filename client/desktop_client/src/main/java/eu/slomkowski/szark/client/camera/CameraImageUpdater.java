@@ -17,6 +17,9 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class CameraImageUpdater extends JLabel {
+
+    private static final int JPEG_QUALITY = 45;
+
     private Logger logger = LoggerFactory.getLogger(CameraImageUpdater.class);
 
     private final Gson gson = GsonFactory.getGson();
@@ -99,7 +102,7 @@ public class CameraImageUpdater extends JLabel {
         protected Void doInBackground() throws Exception {
             while (!needToStop.get()) {
                 try {
-                    cameraParams.setCompressed(false);//todo
+                    cameraParams.setQuality(JPEG_QUALITY);
                     cameraParams.setDrawHud(cameraMode == CameraMode.HUD);
                     cameraParams.setSerial(333);//todo
 
