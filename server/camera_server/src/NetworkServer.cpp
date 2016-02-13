@@ -83,6 +83,8 @@ void camera::NetworkServer::doReceive() {
                 long serial = 0;
                 bool drawHud = false;
                 int quality = camera::DEFAULT_JPEG_QUALITY;
+                string receivedTimestamp = common::utils::getTimestamp();
+                string sendTimestamp = common::utils::getTimestamp();
 
                 try {
                     minijson::buffer_context ctx(recvBuffer.get(), RECEIVED_DATA_MAX_LENGTH);
@@ -90,7 +92,8 @@ void camera::NetworkServer::doReceive() {
                         minijson::dispatch(k)
                         << "serial" >> [&] { serial = v.as_long(); }
                         << "drawHud" >> [&] { drawHud = v.as_bool(); }
-                        << "quality" >> [&] { quality = v.as_long(); };
+                        << "quality" >> [&] { quality = v.as_long(); }
+                        << "tss" >> [&] { sendTimestamp = v.as_string(); };
                     });
 
                     quality = std::min(100, quality);
@@ -102,27 +105,31 @@ void camera::NetworkServer::doReceive() {
                                 (drawHud ? "with" : "without"),
                                 quality);
 
-                    auto img = imageSource->getImage(drawHud);
+                    std::array<unsigned char, 0x40000> buffer;
+                    std::array<unsigned char, 0x40000> imgBuffer;
 
-                    std::array<unsigned char, 0x400000> buffer;
-
-                    std::stringstream headerStream;
+                    stringstream headerStream;
                     minijson::object_writer writer(headerStream);
                     writer.write("serial", serial);
                     writer.write("drawHud", drawHud);
                     writer.write("quality", quality);
-                    writer.close();
+                    writer.write("tss", sendTimestamp);
+                    writer.write("tsr", receivedTimestamp);
 
-                    std::string header = headerStream.str();
-
-                    std::memcpy(buffer.data(), header.c_str(), header.size());
-
-                    buffer[header.size()] = 0;
-
-                    auto encodedLength = jpegEncoder->encodeImage(img, buffer.data() + header.size() + 1,
-                                                                  buffer.size() - header.size() - 1, quality);
+                    auto img = imageSource->getImage(drawHud);
+                    auto encodedLength = jpegEncoder->encodeImage(img, imgBuffer.data(), imgBuffer.size(), quality);
 
                     logger.debug("JPEG file length: %d B.", encodedLength);
+
+                    writer.write("tssr", common::utils::getTimestamp());
+                    writer.close();
+
+                    string header = headerStream.str();
+
+                    std::memcpy(buffer.data(), header.c_str(), header.size());
+                    buffer[header.size()] = 0;
+                    std::memcpy(buffer.data() + header.size() + 1, imgBuffer.data(), encodedLength);
+
                     auto packetLength = header.size() + 1 + encodedLength;
 
                     auto sentBytes = udpSocket->send_to(asio::buffer(buffer.data(), packetLength), endpoint);
