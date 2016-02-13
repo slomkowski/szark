@@ -15,8 +15,9 @@ find_package(Threads REQUIRED)
 pkg_check_modules(LOG4CPP "log4cpp")
 
 include_directories(${LOG4CPP_INCLUDE_DIRS})
-
 include_directories("src")
+
+link_directories(${LOG4CPP_LIBRARY_DIRS})
 
 set(src
         src/ColorPatternLayout.cpp include/ColorPatternLayout.hpp

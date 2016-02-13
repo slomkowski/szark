@@ -33,6 +33,13 @@ include_directories(../../external-libs/minijson_writer)
 
 include_directories("src")
 
+link_directories(${LIBUSB_LIBRARY_DIRS})
+link_directories(${LOG4CPP_LIBRARY_DIRS})
+link_directories(${JSON_LIBRARY_DIRS})
+link_directories(${NETLINK_GENL_LIBRARY_DIRS})
+link_directories(${NETLINK_ROUTE_LIBRARY_DIRS})
+link_directories(${DW_LIBRARY_DIRS})
+
 set(SOURCES
         src/BridgeProcessor.cpp src/BridgeProcessor.hpp
         src/InterfaceManager.cpp src/InterfaceManager.hpp

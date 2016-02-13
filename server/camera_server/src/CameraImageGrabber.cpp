@@ -15,6 +15,12 @@
 #include <pthread.h>
 #include <cstring>
 #include <cstdlib>
+#include <numeric>
+#include <string>
+
+#ifdef __FreeBSD__
+#include <pthread_np.h>
+#endif
 
 using namespace std;
 using namespace boost;
@@ -30,6 +36,17 @@ camera::ImageGrabber::ImageGrabber(const std::string &prefix) :
         config("config", RegistrationToken()),
         captureTimesAvgBuffer(FRAMERATE_AVG_FRAMES),
         currentFrameNo(1) {
+}
+
+static void setThreadName(log4cpp::Category &logger, thread *thr, string name) {
+#ifdef __FreeBSD__
+    pthread_set_name_np(thr->native_handle(), name.c_str());
+#else
+    int result = pthread_setname_np(thr->native_handle(), name.c_str());
+    if (result != 0) {
+        logger.error("Cannot set thread name: %s.", strerror(result));
+    }
+#endif
 }
 
 void ImageGrabber::Init() {
@@ -48,10 +65,7 @@ void ImageGrabber::Init() {
                   videoCapture->get(CV_CAP_PROP_FRAME_HEIGHT));
 
     grabberThread.reset(new std::thread(&ImageGrabber::grabberThreadFunction, this));
-    int result = pthread_setname_np(grabberThread->native_handle(), (prefix + "ImgGrab").c_str());
-    if (result != 0) {
-        logger.error("Cannot set thread name: %s.", strerror(result));
-    }
+    setThreadName(logger, grabberThread.get(), prefix + "ImgGrab");
 
     logger.notice("Instance created.");
 }
@@ -343,10 +357,7 @@ namespace camera {
             }
 
             grabberThread.reset(new std::thread(&Video4LinuxImageGrabber::grabberThreadFunction, this));
-            int result = pthread_setname_np(grabberThread->native_handle(), (prefix + "ImgGrab").c_str());
-            if (result != 0) {
-                logger.error("Cannot set thread name: %s.", strerror(result));
-            }
+            setThreadName(logger, grabberThread.get(), prefix + "ImgGrab");
 
             logger.notice("Instance created.");
         }

@@ -6,6 +6,8 @@
 #include <log4cpp/Category.hh>
 #include <boost/algorithm/string.hpp>
 
+#include <numeric>
+
 using namespace std;
 using namespace boost;
 using namespace common;

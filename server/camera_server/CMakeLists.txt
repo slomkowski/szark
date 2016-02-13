@@ -28,6 +28,9 @@ include_directories(../../external-libs/backward-cpp)
 include_directories(../../external-libs/minijson_reader)
 include_directories(../../external-libs/minijson_writer)
 
+link_directories(${LOG4CPP_LIBRARY_DIRS})
+link_directories(${DW_LIBRARY_DIRS})
+
 set(SOURCES
         src/CameraImageGrabber.cpp src/CameraImageGrabber.hpp
         src/Painter.hpp
