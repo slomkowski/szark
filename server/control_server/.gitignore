@@ -30,3 +30,5 @@ szark_server_test
 libszark_server_lib.a
 
 callgrind.out.*
+
+*.log
