@@ -39,8 +39,20 @@ public class Status {
     private int serial = 0;
 
     @Expose(serialize = true, deserialize = false)
-    @SerializedName("timestamp")
+    @SerializedName("tss")
     private LocalTime timestamp = LocalTime.now();
+
+    @Expose(serialize = false, deserialize = true)
+    @SerializedName("tsr")
+    private LocalTime receivedTimestamp;
+
+    @Expose(serialize = false, deserialize = true)
+    @SerializedName("tspb")
+    private LocalTime beginProcessingTimestamp;
+
+    @Expose(serialize = false, deserialize = true)
+    @SerializedName("tspe")
+    private LocalTime endProcessingTimestamp;
 
     public Status() {
         clean();
@@ -88,5 +100,29 @@ public class Status {
 
     public void setTimestamp(LocalTime timestamp) {
         this.timestamp = timestamp;
+    }
+
+    public LocalTime getEndProcessingTimestamp() {
+        return endProcessingTimestamp;
+    }
+
+    public void setEndProcessingTimestamp(LocalTime endProcessingTimestamp) {
+        this.endProcessingTimestamp = endProcessingTimestamp;
+    }
+
+    public LocalTime getBeginProcessingTimestamp() {
+        return beginProcessingTimestamp;
+    }
+
+    public void setBeginProcessingTimestamp(LocalTime beginProcessingTimestamp) {
+        this.beginProcessingTimestamp = beginProcessingTimestamp;
+    }
+
+    public LocalTime getReceivedTimestamp() {
+        return receivedTimestamp;
+    }
+
+    public void setReceivedTimestamp(LocalTime receivedTimestamp) {
+        this.receivedTimestamp = receivedTimestamp;
     }
 }

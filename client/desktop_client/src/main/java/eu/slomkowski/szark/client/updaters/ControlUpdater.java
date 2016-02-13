@@ -74,10 +74,12 @@ public class ControlUpdater extends SwingWorker<Void, Status> {
         if (status.getSerial() == receivedStatus.getSerial()) {
             responseMatchesRequest = true;
 
-            long to = ChronoUnit.MILLIS.between(status.getTimestamp(), receivedStatus.getTimestamp());
-            long from = ChronoUnit.MILLIS.between(receivedStatus.getTimestamp(), LocalTime.now());
+            long to = ChronoUnit.MILLIS.between(status.getTimestamp(), receivedStatus.getReceivedTimestamp());
+            long from = ChronoUnit.MILLIS.between(receivedStatus.getEndProcessingTimestamp(), LocalTime.now());
+            long processingTime = ChronoUnit.MILLIS.between(receivedStatus.getBeginProcessingTimestamp(), receivedStatus.getEndProcessingTimestamp());
+            long queueTime = ChronoUnit.MILLIS.between(receivedStatus.getReceivedTimestamp(), receivedStatus.getBeginProcessingTimestamp());
 
-            logger.debug("Trip: to {} ms, from {} ms.", to, from);
+            logger.info("Trip: to {} ms, from {} ms, queue: {} ms, process: {} ms.", to, from, queueTime, processingTime);
         }
 
         if (receivedStatus.joints.getCalStatus() == CalibrationStatus.IN_PROGRESS) {

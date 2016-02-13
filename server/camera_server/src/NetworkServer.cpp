@@ -82,7 +82,7 @@ void camera::NetworkServer::doReceive() {
 
                 long serial = 0;
                 bool drawHud = false;
-                bool compress = false;
+                int quality = camera::DEFAULT_JPEG_QUALITY;
 
                 try {
                     minijson::buffer_context ctx(recvBuffer.get(), RECEIVED_DATA_MAX_LENGTH);
@@ -90,14 +90,17 @@ void camera::NetworkServer::doReceive() {
                         minijson::dispatch(k)
                         << "serial" >> [&] { serial = v.as_long(); }
                         << "drawHud" >> [&] { drawHud = v.as_bool(); }
-                        << "compress" >> [&] { compress = v.as_bool(); };
+                        << "quality" >> [&] { quality = v.as_long(); };
                     });
 
-                    logger.info("Received request from %s: serial %d, %s HUD, %s.",
+                    quality = std::min(100, quality);
+                    quality = std::max(5, quality);
+
+                    logger.info("Received request from %s: serial %d, %s HUD, quality: %d.",
                                 endpoint.address().to_string().c_str(),
                                 serial,
                                 (drawHud ? "with" : "without"),
-                                (compress ? "compressed" : "not compressed"));
+                                quality);
 
                     auto img = imageSource->getImage(drawHud);
 
@@ -107,7 +110,7 @@ void camera::NetworkServer::doReceive() {
                     minijson::object_writer writer(headerStream);
                     writer.write("serial", serial);
                     writer.write("drawHud", drawHud);
-                    writer.write("compress", false);
+                    writer.write("quality", quality);
                     writer.close();
 
                     std::string header = headerStream.str();
@@ -117,7 +120,7 @@ void camera::NetworkServer::doReceive() {
                     buffer[header.size()] = 0;
 
                     auto encodedLength = jpegEncoder->encodeImage(img, buffer.data() + header.size() + 1,
-                                                                  buffer.size() - header.size() - 1);
+                                                                  buffer.size() - header.size() - 1, quality);
 
                     logger.debug("JPEG file length: %d B.", encodedLength);
                     auto packetLength = header.size() + 1 + encodedLength;

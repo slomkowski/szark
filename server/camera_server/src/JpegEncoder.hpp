@@ -15,13 +15,22 @@
 
 namespace camera {
 
+    const int DEFAULT_JPEG_QUALITY = 45;
+
     class IJpegEncoder : boost::noncopyable {
     public:
         virtual ~IJpegEncoder() = default;
 
         virtual unsigned int encodeImage(cv::Mat inputImage,
                                          unsigned char *outputBuffer,
-                                         unsigned int maxOutputLength) = 0;
+                                         unsigned int maxOutputLength,
+                                         int quality) = 0;
+
+        virtual unsigned int encodeImage(cv::Mat inputImage,
+                                         unsigned char *outputBuffer,
+                                         unsigned int maxOutputLength) {
+            return encodeImage(inputImage, outputBuffer, maxOutputLength, DEFAULT_JPEG_QUALITY);
+        }
     };
 
     class OpenCvJpegEncoder : public IJpegEncoder, public wallaroo::Part {
@@ -29,7 +38,8 @@ namespace camera {
 
         unsigned int encodeImage(cv::Mat inputImage,
                                  unsigned char *outputBuffer,
-                                 unsigned int maxOutputLength);
+                                 unsigned int maxOutputLength,
+                                 int quality) override;
 
     private:
         log4cpp::Category &logger = log4cpp::Category::getInstance("OpenCvJpegEncoder");
@@ -43,7 +53,8 @@ namespace camera {
 
         unsigned int encodeImage(cv::Mat inputImage,
                                  unsigned char *outputBuffer,
-                                 unsigned int maxOutputLength);
+                                 unsigned int maxOutputLength,
+                                 int quality) override;
 
     private:
         log4cpp::Category &logger = log4cpp::Category::getInstance("TurboJpegEncoder");

@@ -5,21 +5,20 @@
 
 using namespace camera;
 
-const int JPEG_QUALITY = 45;
-
 WALLAROO_REGISTER(OpenCvJpegEncoder);
 
 WALLAROO_REGISTER(TurboJpegEncoder);
 
 unsigned int camera::OpenCvJpegEncoder::encodeImage(cv::Mat inputImage,
                                                     unsigned char *outputBuffer,
-                                                    unsigned int maxOutputLength) {
+                                                    unsigned int maxOutputLength,
+                                                    int quality) {
 
     std::vector<unsigned char> buffer(30000);
 
     std::vector<int> jpegEncoderParameters;
     jpegEncoderParameters.push_back(CV_IMWRITE_JPEG_QUALITY);
-    jpegEncoderParameters.push_back(JPEG_QUALITY);
+    jpegEncoderParameters.push_back(quality);
 
     int us = common::utils::measureTime<std::chrono::microseconds>([&]() {
         cv::imencode(".jpg", inputImage, buffer, jpegEncoderParameters);
@@ -38,13 +37,14 @@ unsigned int camera::OpenCvJpegEncoder::encodeImage(cv::Mat inputImage,
 
 unsigned int TurboJpegEncoder::encodeImage(cv::Mat inputImage,
                                            unsigned char *outputBuffer,
-                                           unsigned int maxOutputLength) {
+                                           unsigned int maxOutputLength,
+                                           int quality) {
     long unsigned int _jpegSize = maxOutputLength;
 
     int us = common::utils::measureTime<std::chrono::microseconds>([&]() {
 
         int status = tjCompress2(_jpegCompressor, inputImage.data, inputImage.cols, 0, inputImage.rows, TJPF_BGR,
-                                 &outputBuffer, &_jpegSize, TJSAMP_422, JPEG_QUALITY,
+                                 &outputBuffer, &_jpegSize, TJSAMP_422, quality,
                                  TJFLAG_FASTDCT | TJFLAG_NOREALLOC);
 
         if (status != 0) {
