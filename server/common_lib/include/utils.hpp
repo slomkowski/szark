@@ -13,11 +13,14 @@
 
 #pragma once
 
+#include <log4cpp/Category.hh>
+
 #include <functional>
 #include <chrono>
 #include <vector>
 #include <string>
 #include <sstream>
+#include <thread>
 
 #define LINE_DBG() {logger.debug("__ " __FILE__ ":%d", __LINE__);}
 
@@ -70,5 +73,6 @@ namespace common {
             return out.str();
         }
 
+        void setThreadName(log4cpp::Category &logger, std::thread *thr, std::string name);
     }
 }

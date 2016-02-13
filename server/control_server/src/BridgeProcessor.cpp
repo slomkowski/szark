@@ -8,8 +8,6 @@
 #include <boost/format.hpp>
 #include <json/value.h>
 
-#include <pthread.h>
-
 #include <chrono>
 #include <functional>
 
@@ -39,10 +37,7 @@ bridge::BridgeProcessor::BridgeProcessor()
 void bridge::BridgeProcessor::Init() {
     if (MAINTENANCE_TASK_ENABLED) {
         maintenanceThread.reset(new thread(&BridgeProcessor::maintenanceThreadFunction, this));
-        int result = pthread_setname_np(maintenanceThread->native_handle(), "bMaintenance");
-        if (result != 0) {
-            logger.error("Cannot set thread name: %s.", strerror(result));
-        }
+        common::utils::setThreadName(logger, maintenanceThread.get(), "bMaintenance");
     }
 
     logger.notice("Instance created.");

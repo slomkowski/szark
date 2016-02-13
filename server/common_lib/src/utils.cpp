@@ -1,5 +1,13 @@
 #include "utils.hpp"
 
+#include <pthread.h>
+
+#ifdef __FreeBSD__
+#include <pthread_np.h>
+#endif
+
+#include <cstring>
+
 std::string common::utils::getTimestamp() {
 
     std::stringstream now;
@@ -23,4 +31,15 @@ std::string common::utils::getTimestamp() {
     now << modulo;
 
     return now.str();
+}
+
+void common::utils::setThreadName(log4cpp::Category &logger, std::thread *thr, std::string name) {
+#ifdef __FreeBSD__
+    pthread_set_name_np(thr->native_handle(), name.c_str());
+#else
+    int result = pthread_setname_np(thr->native_handle(), name.c_str());
+    if (result != 0) {
+        logger.error("Cannot set thread name: %s.", std::strerror(result));
+    }
+#endif
 }

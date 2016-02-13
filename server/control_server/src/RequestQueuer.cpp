@@ -34,10 +34,7 @@ processing::RequestQueuer::RequestQueuer()
 
 void processing::RequestQueuer::Init() {
     requestProcessorExecutorThread.reset(new thread(&RequestQueuer::requestProcessorExecutorThreadFunction, this));
-    int result = pthread_setname_np(requestProcessorExecutorThread->native_handle(), "reqProcExec");
-    if (result != 0) {
-        logger.error("Cannot set thread name: %s.", strerror(result));
-    }
+    common::utils::setThreadName(logger, requestProcessorExecutorThread.get(), "reqProcExec");
     logger.notice("Instance created.");
 }
 

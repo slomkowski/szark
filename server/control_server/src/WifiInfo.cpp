@@ -8,7 +8,6 @@
 #include <netlink/attr.h>
 #include <netlink/route/neighbour.h>
 #include <linux/nl80211.h>
-#include <pthread.h>
 
 #include <boost/format.hpp>
 
@@ -155,10 +154,8 @@ void os::WifiInfo::Init() {
     }
 
     impl->acquireNetworkInformationThread.reset(new thread(&WifiInfo::acquireNetworkInformationThreadFunction, this));
-    int result = pthread_setname_np(impl->acquireNetworkInformationThread->native_handle(), "wifiInfo");
-    if (result != 0) {
-        logger.error("Cannot set thread name: %s.", strerror(result));
-    }
+
+    common::utils::setThreadName(logger, impl->acquireNetworkInformationThread.get(), "wifiInfo");
 
     logger.notice("Instance created.");
 }
