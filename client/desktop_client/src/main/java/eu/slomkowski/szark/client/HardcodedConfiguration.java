@@ -4,7 +4,13 @@ public interface HardcodedConfiguration {
 
     String PROGRAM_VERSION = "0.19";
 
-    String[] DEFAULT_HOST_NAMES = {"localhost", "szark.local"};
+    String[] DEFAULT_HOST_NAMES = {
+            "localhost",
+            "szark.local",
+            "192.168.5.234",
+            "192.168.0.21",
+            "fe80::214:a4ff:fe59:bb61%eth0"
+    };
 
     int CAMERA_TIMEOUT = 500; // in milliseconds
     int CAMERA_PORT_GRIPPER = 10192;
