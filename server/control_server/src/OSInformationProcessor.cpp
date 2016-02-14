@@ -24,8 +24,9 @@ void os::OSInformationProcessor::process(Json::Value &request,
         auto linkParams = wifiInfo->getWifiLinkParams(address);
 
         auto wifiWriter = response.nested_object("wifi");
-        wifiWriter.write("b", linkParams.getSignalStrength());
-        wifiWriter.write("s", 0);
+        wifiWriter.write("s", linkParams.getSignalStrength());
+        wifiWriter.write("txb", linkParams.getTxBitrate());
+        wifiWriter.write("rxb", linkParams.getRxBitrate());
         wifiWriter.close();
 
         logger.info("Wi-Fi params for %s: %2.0f dBm",
@@ -35,7 +36,8 @@ void os::OSInformationProcessor::process(Json::Value &request,
         logger.info(std::string("Error reading Wi-Fi information: ") + e.what());
 
         auto wifiWriter = response.nested_object("wifi");
-        wifiWriter.write("b", 0);
+        wifiWriter.write("txb", 0);
+        wifiWriter.write("rxb", 0);
         wifiWriter.write("s", 0);
         wifiWriter.close();
     }
