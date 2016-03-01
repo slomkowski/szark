@@ -22,9 +22,13 @@ namespace processing {
 
     typedef std::function<void(long, std::string, bool)> ResponseSender;
     typedef std::function<void(long)> RejectedRequestRemover;
-    typedef std::tuple<long, boost::asio::ip::address, Json::Value> Request;
 
     constexpr long INVALID_MESSAGE = -1;
+
+
+
+//    typedef std::tuple<long, boost::asio::ip::address, Json::Value> Request;
+
 
     class IRequestQueuer {
     public:
@@ -49,10 +53,19 @@ namespace processing {
 
     class RequestValueComparer {
     public:
-        bool operator()(const Request &r1, const Request &r2) const {
-            return std::get<2>(r1)["serial"].asInt() > std::get<2>(r2)["serial"].asInt();
+        bool operator()(const std::shared_ptr<Request> &r1, const std::shared_ptr<Request> &r2) const {
+            //return std::get<2>(r1)["serial"].asInt() > std::get<2>(r2)["serial"].asInt();
+            return r1->serial > r2->serial;
         }
     };
+
+//    class RequestValueComparer {
+//    public:
+//        bool operator()(const Request &r1, const Request &r2) const {
+//            //return std::get<2>(r1)["serial"].asInt() > std::get<2>(r2)["serial"].asInt();
+//            return r1.serial > r2.serial;
+//        }
+//    };
 
     class RequestQueuer : public wallaroo::Part, public IRequestQueuer {
     public:
@@ -80,7 +93,7 @@ namespace processing {
         wallaroo::Collaborator<IRequestProcessor, wallaroo::collection> requestProcessors;
 
         std::mutex requestsMutex;
-        std::priority_queue<Request, std::vector<Request>, RequestValueComparer> requests;
+        std::priority_queue<std::shared_ptr<Request>, std::vector<std::shared_ptr<Request>>, RequestValueComparer> requests;
         volatile long lastSerial = 0;
 
         std::unique_ptr<std::thread> requestProcessorExecutorThread;
@@ -99,4 +112,4 @@ namespace processing {
         long nextId();
     };
 
-} /* namespace processing */
+}

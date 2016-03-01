@@ -15,13 +15,12 @@ os::OSInformationProcessor::~OSInformationProcessor() {
     logger.notice("Instance destroyed.");
 }
 
-void os::OSInformationProcessor::process(Json::Value &request,
-                                         boost::asio::ip::address address,
-                                         minijson::object_writer &response) {
+void OSInformationProcessor::process(processing::Request &req, minijson::object_writer &response) {
+
     logger.info("Processing request.");
 
     try {
-        auto linkParams = wifiInfo->getWifiLinkParams(address);
+        auto linkParams = wifiInfo->getWifiLinkParams(req.ipAddress);
 
         auto wifiWriter = response.nested_object("wifi");
         wifiWriter.write("s", linkParams.getSignalStrength());
@@ -30,7 +29,7 @@ void os::OSInformationProcessor::process(Json::Value &request,
         wifiWriter.close();
 
         logger.info("Wi-Fi params for %s: %2.0f dBm",
-                    address.to_string().c_str(), linkParams.getSignalStrength());
+                    req.ipAddress.to_string().c_str(), linkParams.getSignalStrength());
         //TODO add isEnabled to WifiInfo
     } catch (WifiException &e) {
         logger.info(std::string("Error reading Wi-Fi information: ") + e.what());
@@ -42,3 +41,4 @@ void os::OSInformationProcessor::process(Json::Value &request,
         wifiWriter.close();
     }
 }
+

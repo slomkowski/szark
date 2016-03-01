@@ -30,6 +30,7 @@ include_directories(${DW_INCLUDE_DIRS})
 
 include_directories(../../external-libs/backward-cpp)
 include_directories(../../external-libs/minijson_writer)
+include_directories(../../external-libs/rapidjson/include)
 
 include_directories("src")
 

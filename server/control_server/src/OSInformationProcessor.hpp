@@ -13,8 +13,7 @@ namespace os {
 
         ~OSInformationProcessor();
 
-        virtual void process(Json::Value &request, boost::asio::ip::address address,
-                             minijson::object_writer &response) override;
+        virtual void process(processing::Request &req, minijson::object_writer &response);
 
     private:
         log4cpp::Category &logger;

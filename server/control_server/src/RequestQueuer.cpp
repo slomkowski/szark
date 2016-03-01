@@ -2,6 +2,8 @@
 #include "utils.hpp"
 
 #include <minijson_writer.hpp>
+#include "rapidjson/document.h"
+#include "rapidjson/error/en.h"
 
 #include <boost/interprocess/streams/bufferstream.hpp>
 
@@ -62,46 +64,45 @@ long processing::RequestQueuer::addRequest(string requestString, boost::asio::ip
         return INVALID_MESSAGE;
     }
 
-    Json::Value req;
-    bool parseSuccess = jsonReader.parse(requestString, req);
+    std::shared_ptr<Request> request(new Request());
 
-    if (not parseSuccess) {
+    if (request->reqJson.Parse(requestString.c_str()).HasParseError()) {
         logger.error("Received request is not valid JSON document. See NOTICE for details.");
-        logger.notice("Details of the invalid request: " + jsonReader.getFormattedErrorMessages());
+        logger.notice("Details of the invalid request (offset %u): %s.",
+                      request->reqJson.GetErrorOffset(),
+                      rapidjson::GetParseError_En(request->reqJson.GetParseError()));
         return INVALID_MESSAGE;
     }
 
-    if (not req["serial"].isInt()) {
+    if (not request->reqJson["serial"].IsUint()) {
         logger.error("Request does not contain valid serial.");
         return INVALID_MESSAGE;
     }
 
-    auto serial = req["serial"].asInt();
+    request->serial = request->reqJson["serial"].GetInt();
 
-    if (serial != 0 and serial <= lastSerial) {
-        logger.warn("Request has too old serial (%d). Skipping.", serial);
+    if (request->serial != 0 and request->serial <= lastSerial) {
+        logger.warn("Request has too old serial (%d). Skipping.", request->serial);
         return INVALID_MESSAGE;
     }
 
-    req["tsr"] = common::utils::getTimestamp();
+    request->receiveTimestamp = common::utils::getTimestamp();
 
     if (requests.size() == REQUEST_QUEUE_MAX_SIZE) {
         logger.warn("Requests queue is full (%d). removing the oldest one.", REQUEST_QUEUE_MAX_SIZE);
 
-        long id;
-
-        tie(id, ignore, ignore) = requests.top();
+        auto toppedRequest = requests.top();
 
         requests.pop();
 
         if (rejectedRequestRemover == nullptr) {
             logger.error("Cannot remove rejected request. No RejectedRequestRemover set.");
         } else {
-            rejectedRequestRemover(id);
+            rejectedRequestRemover(toppedRequest->internalId);
         }
     }
 
-    if (serial == 0) {
+    if (request->serial == 0) {
         logger.notice("Request has the serial = 0, resetting counter and clearing queue.");
         for (unsigned int i = 0; i < requests.size(); ++i) {
             requests.pop();
@@ -109,15 +110,16 @@ long processing::RequestQueuer::addRequest(string requestString, boost::asio::ip
         lastSerial = 0;
     }
 
-    long id = nextId();
+    request->internalId = nextId();
+    request->ipAddress = address;
 
-    requests.push(make_tuple(id, address, req));
+    requests.push(request);
 
-    logger.info("Pushed request with the serial %d. Queue size: %d.", serial, requests.size());
+    logger.info("Pushed request with the serial %d. Queue size: %d.", request->serial, requests.size());
 
     cv.notify_one();
 
-    return id;
+    return request->internalId;
 }
 
 int processing::RequestQueuer::getNumOfMessages() {
@@ -149,25 +151,20 @@ void processing::RequestQueuer::requestProcessorExecutorThreadFunction() {
             return;
         }
 
-        long id;
-        asio::ip::address addr;
-        Json::Value req;
-
-        tie(id, addr, req) = requests.top();
+        auto request = requests.top();
         requests.pop();
 
         lk.unlock();
 
-        auto serial = req["serial"].asInt();
-
-        if (serial < lastSerial) {
-            logger.warn("Request has too old serial (%d). Skipping (from executor).", serial);
+        if (request->serial < lastSerial) {
+            logger.warn("Request has too old serial (%d). Skipping (from executor).", request->serial);
             continue;
         } else {
-            lastSerial = serial;
+            lastSerial = request->serial;
         }
 
-        logger.info("Executing request with serial %d from %s.", serial, addr.to_string().c_str());
+        logger.info("Executing request with serial %d from %s.", request->serial,
+                    request->ipAddress.to_string().c_str());
 
         char responseBuffer[RESPONSE_MAX_LENGTH];
         std::memset(responseBuffer, 0, RESPONSE_MAX_LENGTH);
@@ -175,16 +172,13 @@ void processing::RequestQueuer::requestProcessorExecutorThreadFunction() {
 
         minijson::object_writer response(responseStream);
 
-        response.write("serial", serial);
-
-        response.write("tss", req["tss"].asString());
-        response.write("tsr", req["tsr"].asString());
-
+        response.write("serial", request->serial);
+        response.write("tsr", request->receiveTimestamp);
         response.write("tspb", common::utils::getTimestamp());
 
         auto execTimeMicroseconds = common::utils::measureTime<chrono::microseconds>([&]() {
             for (auto proc : requestProcessors) {
-                std::shared_ptr<IRequestProcessor>(proc)->process(req, addr, response);
+                std::shared_ptr<IRequestProcessor>(proc)->process(*request, response);
             }
         });
 
@@ -192,9 +186,9 @@ void processing::RequestQueuer::requestProcessorExecutorThreadFunction() {
 
         response.close();
 
-        logger.info("Request %d executed in %d us.", serial, execTimeMicroseconds);
+        logger.info("Request %d executed in %d us.", request->serial, execTimeMicroseconds);
 
-        bool skipResponse = req["skip_response"].asBool();
+        bool skipResponse = request->reqJson["skip_response"].GetBool();
 
         if (skipResponse) {
             logger.debug("Skipping response sending.");
@@ -205,7 +199,7 @@ void processing::RequestQueuer::requestProcessorExecutorThreadFunction() {
         if (responseSender == nullptr) {
             logger.error("Cannot send response. No ResponseSender set.");
         } else {
-            responseSender(id, responseBuffer, not skipResponse);
+            responseSender(request->internalId, responseBuffer, not skipResponse);
         }
     }
 }

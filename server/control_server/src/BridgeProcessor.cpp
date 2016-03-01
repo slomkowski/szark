@@ -55,15 +55,14 @@ bridge::BridgeProcessor::~BridgeProcessor() {
     logger.notice("Instance destroyed.");
 }
 
-void bridge::BridgeProcessor::process(Json::Value &request, boost::asio::ip::address address,
-                                      minijson::object_writer &response) {
+void bridge::BridgeProcessor::process(processing::Request &request, minijson::object_writer &response) {
     SharedScopedMutex lk(iface().mutex);
 
     firstMaintenanceTask = true;
 
     logger.info("Processing request.");
 
-    parseRequest(request);
+    parseRequest(request.reqJson);
 
     interfaceManager->syncWithDevice([&](vector<uint8_t> &r) {
         usbComm->sendData(r);
@@ -130,78 +129,81 @@ struct jsonType<bool> {
     }
 };
 
-template<>
-struct jsonType<int> {
-    static const Json::ValueType value = Json::intValue;
+//template<>
+//struct jsonType<int> {
+//    static const Json::ValueType value = Json::intValue;
+//
+//    static void execute(const Json::Value &key, function<void(int)> &setter) {
+//        setter(key.asInt());
+//    }
+//};
 
-    static void execute(const Json::Value &key, function<void(int)> &setter) {
-        setter(key.asInt());
-    }
-};
+void bridge::BridgeProcessor::tryAssignInt(const rapidjson::Value &key, function<void(int)> setter) {
 
-template<typename T>
-void bridge::BridgeProcessor::tryAssign(const Json::Value &key, function<void(T)> setter) {
-    if (key.empty()) {
+    if (not key.IsInt()) {
+        //  logger.error("Value for " + " is in invalid format.");
         return;
     }
 
-    if (not key.isConvertibleTo(jsonType<T>::value)) {
-        logger.error("Value for " + key.toStyledString() + " is in invalid format.");
-        return;
-    }
-
-    jsonType<T>::execute(key, setter);
+    setter(key.GetInt());
 }
 
-void bridge::BridgeProcessor::tryAssignDirection(const Json::Value &key, function<void(Direction)> setter) {
-    if (key.empty()) {
+void bridge::BridgeProcessor::tryAssignBool(const rapidjson::Value &key, function<void(bool)> setter) {
+    if (not key.IsBool()) {
+        // logger.error("Value for " + key.toStyledString() + " is in invalid format.");
         return;
     }
 
+    setter(key.GetBool());
+}
+
+void bridge::BridgeProcessor::tryAssignDirection(const rapidjson::Value &key, function<void(Direction)> setter) {
     try {
-        auto dir = stringToDirection(key.asString());
+        auto dir = stringToDirection(key.GetString());
         setter(dir);
     } catch (runtime_error &e) {
-        logger.error("Value for " + key.toStyledString() + ": " + e.what() + ".");
+        // logger.error("Value for " + key.toStyledString() + ": " + e.what() + ".");
     }
 }
 
-void bridge::BridgeProcessor::parseRequest(Json::Value &r) {
+void bridge::BridgeProcessor::parseRequest(rapidjson::Document &r) {
     using namespace std::placeholders;
     // TODO wkładanie requestów do interfejsu
 
-    tryAssign<bool>(r["ks_en"], std::bind(&Interface::setKillSwitch, &iface(), _1));
-    tryAssign<string>(r["lcd"], std::bind(&Interface::setLCDText, &iface(), _1));
+    tryAssignBool(r["ks_en"], std::bind(&Interface::setKillSwitch, &iface(), _1));
+    if (r["lcd"].IsString()) {
+        iface().setLCDText(r["lcd"].GetString());
+    }
 
-    auto fillArm = [&](string name, Joint j) {
-        tryAssign<int>(r["arm"][name]["speed"],
-                       bind(&Interface::ArmClass::SingleJoint::setSpeed, &iface().arm[j], _1));
+    auto fillArm = [&](const char *name, Joint j) {
+        tryAssignInt(r["arm"][name]["speed"],
+                     bind(&Interface::ArmClass::SingleJoint::setSpeed, &iface().arm[j], _1));
 
         tryAssignDirection(r["arm"][name]["dir"],
                            bind(&Interface::ArmClass::SingleJoint::setDirection, &iface().arm[j], _1));
 
-        if (r["arm"][name]["dir"].empty()) {
-            tryAssign<int>(r["arm"][name]["pos"],
-                           bind(&Interface::ArmClass::SingleJoint::setPosition, &iface().arm[j], _1));
+        if (!r["arm"][name]["dir"].IsString()) {
+            tryAssignInt(r["arm"][name]["pos"],
+                         bind(&Interface::ArmClass::SingleJoint::setPosition, &iface().arm[j], _1));
         }
     };
 
     // TODO arm ogólne ustawienia kalibracja itd.
 
-    auto fillMotor = [&](string name, Motor m) {
-        tryAssign<int>(r["motor"][name]["speed"],
-                       bind(&Interface::MotorClass::SingleMotor::setSpeed, &iface().motor[m], _1));
+    auto fillMotor = [&](const char *name, Motor m) {
+        tryAssignInt(r["motor"][name]["speed"],
+                     bind(&Interface::MotorClass::SingleMotor::setSpeed, &iface().motor[m], _1));
 
         tryAssignDirection(r["motor"][name]["dir"],
                            bind(&Interface::MotorClass::SingleMotor::setDirection, &iface().motor[m], _1));
     };
 
-    auto fillExpander = [&](string name, ExpanderDevice d) {
-        tryAssign<bool>(r["light"][name],
-                        bind(&Interface::ExpanderClass::Device::setEnabled, &iface().expander[d], _1));
+    auto fillExpander = [&](const char *name, ExpanderDevice d) {
+        tryAssignInt(r["light"][name],
+                     bind(&Interface::ExpanderClass::Device::setEnabled, &iface().expander[d], _1));
     };
 
-    tryAssign<bool>(r["arm"]["b_cal"], [&](bool startCalibration) {
+    tryAssignBool(r["arm"]["b_cal"], [&](bool startCalibration) {
         if (startCalibration) {
             iface().arm.calibrate();
         }
@@ -297,9 +299,9 @@ void bridge::BridgeProcessor::createReport(minijson::object_writer &r) {
 }
 
 void bridge::BridgeProcessor::fillAllDevices(
-        std::function<void(string, Joint)> fillArm,
-        std::function<void(string, Motor)> fillMotor,
-        std::function<void(string, ExpanderDevice)> fillExpander) {
+        std::function<void(const char *, Joint)> fillArm,
+        std::function<void(const char *, Motor)> fillMotor,
+        std::function<void(const char *, ExpanderDevice)> fillExpander) {
 
     fillExpander("right", ExpanderDevice::LIGHT_RIGHT);
     fillExpander("left", ExpanderDevice::LIGHT_LEFT);
