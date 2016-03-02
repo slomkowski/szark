@@ -5,19 +5,19 @@ import com.google.gson.annotations.SerializedName;
 
 public class Battery {
 
-	@Expose(deserialize = true, serialize = false)
-	@SerializedName("curr")
-	private float current;
+    @Expose(deserialize = true, serialize = false)
+    @SerializedName("i")
+    private float current;
 
-	@Expose(deserialize = true, serialize = false)
-	@SerializedName("volt")
-	private float voltage;
+    @Expose(deserialize = true, serialize = false)
+    @SerializedName("u")
+    private float voltage;
 
-	public float getCurrent() {
-		return current;
-	}
+    public float getCurrent() {
+        return current;
+    }
 
-	public float getVoltage() {
-		return voltage;
-	}
+    public float getVoltage() {
+        return voltage;
+    }
 }

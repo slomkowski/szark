@@ -7,10 +7,13 @@ import eu.slomkowski.szark.client.HardcodedConfiguration;
 public class JointSet extends AbstractMotor {
 
     @Expose
+    @SerializedName("e")
     public Joint elbow = new Joint();
     @Expose
+    @SerializedName("g")
     public Joint gripper = new Joint();
     @Expose
+    @SerializedName("s")
     public Joint shoulder = new Joint();
 
     @Expose(deserialize = false, serialize = true)
@@ -104,7 +107,7 @@ public class JointSet extends AbstractMotor {
         private Direction exactDirection;
 
         @Expose(deserialize = true, serialize = false)
-        @SerializedName("pos")
+        @SerializedName("p")
         private int position;
 
         @Override

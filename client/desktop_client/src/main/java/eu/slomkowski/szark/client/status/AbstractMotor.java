@@ -23,10 +23,10 @@ public abstract class AbstractMotor {
 
         protected byte speedLimit = 0;
         @Expose
-        @SerializedName("dir")
+        @SerializedName("d")
         private Direction direction;
         @Expose
-        @SerializedName("speed")
+        @SerializedName("s")
         private byte speed;
 
         AbstractParams() {

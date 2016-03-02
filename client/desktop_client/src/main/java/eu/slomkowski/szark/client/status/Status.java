@@ -8,23 +8,23 @@ import java.time.LocalTime;
 public class Status {
 
     @Expose
-    @SerializedName("arm")
+    @SerializedName("a")
     public JointSet joints;
 
     @Expose
-    @SerializedName("motor")
+    @SerializedName("m")
     public MotorSet motors;
 
     @Expose(deserialize = false, serialize = true)
-    @SerializedName("light")
+    @SerializedName("e")
     public LightSet lights;
 
     @Expose(deserialize = true, serialize = false)
-    @SerializedName("batt")
+    @SerializedName("b")
     public Battery battery;
 
     @Expose(deserialize = true, serialize = false)
-    @SerializedName("wifi")
+    @SerializedName("w")
     public WifiInfo wifi;
 
     @Expose(deserialize = false, serialize = true)
