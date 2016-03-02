@@ -115,67 +115,72 @@ void bridge::BridgeProcessor::parseRequest(std::string &request) {
     using namespace std::placeholders;
     using namespace minijson;
 
-    auto parse_motor = [&](Motor m, const char *k, value v) {
+    const_buffer_context ctx(request.c_str(), request.size());
+
+    auto parse_motor = [&](Motor m, const char *k, minijson::value v) {
         try {
             dispatch(k)
-            << "speed" >> [&] { iface().motor[m].setSpeed(v.as_long()); }
-            << "dir" >> [&] { iface().motor[m].setDirection(stringToDirection(v.as_string())); };
+            << "s" >> [&] { iface().motor[m].setSpeed(v.as_long()); }
+            << "d" >> [&] { iface().motor[m].setDirection(stringToDirection(v.as_string())); }
+            << minijson::any >> [&] { minijson::ignore(ctx); };
         } catch (runtime_error &e) {
             logger.error("Cannot set value for motor " + devToString(m) + ": " + e.what() + ".");
         }
     };
 
-    auto parse_arm = [&](Joint j, const char *k, value v) {
+    auto parse_arm = [&](Joint j, const char *k, minijson::value v) {
         try {
             bool directionSet = false;
             dispatch(k)
-            << "speed" >> [&] { iface().arm[j].setSpeed(v.as_long()); }
-            << "dir" >> [&] {
+            << "s" >> [&] { iface().arm[j].setSpeed(v.as_long()); }
+            << "d" >> [&] {
                 iface().arm[j].setDirection(stringToDirection(v.as_string()));
                 directionSet = true;
             }
-            << "pos" >> [&] {
+            << "p" >> [&] {
                 if (!directionSet) {
                     iface().arm[j].setPosition(v.as_long());
                 }
-            };
+            }
+            << minijson::any >> [&] { minijson::ignore(ctx); };
         } catch (runtime_error &e) {
             logger.error("Cannot set value for joint " + devToString(j) + ": " + e.what() + ".");
         }
     };
 
-    const_buffer_context ctx(request.c_str(), request.size());
     parse_object(ctx, [&](const char *k, value v) {
         dispatch(k)
         << "lcd" >> [&] { iface().setLCDText(v.as_string()); }
         << "ks_en" >> [&] { iface().setKillSwitch(v.as_bool()); }
-        << "motor" >> [&] {
+        << "m" >> [&] {
             parse_object(ctx, [&](const char *k, value v) {
                 dispatch(k)
-                << "left" >> [&] { parse_object(ctx, bind(parse_motor, Motor::LEFT, _1, _2)); }
-                << "right" >> [&] { parse_object(ctx, bind(parse_motor, Motor::RIGHT, _1, _2)); };
+                << "l" >> [&] { parse_object(ctx, bind(parse_motor, Motor::LEFT, _1, _2)); }
+                << "r" >> [&] { parse_object(ctx, bind(parse_motor, Motor::RIGHT, _1, _2)); }
+                << minijson::any >> [&] { minijson::ignore(ctx); };
             });
         }
-        << "arm" >> [&] {
+        << "a" >> [&] {
             parse_object(ctx, [&](const char *k, value v) {
                 dispatch(k)
-                << "shoulder" >> [&] { parse_object(ctx, bind(parse_arm, Joint::SHOULDER, _1, _2)); }
-                << "elbow" >> [&] { parse_object(ctx, bind(parse_arm, Joint::ELBOW, _1, _2)); }
-                << "gripper" >> [&] { parse_object(ctx, bind(parse_arm, Joint::GRIPPER, _1, _2)); }
+                << "s" >> [&] { parse_object(ctx, bind(parse_arm, Joint::SHOULDER, _1, _2)); }
+                << "e" >> [&] { parse_object(ctx, bind(parse_arm, Joint::ELBOW, _1, _2)); }
+                << "g" >> [&] { parse_object(ctx, bind(parse_arm, Joint::GRIPPER, _1, _2)); }
                 << "b_cal" >> [&] {
                     if (v.as_bool()) {
                         iface().arm.calibrate();
                     }
-                };
+                }
+                << minijson::any >> [&] { minijson::ignore(ctx); };
             });
         }
-        << "light" >> [&] {
+        << "e" >> [&] {
             parse_object(ctx, [&](const char *k, value v) {
                 dispatch(k)
-                << "right" >> [&] { iface().expander[ExpanderDevice::LIGHT_RIGHT].setEnabled(v.as_bool()); }
-                << "left" >> [&] { iface().expander[ExpanderDevice::LIGHT_LEFT].setEnabled(v.as_bool()); }
-                << "camera" >> [&] { iface().expander[ExpanderDevice::LIGHT_CAMERA].setEnabled(v.as_bool()); };
-
+                << "r" >> [&] { iface().expander[ExpanderDevice::LIGHT_RIGHT].setEnabled(v.as_bool()); }
+                << "l" >> [&] { iface().expander[ExpanderDevice::LIGHT_LEFT].setEnabled(v.as_bool()); }
+                << "cam" >> [&] { iface().expander[ExpanderDevice::LIGHT_CAMERA].setEnabled(v.as_bool()); }
+                << minijson::any >> [&] { minijson::ignore(ctx); };
             });
         }
 
@@ -186,48 +191,48 @@ void bridge::BridgeProcessor::parseRequest(std::string &request) {
 void bridge::BridgeProcessor::createReport(minijson::object_writer &r) {
 
     {
-        auto light = r.nested_object("light");
+        auto light = r.nested_object("e");
         auto fillExpander = [&](const char *name, ExpanderDevice d) {
             light.write(name, iface().expander[d].isEnabled());
         };
 
-        fillExpander("right", ExpanderDevice::LIGHT_RIGHT);
-        fillExpander("left", ExpanderDevice::LIGHT_LEFT);
-        fillExpander("camera", ExpanderDevice::LIGHT_CAMERA);
+        fillExpander("r", ExpanderDevice::LIGHT_RIGHT);
+        fillExpander("l", ExpanderDevice::LIGHT_LEFT);
+        fillExpander("cam", ExpanderDevice::LIGHT_CAMERA);
 
         light.close();
     }
 
     {
-        auto motor = r.nested_object("motor");
+        auto motor = r.nested_object("m");
 
         auto fillMotor = [&](const char *name, Motor m) {
             auto specificMotor = motor.nested_object(name);
-            specificMotor.write("speed", iface().motor[m].getSpeed());
-            specificMotor.write("dir", directionToString(iface().motor[m].getDirection()));
+            specificMotor.write("s", iface().motor[m].getSpeed());
+            specificMotor.write("d", directionToString(iface().motor[m].getDirection()));
             specificMotor.close();
         };
 
-        fillMotor("left", Motor::LEFT);
-        fillMotor("right", Motor::RIGHT);
+        fillMotor("l", Motor::LEFT);
+        fillMotor("r", Motor::RIGHT);
 
         motor.close();
     }
 
     {
-        auto arm = r.nested_object("arm");
+        auto arm = r.nested_object("a");
 
         auto fillArm = [&](const char *name, Joint j) {
             auto joint = arm.nested_object(name);
-            joint.write("speed", iface().arm[j].getSpeed());
-            joint.write("pos", iface().arm[j].getPosition());
-            joint.write("dir", directionToString(iface().arm[j].getDirection()));
+            joint.write("s", iface().arm[j].getSpeed());
+            joint.write("p", iface().arm[j].getPosition());
+            joint.write("d", directionToString(iface().arm[j].getDirection()));
             joint.close();
         };
 
-        fillArm("shoulder", Joint::SHOULDER);
-        fillArm("elbow", Joint::ELBOW);
-        fillArm("gripper", Joint::GRIPPER);
+        fillArm("s", Joint::SHOULDER);
+        fillArm("e", Joint::ELBOW);
+        fillArm("g", Joint::GRIPPER);
 
         arm.write("cal_st", armCalibrationStatusToString(iface().arm.getCalibrationStatus()));
         arm.write("mode", armDriverModeToString(iface().arm.getMode()));
@@ -236,7 +241,7 @@ void bridge::BridgeProcessor::createReport(minijson::object_writer &r) {
     }
 
     {
-        auto button = r.nested_array("button");
+        auto button = r.nested_array("btn");
 
         auto fillButtons = [&](string name, Button d) {
             if (iface().isButtonPressed(d)) {
@@ -244,17 +249,17 @@ void bridge::BridgeProcessor::createReport(minijson::object_writer &r) {
             }
         };
 
-        fillButtons("up", Button::UP);
-        fillButtons("down", Button::DOWN);
-        fillButtons("enter", Button::ENTER);
+        fillButtons("u", Button::UP);
+        fillButtons("d", Button::DOWN);
+        fillButtons("e", Button::ENTER);
 
         button.close();
     }
 
     {
-        auto batt = r.nested_object("batt");
-        batt.write("volt", iface().getVoltage());
-        batt.write("curr", iface().getCurrent());
+        auto batt = r.nested_object("b");
+        batt.write("u", iface().getVoltage());
+        batt.write("i", iface().getCurrent());
         batt.close();
     }
 

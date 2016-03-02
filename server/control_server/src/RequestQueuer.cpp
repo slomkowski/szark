@@ -196,7 +196,7 @@ void processing::RequestQueuer::requestProcessorExecutorThreadFunction() {
         if (request->skipResponse) {
             logger.debug("Skipping response sending.");
         } else {
-            logger.debug("Response in JSON: %s", responseBuffer);
+            logger.debug("Response in JSON (%d B): %s", strlen(responseBuffer), responseBuffer);
         }
 
         if (responseSender == nullptr) {

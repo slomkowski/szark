@@ -22,7 +22,7 @@ void OSInformationProcessor::process(processing::Request &req, minijson::object_
     try {
         auto linkParams = wifiInfo->getWifiLinkParams(req.ipAddress);
 
-        auto wifiWriter = response.nested_object("wifi");
+        auto wifiWriter = response.nested_object("w");
         wifiWriter.write("s", linkParams.getSignalStrength());
         wifiWriter.write("txb", linkParams.getTxBitrate());
         wifiWriter.write("rxb", linkParams.getRxBitrate());
@@ -32,9 +32,9 @@ void OSInformationProcessor::process(processing::Request &req, minijson::object_
                     req.ipAddress.to_string().c_str(), linkParams.getSignalStrength());
         //TODO add isEnabled to WifiInfo
     } catch (WifiException &e) {
-        logger.info(std::string("Error reading Wi-Fi information: ") + e.what());
+        logger.info("Error reading Wi-Fi information: %s.", e.what());
 
-        auto wifiWriter = response.nested_object("wifi");
+        auto wifiWriter = response.nested_object("w");
         wifiWriter.write("txb", 0);
         wifiWriter.write("rxb", 0);
         wifiWriter.write("s", 0);
