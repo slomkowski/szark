@@ -6,7 +6,7 @@
 #include "utils.hpp"
 
 #include <boost/format.hpp>
-#include <json/value.h>
+#include <minijson_reader.hpp>
 
 #include <chrono>
 #include <functional>
@@ -111,105 +111,76 @@ using bridge::Motor;
 using bridge::Joint;
 using bridge::Button;
 
-template<typename T>
-struct jsonType {
-    static const Json::ValueType value = Json::stringValue;
-
-    static void execute(const Json::Value &key, function<void(T)> &setter) {
-        setter(key.asString());
-    }
-};
-
-template<>
-struct jsonType<bool> {
-    static const Json::ValueType value = Json::booleanValue;
-
-    static void execute(const Json::Value &key, function<void(bool)> &setter) {
-        setter(key.asBool());
-    }
-};
-
-//template<>
-//struct jsonType<int> {
-//    static const Json::ValueType value = Json::intValue;
-//
-//    static void execute(const Json::Value &key, function<void(int)> &setter) {
-//        setter(key.asInt());
-//    }
-//};
-
-void bridge::BridgeProcessor::tryAssignInt(const rapidjson::Value &key, function<void(int)> setter) {
-
-    if (not key.IsInt()) {
-        //  logger.error("Value for " + " is in invalid format.");
-        return;
-    }
-
-    setter(key.GetInt());
-}
-
-void bridge::BridgeProcessor::tryAssignBool(const rapidjson::Value &key, function<void(bool)> setter) {
-    if (not key.IsBool()) {
-        // logger.error("Value for " + key.toStyledString() + " is in invalid format.");
-        return;
-    }
-
-    setter(key.GetBool());
-}
-
-void bridge::BridgeProcessor::tryAssignDirection(const rapidjson::Value &key, function<void(Direction)> setter) {
-    try {
-        auto dir = stringToDirection(key.GetString());
-        setter(dir);
-    } catch (runtime_error &e) {
-        // logger.error("Value for " + key.toStyledString() + ": " + e.what() + ".");
-    }
-}
-
-void bridge::BridgeProcessor::parseRequest(rapidjson::Document &r) {
+void bridge::BridgeProcessor::parseRequest(std::string &request) {
     using namespace std::placeholders;
-    // TODO wkładanie requestów do interfejsu
+    using namespace minijson;
 
-    tryAssignBool(r["ks_en"], std::bind(&Interface::setKillSwitch, &iface(), _1));
-    if (r["lcd"].IsString()) {
-        iface().setLCDText(r["lcd"].GetString());
-    }
-
-    auto fillArm = [&](const char *name, Joint j) {
-        tryAssignInt(r["arm"][name]["speed"],
-                     bind(&Interface::ArmClass::SingleJoint::setSpeed, &iface().arm[j], _1));
-
-        tryAssignDirection(r["arm"][name]["dir"],
-                           bind(&Interface::ArmClass::SingleJoint::setDirection, &iface().arm[j], _1));
-
-        if (!r["arm"][name]["dir"].IsString()) {
-            tryAssignInt(r["arm"][name]["pos"],
-                         bind(&Interface::ArmClass::SingleJoint::setPosition, &iface().arm[j], _1));
+    auto parse_motor = [&](Motor m, const char *k, value v) {
+        try {
+            dispatch(k)
+            << "speed" >> [&] { iface().motor[m].setSpeed(v.as_long()); }
+            << "dir" >> [&] { iface().motor[m].setDirection(stringToDirection(v.as_string())); };
+        } catch (runtime_error &e) {
+            logger.error("Cannot set value for motor " + devToString(m) + ": " + e.what() + ".");
         }
     };
 
-    // TODO arm ogólne ustawienia kalibracja itd.
-
-    auto fillMotor = [&](const char *name, Motor m) {
-        tryAssignInt(r["motor"][name]["speed"],
-                     bind(&Interface::MotorClass::SingleMotor::setSpeed, &iface().motor[m], _1));
-
-        tryAssignDirection(r["motor"][name]["dir"],
-                           bind(&Interface::MotorClass::SingleMotor::setDirection, &iface().motor[m], _1));
-    };
-
-    auto fillExpander = [&](const char *name, ExpanderDevice d) {
-        tryAssignInt(r["light"][name],
-                     bind(&Interface::ExpanderClass::Device::setEnabled, &iface().expander[d], _1));
-    };
-
-    tryAssignBool(r["arm"]["b_cal"], [&](bool startCalibration) {
-        if (startCalibration) {
-            iface().arm.calibrate();
+    auto parse_arm = [&](Joint j, const char *k, value v) {
+        try {
+            bool directionSet = false;
+            dispatch(k)
+            << "speed" >> [&] { iface().arm[j].setSpeed(v.as_long()); }
+            << "dir" >> [&] {
+                iface().arm[j].setDirection(stringToDirection(v.as_string()));
+                directionSet = true;
+            }
+            << "pos" >> [&] {
+                if (!directionSet) {
+                    iface().arm[j].setPosition(v.as_long());
+                }
+            };
+        } catch (runtime_error &e) {
+            logger.error("Cannot set value for joint " + devToString(j) + ": " + e.what() + ".");
         }
+    };
+
+    const_buffer_context ctx(request.c_str(), request.size());
+    parse_object(ctx, [&](const char *k, value v) {
+        dispatch(k)
+        << "lcd" >> [&] { iface().setLCDText(v.as_string()); }
+        << "ks_en" >> [&] { iface().setKillSwitch(v.as_bool()); }
+        << "motor" >> [&] {
+            parse_object(ctx, [&](const char *k, value v) {
+                dispatch(k)
+                << "left" >> [&] { parse_object(ctx, bind(parse_motor, Motor::LEFT, _1, _2)); }
+                << "right" >> [&] { parse_object(ctx, bind(parse_motor, Motor::RIGHT, _1, _2)); };
+            });
+        }
+        << "arm" >> [&] {
+            parse_object(ctx, [&](const char *k, value v) {
+                dispatch(k)
+                << "shoulder" >> [&] { parse_object(ctx, bind(parse_arm, Joint::SHOULDER, _1, _2)); }
+                << "elbow" >> [&] { parse_object(ctx, bind(parse_arm, Joint::ELBOW, _1, _2)); }
+                << "gripper" >> [&] { parse_object(ctx, bind(parse_arm, Joint::GRIPPER, _1, _2)); }
+                << "b_cal" >> [&] {
+                    if (v.as_bool()) {
+                        iface().arm.calibrate();
+                    }
+                };
+            });
+        }
+        << "light" >> [&] {
+            parse_object(ctx, [&](const char *k, value v) {
+                dispatch(k)
+                << "right" >> [&] { iface().expander[ExpanderDevice::LIGHT_RIGHT].setEnabled(v.as_bool()); }
+                << "left" >> [&] { iface().expander[ExpanderDevice::LIGHT_LEFT].setEnabled(v.as_bool()); }
+                << "camera" >> [&] { iface().expander[ExpanderDevice::LIGHT_CAMERA].setEnabled(v.as_bool()); };
+
+            });
+        }
+
+        << minijson::any >> [&] { minijson::ignore(ctx); };
     });
-
-    fillAllDevices(fillArm, fillMotor, fillExpander);
 }
 
 void bridge::BridgeProcessor::createReport(minijson::object_writer &r) {
@@ -296,21 +267,4 @@ void bridge::BridgeProcessor::createReport(minijson::object_writer &r) {
     } else {
         r.write("ks_stat", "inactive");
     }
-}
-
-void bridge::BridgeProcessor::fillAllDevices(
-        std::function<void(const char *, Joint)> fillArm,
-        std::function<void(const char *, Motor)> fillMotor,
-        std::function<void(const char *, ExpanderDevice)> fillExpander) {
-
-    fillExpander("right", ExpanderDevice::LIGHT_RIGHT);
-    fillExpander("left", ExpanderDevice::LIGHT_LEFT);
-    fillExpander("camera", ExpanderDevice::LIGHT_CAMERA);
-
-    fillMotor("left", Motor::LEFT);
-    fillMotor("right", Motor::RIGHT);
-
-    fillArm("shoulder", Joint::SHOULDER);
-    fillArm("elbow", Joint::ELBOW);
-    fillArm("gripper", Joint::GRIPPER);
 }

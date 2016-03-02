@@ -48,18 +48,7 @@ namespace bridge {
 
         void createReport(minijson::object_writer &r);
 
-        void parseRequest(rapidjson::Document &r);
-
-        void tryAssignBool(const rapidjson::Value &key, std::function<void(bool)> setter);
-
-        void tryAssignInt(const rapidjson::Value &key, std::function<void(int)> setter);
-
-        void tryAssignDirection(const rapidjson::Value &key, std::function<void(Direction)> setter);
-
-        void fillAllDevices(
-                std::function<void(const char *name, Joint j)> fillArm,
-                std::function<void(const char *name, Motor m)> fillMotor,
-                std::function<void(const char *name, ExpanderDevice d)> fillExpander);
+        void parseRequest(std::string &request);
     };
 
 }

@@ -1,6 +1,5 @@
 #pragma once
 
-#include <rapidjson/document.h>
 #include <minijson_writer.hpp>
 
 #include <boost/asio.hpp>
@@ -12,8 +11,10 @@ namespace processing {
     struct Request {
         long internalId = -1;
         long serial = -1;
+        bool skipResponse = false;
         boost::asio::ip::address ipAddress;
-        rapidjson::Document reqJson;
+        std::string reqJson;
+        std::string sendTimestamp;
         std::string receiveTimestamp;
     };
 

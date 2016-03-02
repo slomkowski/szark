@@ -2,8 +2,7 @@
 #include "utils.hpp"
 
 #include <minijson_writer.hpp>
-#include "rapidjson/document.h"
-#include "rapidjson/error/en.h"
+#include <minijson_reader.hpp>
 
 #include <boost/interprocess/streams/bufferstream.hpp>
 
@@ -30,8 +29,7 @@ WALLAROO_REGISTER(RequestQueuer);
 
 processing::RequestQueuer::RequestQueuer()
         : logger(log4cpp::Category::getInstance("RequestQueuer")),
-          requestProcessors("requestProcessors", RegistrationToken()),
-          jsonReader(Json::Reader(Json::Features::strictMode())) {
+          requestProcessors("requestProcessors", RegistrationToken()) {
 }
 
 void processing::RequestQueuer::Init() {
@@ -66,20 +64,25 @@ long processing::RequestQueuer::addRequest(string requestString, boost::asio::ip
 
     std::shared_ptr<Request> request(new Request());
 
-    if (request->reqJson.Parse(requestString.c_str()).HasParseError()) {
-        logger.error("Received request is not valid JSON document. See NOTICE for details.");
-        logger.notice("Details of the invalid request (offset %u): %s.",
-                      request->reqJson.GetErrorOffset(),
-                      rapidjson::GetParseError_En(request->reqJson.GetParseError()));
+    try {
+        minijson::const_buffer_context ctx(requestString.c_str(), requestString.size());
+        minijson::parse_object(ctx, [&](const char *k, minijson::value v) {
+            minijson::dispatch(k)
+            << "serial" >> [&] { request->serial = v.as_long(); }
+            << "skip_response" >> [&] { request->skipResponse = v.as_bool(); }
+            << "tss" >> [&] { request->sendTimestamp = v.as_string(); }
+
+            << minijson::any >> [&] { minijson::ignore(ctx); };
+        });
+    } catch (minijson::parse_error &e) {
+        logger.error("Received request is not valid JSON document: %s.", e.what());
         return INVALID_MESSAGE;
     }
 
-    if (not request->reqJson["serial"].IsUint()) {
+    if (request->serial < 0) {
         logger.error("Request does not contain valid serial.");
         return INVALID_MESSAGE;
     }
-
-    request->serial = request->reqJson["serial"].GetInt();
 
     if (request->serial != 0 and request->serial <= lastSerial) {
         logger.warn("Request has too old serial (%d). Skipping.", request->serial);
@@ -112,6 +115,7 @@ long processing::RequestQueuer::addRequest(string requestString, boost::asio::ip
 
     request->internalId = nextId();
     request->ipAddress = address;
+    request->reqJson = requestString;
 
     requests.push(request);
 
@@ -173,6 +177,7 @@ void processing::RequestQueuer::requestProcessorExecutorThreadFunction() {
         minijson::object_writer response(responseStream);
 
         response.write("serial", request->serial);
+        response.write("tss", request->sendTimestamp);
         response.write("tsr", request->receiveTimestamp);
         response.write("tspb", common::utils::getTimestamp());
 
@@ -188,18 +193,16 @@ void processing::RequestQueuer::requestProcessorExecutorThreadFunction() {
 
         logger.info("Request %d executed in %d us.", request->serial, execTimeMicroseconds);
 
-        bool skipResponse = request->reqJson["skip_response"].GetBool();
-
-        if (skipResponse) {
+        if (request->skipResponse) {
             logger.debug("Skipping response sending.");
         } else {
-            logger.debug(string("Response in JSON: ") + responseBuffer);
+            logger.debug("Response in JSON: %s", responseBuffer);
         }
 
         if (responseSender == nullptr) {
             logger.error("Cannot send response. No ResponseSender set.");
         } else {
-            responseSender(request->internalId, responseBuffer, not skipResponse);
+            responseSender(request->internalId, responseBuffer, not request->skipResponse);
         }
     }
 }

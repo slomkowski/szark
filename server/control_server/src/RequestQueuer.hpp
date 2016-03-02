@@ -4,9 +4,6 @@
 
 #include <log4cpp/Category.hh>
 #include <wallaroo/registered.h>
-#include <json/value.h>
-#include <json/reader.h>
-#include <json/writer.h>
 #include <boost/asio/ip/address.hpp>
 
 #include <string>
@@ -24,11 +21,6 @@ namespace processing {
     typedef std::function<void(long)> RejectedRequestRemover;
 
     constexpr long INVALID_MESSAGE = -1;
-
-
-
-//    typedef std::tuple<long, boost::asio::ip::address, Json::Value> Request;
-
 
     class IRequestQueuer {
     public:
@@ -99,8 +91,6 @@ namespace processing {
         std::unique_ptr<std::thread> requestProcessorExecutorThread;
         std::condition_variable cv;
         volatile bool finishCycleThread = false;
-
-        Json::Reader jsonReader;
 
         ResponseSender responseSender;
         RejectedRequestRemover rejectedRequestRemover;
