@@ -144,7 +144,7 @@ namespace common {
             * since bridge doesn't support this functionality. If you haven't send any text previously,
             * empty string will be returned.
             */
-            std::string getLCDText() {
+            const std::string &getLCDText() {
                 return lcdText;
             }
 
@@ -153,7 +153,7 @@ namespace common {
             * be ignored. Every time you send the new text the old one will be cleared. You can't srequestsy append
             * to the existing one.
             */
-            void setLCDText(std::string text);
+            void setLCDText(const std::string &text);
 
             /**
             * Set the state of the kill switch feature. Activating kill switch forces immediate stop of all devices

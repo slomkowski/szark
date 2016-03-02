@@ -9,23 +9,23 @@ namespace common {
         * @param dir
         * @return
         */
-        std::string directionToString(const Direction dir);
+        const std::string &directionToString(const Direction dir);
 
         /**
         * Converts string to direction enum. Throws runtime_error if invalid string.
         * @param dir
         * @return
         */
-        Direction stringToDirection(std::string dir);
+        const Direction stringToDirection(const std::string &dir);
 
-        std::string armDriverModeToString(const ArmDriverMode mode);
+        const std::string &armDriverModeToString(const ArmDriverMode mode);
 
-        std::string armCalibrationStatusToString(const ArmCalibrationStatus status);
+        const std::string &armCalibrationStatusToString(const ArmCalibrationStatus status);
 
-        std::string devToString(ExpanderDevice dev);
+        const std::string &devToString(ExpanderDevice dev);
 
-        std::string devToString(Joint dev);
+        const std::string &devToString(Joint dev);
 
-        std::string devToString(Motor dev);
+        const std::string &devToString(Motor dev);
     }
 }

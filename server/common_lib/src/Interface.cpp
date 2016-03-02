@@ -75,7 +75,7 @@ double bridge::Interface::getCurrent() {
                  * accumulate(rawCurrent.begin(), rawCurrent.end(), 0) / rawCurrent.size()) / 10.0;
 }
 
-void bridge::Interface::setLCDText(std::string text) {
+void bridge::Interface::setLCDText(const std::string &text) {
     string newString;
     // 32 characters + new line
     if (text.length() > 33) {
@@ -335,10 +335,10 @@ void bridge::Interface::ArmClass::calibrate() {
 void bridge::Interface::ExpanderClass::Device::setEnabled(bool enabled) {
     if (enabled) {
         expanderClass->expanderByte |= (1 << int(device));
-        logger.info(string("Enabling expander device ") + devToString(device) + ".");
+        logger.info("Enabling expander device %s.", devToString(device).c_str());
     } else {
         expanderClass->expanderByte &= ~(1 << int(device));
-        logger.info(string("Disabling expander device ") + devToString(device) + ".");
+        logger.info("Disabling expander device %s.", devToString(device).c_str());
     }
 
     expanderClass->insertRequest("expander",

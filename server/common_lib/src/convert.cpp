@@ -4,51 +4,73 @@
 
 using namespace common::bridge;
 
-std::string common::bridge::devToString(ExpanderDevice dev) {
+const std::string &common::bridge::devToString(ExpanderDevice dev) {
+    static const std::string text[] = {
+            "camera light",
+            "left light",
+            "right light"
+    };
     switch (dev) {
         case ExpanderDevice::LIGHT_CAMERA:
-            return "camera light";
+            return text[0];
         case ExpanderDevice::LIGHT_LEFT:
-            return "left light";
+            return text[1];
         default:
-            return "right light";
+            return text[2];
     };
 }
 
-std::string common::bridge::devToString(Joint dev) {
+const std::string &common::bridge::devToString(Joint dev) {
+    static const std::string text[] = {
+            "elbow",
+            "gripper",
+            "shoulder"
+    };
+
     switch (dev) {
         case Joint::ELBOW:
-            return "elbow";
+            return text[0];
         case Joint::GRIPPER:
-            return "gripper";
+            return text[1];
         case Joint::SHOULDER:
         default:
-            return "shoulder";
+            return text[2];
     };
 }
 
-std::string common::bridge::devToString(Motor dev) {
+const std::string &common::bridge::devToString(Motor dev) {
+    static const std::string text[] = {
+            "left",
+            "right"
+    };
+
     if (dev == Motor::LEFT) {
-        return "left";
+        return text[0];
     } else {
-        return "right";
+        return text[1];
     }
 }
 
+const std::string &common::bridge::directionToString(const Direction dir) {
+    static const std::string text[] = {
+            "forward",
+            "backward",
+            "stop"
+    };
 
-std::string common::bridge::directionToString(const Direction dir) {
     switch (dir) {
         case Direction::FORWARD:
-            return "forward";
+            return text[0];
         case Direction::BACKWARD:
-            return "backward";
+            return text[1];
         case Direction::STOP:
         default:
-            return "stop";
+            return text[2];
     }
 }
 
-Direction common::bridge::stringToDirection(std::string dir) {
+const Direction common::bridge::stringToDirection(const std::string &dirc) {
+    std::string dir = dirc;
     boost::algorithm::to_lower(dir);
 
     if (dir == "stop") {
@@ -64,26 +86,37 @@ Direction common::bridge::stringToDirection(std::string dir) {
     return Direction::STOP;
 }
 
-std::string common::bridge::armDriverModeToString(const ArmDriverMode mode) {
+const std::string &common::bridge::armDriverModeToString(const ArmDriverMode mode) {
+    static const std::string text[] = {
+            "calibrating",
+            "positional",
+            "directional"
+    };
+
     switch (mode) {
         case ArmDriverMode::CALIBRATING:
-            return "calibrating";
+            return text[0];
         case ArmDriverMode::POSITIONAL:
-            return "positional";
+            return text[1];
         case ArmDriverMode::DIRECTIONAL:
         default:
-            return "directional";
+            return text[2];
     }
 }
 
-std::string common::bridge::armCalibrationStatusToString(const ArmCalibrationStatus status) {
+const std::string &common::bridge::armCalibrationStatusToString(const ArmCalibrationStatus status) {
+    static const std::string text[] = {
+            "done",
+            "prog",
+            "none"
+    };
     switch (status) {
         case ArmCalibrationStatus::DONE:
-            return "done";
+            return text[0];
         case ArmCalibrationStatus::IN_PROGRESS:
-            return "prog";
+            return text[1];
         case ArmCalibrationStatus::NONE:
         default:
-            return "none";
+            return text[2];
     }
 }
