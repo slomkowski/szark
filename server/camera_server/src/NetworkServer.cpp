@@ -1,10 +1,14 @@
 #include "NetworkServer.hpp"
 #include "Configuration.hpp"
 
+#include "utils.hpp"
+
 #include <minijson_reader.hpp>
 #include <minijson_writer.hpp>
 
 #include <boost/format.hpp>
+
+#include <cstdlib>
 
 using namespace std;
 using namespace boost;
@@ -59,6 +63,11 @@ void NetworkServer::Init() {
         throw NetworkException("error at binding socket: " + err.message());
     }
 
+    if (posix_memalign(reinterpret_cast<void **>(&sendBuffer), 32, SEND_BUFFER_SIZE) != 0
+        or posix_memalign(reinterpret_cast<void **>(&sendImgBuffer), 32, SEND_BUFFER_SIZE) != 0) {
+        throw NetworkException("cannot allocate buffer");
+    }
+
     doReceive();
 
     logger.notice("Started UDP listener on port %u%s.", port, ipv6enabled ? " (IPv6 enabled)" : "");
@@ -67,6 +76,14 @@ void NetworkServer::Init() {
 }
 
 camera::NetworkServer::~NetworkServer() {
+    if (sendBuffer != nullptr) {
+        free(sendBuffer);
+    }
+
+    if (sendImgBuffer != nullptr) {
+        free(sendImgBuffer);
+    }
+
     logger.notice("Instance destroyed.");
 }
 
@@ -105,9 +122,6 @@ void camera::NetworkServer::doReceive() {
                                 (drawHud ? "with" : "without"),
                                 quality);
 
-                    std::array<unsigned char, 0x40000> buffer;
-                    std::array<unsigned char, 0x40000> imgBuffer;
-
                     stringstream headerStream;
                     minijson::object_writer writer(headerStream);
                     writer.write("serial", serial);
@@ -117,7 +131,7 @@ void camera::NetworkServer::doReceive() {
                     writer.write("tsr", receivedTimestamp);
 
                     auto img = imageSource->getImage(drawHud);
-                    auto encodedLength = jpegEncoder->encodeImage(img, imgBuffer.data(), imgBuffer.size(), quality);
+                    auto encodedLength = jpegEncoder->encodeImage(img, sendImgBuffer, SEND_BUFFER_SIZE, quality);
 
                     logger.debug("JPEG file length: %d B.", encodedLength);
 
@@ -126,13 +140,13 @@ void camera::NetworkServer::doReceive() {
 
                     string header = headerStream.str();
 
-                    std::memcpy(buffer.data(), header.c_str(), header.size());
-                    buffer[header.size()] = 0;
-                    std::memcpy(buffer.data() + header.size() + 1, imgBuffer.data(), encodedLength);
+                    std::memcpy(sendBuffer, header.c_str(), header.size());
+                    sendBuffer[header.size()] = 0;
+                    std::memcpy(sendBuffer + header.size() + 1, sendImgBuffer, encodedLength);
 
                     auto packetLength = header.size() + 1 + encodedLength;
 
-                    auto sentBytes = udpSocket->send_to(asio::buffer(buffer.data(), packetLength), endpoint);
+                    auto sentBytes = udpSocket->send_to(asio::buffer(sendBuffer, packetLength), endpoint);
 
                     if (sentBytes != packetLength) {
                         logger.error("Not whole packet sent (%u < %u).", sentBytes, packetLength);

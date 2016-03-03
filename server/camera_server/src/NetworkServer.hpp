@@ -27,6 +27,8 @@ namespace camera {
         virtual ~INetworkServer() = default;
     };
 
+    constexpr int SEND_BUFFER_SIZE = 0x40000;
+
     class NetworkServer : public wallaroo::Part, public INetworkServer {
     public:
         NetworkServer();
@@ -48,6 +50,9 @@ namespace camera {
         boost::asio::ip::udp::endpoint endpoint;
 
         std::unique_ptr<char> recvBuffer;
+
+        unsigned char *sendBuffer = nullptr;
+        unsigned char *sendImgBuffer = nullptr;
 
         void Init();
 
