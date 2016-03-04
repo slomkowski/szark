@@ -6,6 +6,7 @@
 using namespace common::config;
 
 WALLAROO_REGISTER(Configuration, std::vector<std::string>)
+WALLAROO_REGISTER(Configuration)
 
 namespace common {
     namespace config {
@@ -55,4 +56,14 @@ std::string common::config::Configuration::getString(const std::string &property
     return get<std::string>(impl->ptree, property);
 }
 
+void common::config::Configuration::putInt(const std::string &property, const int val) {
+    impl->ptree.put(property, val);
+}
 
+void common::config::Configuration::putBool(const std::string &property, const bool val) {
+    impl->ptree.put(property, val);
+}
+
+void common::config::Configuration::putString(const std::string &property, const std::string val) {
+    impl->ptree.put(property, val);
+}

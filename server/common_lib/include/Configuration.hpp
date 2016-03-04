@@ -29,6 +29,12 @@ namespace common {
 
             ~Configuration();
 
+            void putInt(const std::string &property, const int val);
+
+            void putBool(const std::string &property, const bool val);
+
+            void putString(const std::string &property, const std::string val);
+
             int getInt(const std::string &property);
 
             bool getBool(const std::string &property);

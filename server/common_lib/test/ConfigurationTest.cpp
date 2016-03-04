@@ -24,6 +24,15 @@ BOOST_AUTO_TEST_CASE(ConfigurationTest_Run) {
     BOOST_CHECK_THROW(config->getBool("invalid_bool"), config::ConfigException);
     BOOST_CHECK_THROW(config->getString("invalid_string"), config::ConfigException);
 
+    config->putString("test.string", "qwerty");
+    BOOST_CHECK_EQUAL(config->getString("test.string"), "qwerty");
+
+    config->putBool("test.bool", true);
+    BOOST_CHECK_EQUAL(config->getBool("test.bool"), true);
+
+    config->putInt("test.int", 123);
+    BOOST_CHECK_EQUAL(config->getInt("test.int"), 123);
+
 //    int port = config->getInt("szark.server.NetServer.port");
 //
 //    BOOST_TEST_MESSAGE(std::string("port: ") + std::to_string(port));
