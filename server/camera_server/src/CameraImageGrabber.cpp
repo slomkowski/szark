@@ -231,6 +231,8 @@ namespace camera {
         PixFcSSE *pixfc;
 
         virtual void Init() {
+            logger.info("Starting the initialization of Video4LinuxImageGrabber.");
+
             string videoDevice = "/dev/video" + to_string(config->getInt(getFullConfigPath("device")));
 
             fd = open(videoDevice.c_str(), O_RDWR);

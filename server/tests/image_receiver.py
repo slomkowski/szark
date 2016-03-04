@@ -12,8 +12,17 @@ import time
 import cv2
 import numpy
 
+DEFAULT_PORT = 10192
+
+if len(sys.argv) < 2:
+    print("Usage:\n"
+          "%s {host} [port]\n"
+          "port = %d by default\n\n"
+          "press 's' to save image, 'q' to exit" % (__file__, DEFAULT_PORT))
+    sys.exit(1)
+
 udpAddress = sys.argv[1]
-udpPort = int(sys.argv[2])
+udpPort = int(sys.argv[2]) if len(sys.argv) >= 3 else DEFAULT_PORT
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
