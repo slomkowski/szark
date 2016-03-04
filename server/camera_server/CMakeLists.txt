@@ -77,6 +77,7 @@ set(TEST_SOURCES
         test/CameraImageGrabberTest.cpp
         test/GripperImageSourceTest.cpp
         test/NetworkServerTest.cpp
+        test/JpegEncoderTest.cpp
         )
 
 add_executable(szark_camserver_test ${SOURCES} ${TEST_SOURCES} test/main.cpp)
