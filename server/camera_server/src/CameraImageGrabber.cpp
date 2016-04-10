@@ -216,6 +216,10 @@ namespace camera {
         std::condition_variable cond;
 
         cv::Mat currentFrame;
+
+        int flipParam;
+        bool performFlip;
+
         int currentFrameNo;
         double currentFps;
 
@@ -277,6 +281,28 @@ namespace camera {
             fmt.fmt.pix.field = V4L2_FIELD_NONE;
 
             checkedXioctl(fd, VIDIOC_S_FMT, &fmt, "cannot set pixel format");
+
+            std::string flipParams;
+            try {
+                flipParams = config->getString(getFullConfigPath("flip"));
+            } catch (common::config::ConfigException &e) { }
+
+            if (flipParams == "vertically") {
+                performFlip = true;
+                flipParam = 0;
+                logger.notice("Image will be flipped vertically.");
+            } else if (flipParams == "horizontally") {
+                performFlip = true;
+                flipParam = 1;
+                logger.notice("Image will be flipped horizontally");
+            } else if (flipParams == "rotate") {
+                performFlip = true;
+                flipParam = -1;
+                logger.notice("Image will be rotated 180 deg.");
+            } else {
+                performFlip = false;
+                logger.notice("Flipping disabled.");
+            }
 
             memcpy(fourcc, &fmt.fmt.pix.pixelformat, 4);
             logger.notice("Camera mode: width: %d, height: %d, pixel format: %s, field: %d.",
@@ -401,6 +427,10 @@ namespace camera {
                     pixfc->convert(pixfc, buffer->video4linuxBuffer, buffer->rgbBuffer);
                     // todo timecode can be used
                     frame = cv::Mat(height, width, CV_8UC3, buffer->rgbBuffer);
+
+                    if (performFlip) {
+                        cv::flip(frame, frame, flipParam);
+                    }
 
                     logger.debug("Mat: height: %d, width: %d.", frame.rows, frame.cols);
                 });
