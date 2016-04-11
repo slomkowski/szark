@@ -38,7 +38,7 @@ set(SOURCES
         src/HeadHudPainter.cpp
         src/ImageSource.hpp
         src/GripperImageSource.cpp src/GripperImageSource.hpp
-        src/HeadImageSource.cpp src/HeadImageSource.hpp
+        src/HeadImageSource.cpp
         src/NetworkServer.cpp src/NetworkServer.hpp
         src/JpegEncoder.cpp src/JpegEncoder.hpp
         )

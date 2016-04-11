@@ -23,115 +23,6 @@ using namespace camera;
 
 const int FRAMERATE_AVG_FRAMES = 5;
 
-WALLAROO_REGISTER(ImageGrabber, string);
-
-camera::ImageGrabber::ImageGrabber(const std::string &prefix) :
-        prefix(prefix),
-        logger(log4cpp::Category::getInstance("ImageGrabber")),
-        config("config", RegistrationToken()),
-        captureTimesAvgBuffer(FRAMERATE_AVG_FRAMES),
-        currentFrameNo(1) {
-}
-
-void ImageGrabber::Init() {
-    int videoDevice = config->getInt(getFullConfigPath("device"));
-
-    videoCapture.reset(new cv::VideoCapture(videoDevice));
-
-    if (not videoCapture->isOpened()) {
-        throw ImageGrabberException((format("cannot open device %d.") % videoDevice).str());
-    }
-
-    setVideoCaptureProperty(CV_CAP_PROP_FRAME_WIDTH, "width");
-    setVideoCaptureProperty(CV_CAP_PROP_FRAME_HEIGHT, "height");
-
-    logger.notice("Set '%s' frame size to %dx%d.", prefix.c_str(), videoCapture->get(CV_CAP_PROP_FRAME_WIDTH),
-                  videoCapture->get(CV_CAP_PROP_FRAME_HEIGHT));
-
-    grabberThread.reset(new std::thread(&ImageGrabber::grabberThreadFunction, this));
-    common::utils::setThreadName(logger, grabberThread.get(), prefix + "ImgGrab");
-
-    logger.notice("Instance created.");
-}
-
-std::tuple<long, double, cv::Mat>  camera::ImageGrabber::getFrame(bool wait) {
-    std::unique_lock<std::mutex> lk(dataMutex);
-
-    if (not wait) {
-        cond.wait(lk);
-        logger.info("Got frame.");
-    } else {
-        logger.info("Got frame without waiting.");
-    }
-
-    return std::tuple<long, double, cv::Mat>(currentFrameNo, currentFps, currentFrame);
-}
-
-camera::ImageGrabber::~ImageGrabber() {
-    dataMutex.lock();
-    finishThread = true;
-    dataMutex.unlock();
-
-    grabberThread->join();
-
-    videoCapture->release();
-
-    logger.notice("Instance destroyed.");
-}
-
-void ImageGrabber::grabberThreadFunction() {
-    while (!finishThread) {
-        cv::Mat frame;
-        bool validFrame;
-        int elapsedTime = common::utils::measureTime<std::chrono::milliseconds>([&]() {
-            validFrame = videoCapture->read(frame);
-        });
-
-        if (not validFrame) {
-            throw ImageGrabberException("invalid frame");
-        }
-
-        captureTimesAvgBuffer.push_back(elapsedTime);
-
-        double fps = captureTimesAvgBuffer.size() * 1000.0 /
-                     (std::accumulate(captureTimesAvgBuffer.begin(), captureTimesAvgBuffer.end(), 0));
-
-        logger.info("Captured frame no %d in %d ms (%2.1f fps).", currentFrameNo, elapsedTime, fps);
-
-        dataMutex.lock();
-        this->currentFrame = frame;
-        this->currentFrameNo++;
-        this->currentFps = fps;
-        dataMutex.unlock();
-
-        cond.notify_all();
-    }
-}
-
-std::string ImageGrabber::getFullConfigPath(std::string property) {
-    return "ImageGrabber." + prefix + "_" + property;
-}
-
-void ImageGrabber::setVideoCaptureProperty(int prop, std::string confName) {
-    auto path = getFullConfigPath(confName);
-    int val;
-
-    try {
-        val = config->getInt(path);
-    } catch (common::config::ConfigException &e) {
-        throw ImageGrabberException((format("failed to set property: %s") % e.what()).str());
-    }
-
-    videoCapture->set(prop, val);
-
-//	if (readVal != val) {
-//		throw ImageGrabberException((format("failed to set property '%s' to value %d, previous value: %d")
-//				% path % val % readVal).str());
-//	}
-
-    logger.info("Set property '%s' to value %d.", path.c_str(), val);
-}
-
 static int xioctl(int fd, unsigned long request, void *arg) {
     int r;
     do r = ioctl(fd, request, arg);
@@ -152,6 +43,12 @@ static void checkedXioctl(int fd, unsigned long request, void *arg, string error
 }
 
 namespace camera {
+
+    static const std::map<FlipParams, int> flipMap = {
+            {FlipParams::FLIP_HORIZONTALLY, 1},
+            {FlipParams::FLIP_VERTICALLY,   0},
+            {FlipParams::ROTATE_180,        -1}
+    };
 
     struct VideoBuffer {
         uint8_t *video4linuxBuffer;
@@ -183,6 +80,15 @@ namespace camera {
             }
         }
 
+        virtual void setVideoParams(int input, FlipParams flipParams) {
+            this->flipParams = flipParams;
+            if (input != this->prevVideoInput) {
+                logger.info("Setting video input to %d.", input);
+                checkedXioctl(fd, VIDIOC_S_INPUT, &input, "cannot set input to " + to_string(input));
+                this->prevVideoInput = input;
+            }
+        }
+
         virtual std::tuple<long, double, cv::Mat> getFrame(bool wait) {
             std::unique_lock<std::mutex> lk(dataMutex);
 
@@ -194,11 +100,6 @@ namespace camera {
             }
 
             return std::tuple<long, double, cv::Mat>(currentFrameNo, currentFps, currentFrame);
-        }
-
-        void setInput(int inputNo) {
-            logger.info("Setting video input to %d.", inputNo);
-            checkedXioctl(fd, VIDIOC_S_INPUT, &inputNo, "cannot set input to " + to_string(inputNo));
         }
 
     private:
@@ -217,8 +118,9 @@ namespace camera {
 
         cv::Mat currentFrame;
 
-        int flipParam;
-        bool performFlip;
+        int prevVideoInput = -1;
+
+        FlipParams flipParams = FlipParams::NONE;
 
         int currentFrameNo;
         double currentFps;
@@ -282,27 +184,7 @@ namespace camera {
 
             checkedXioctl(fd, VIDIOC_S_FMT, &fmt, "cannot set pixel format");
 
-            std::string flipParams;
-            try {
-                flipParams = config->getString(getFullConfigPath("flip"));
-            } catch (common::config::ConfigException &e) { }
-
-            if (flipParams == "vertically") {
-                performFlip = true;
-                flipParam = 0;
-                logger.notice("Image will be flipped vertically.");
-            } else if (flipParams == "horizontally") {
-                performFlip = true;
-                flipParam = 1;
-                logger.notice("Image will be flipped horizontally");
-            } else if (flipParams == "rotate") {
-                performFlip = true;
-                flipParam = -1;
-                logger.notice("Image will be rotated 180 deg.");
-            } else {
-                performFlip = false;
-                logger.notice("Flipping disabled.");
-            }
+            setVideoParams(0, FlipParams::NONE);
 
             memcpy(fourcc, &fmt.fmt.pix.pixelformat, 4);
             logger.notice("Camera mode: width: %d, height: %d, pixel format: %s, field: %d.",
@@ -317,8 +199,6 @@ namespace camera {
                 logger.info(">> %d: %s.", input.index, input.name);
                 input.index++;
             }
-
-            setInput(getVideoCaptureProperty("input"));
 
             v4l2_requestbuffers req = {};
             req.count = 16; // some high value
@@ -428,14 +308,17 @@ namespace camera {
                     // todo timecode can be used
                     frame = cv::Mat(height, width, CV_8UC3, buffer->rgbBuffer);
 
-                    if (performFlip) {
-                        cv::flip(frame, frame, flipParam);
-                    }
-
                     logger.debug("Mat: height: %d, width: %d.", frame.rows, frame.cols);
                 });
 
                 logger.info("Converted frame %d from UYUV to RGB in %d us.", currentFrameNo, elapsedTime);
+
+                if (flipParams != FlipParams::NONE) {
+                    elapsedTime = common::utils::measureTime<std::chrono::microseconds>([&]() {
+                        cv::flip(frame, frame, flipMap.at(flipParams));
+                    });
+                    logger.info("Flipped image in %d us.", elapsedTime);
+                }
 
                 checkedXioctl(fd, VIDIOC_QBUF, &v4l2_buf, "error during querying buffer");
 

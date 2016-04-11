@@ -18,8 +18,8 @@ int main(int argc, char *argv[]) {
 
     Catalog c;
     c.Create("conf", "Configuration", configFiles);
-    c.Create("imgGrabberLeft", "ImageGrabber", string("left"));
-    c.Create("imgGrabberRight", "ImageGrabber", string("right"));
+    c.Create("imgGrabberLeft", "Video4LinuxImageGrabber", string("left"));
+    c.Create("imgGrabberRight", "Video4LinuxImageGrabber", string("right"));
     c.Create("ifaceProvider", "InterfaceProvider", false);
     c.Create("imgCombiner", "GripperImageSource");
     c.Create("hudPainter", "GripperHudPainter");

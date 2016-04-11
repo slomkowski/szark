@@ -100,6 +100,7 @@ void camera::NetworkServer::doReceive() {
                 long serial = 0;
                 bool drawHud = false;
                 int quality = camera::DEFAULT_JPEG_QUALITY;
+                string videoInput;
                 string receivedTimestamp = common::utils::getTimestamp();
                 string sendTimestamp = common::utils::getTimestamp();
 
@@ -108,6 +109,7 @@ void camera::NetworkServer::doReceive() {
                     minijson::parse_object(ctx, [&](const char *k, minijson::value v) {
                         minijson::dispatch(k)
                         << "serial" >> [&] { serial = v.as_long(); }
+                        << "input" >> [&] { videoInput = v.as_string(); }
                         << "drawHud" >> [&] { drawHud = v.as_bool(); }
                         << "quality" >> [&] { quality = v.as_long(); }
                         << "tss" >> [&] { sendTimestamp = v.as_string(); };
@@ -116,21 +118,23 @@ void camera::NetworkServer::doReceive() {
                     quality = std::min(100, quality);
                     quality = std::max(5, quality);
 
-                    logger.info("Received request from %s: serial %d, %s HUD, quality: %d.",
+                    logger.info("Received request from %s: serial %d, input: %s, %s HUD, quality: %d.",
                                 endpoint.address().to_string().c_str(),
                                 serial,
+                                videoInput,
                                 (drawHud ? "with" : "without"),
                                 quality);
 
                     stringstream headerStream;
                     minijson::object_writer writer(headerStream);
                     writer.write("serial", serial);
+                    writer.write("input", videoInput);
                     writer.write("drawHud", drawHud);
                     writer.write("quality", quality);
                     writer.write("tss", sendTimestamp);
                     writer.write("tsr", receivedTimestamp);
 
-                    auto img = imageSource->getImage(drawHud);
+                    auto img = imageSource->getImage(videoInput, drawHud);
                     auto encodedLength = jpegEncoder->encodeImage(img, sendImgBuffer, SEND_BUFFER_SIZE, quality);
 
                     logger.debug("JPEG file length: %d B.", encodedLength);
@@ -144,7 +148,12 @@ void camera::NetworkServer::doReceive() {
                     sendBuffer[header.size()] = 0;
                     std::memcpy(sendBuffer + header.size() + 1, sendImgBuffer, encodedLength);
 
-                    auto packetLength = header.size() + 1 + encodedLength;
+                    auto packetLength = encodedLength + header.size() + 1;
+
+                    if (packetLength > UDP_MAX_PAYLOAD_SIZE) {
+                        logger.warn("Payload size %d B, limiting to %d B.", packetLength, UDP_MAX_PAYLOAD_SIZE);
+                        packetLength = min(packetLength, UDP_MAX_PAYLOAD_SIZE);
+                    }
 
                     auto sentBytes = udpSocket->send_to(asio::buffer(sendBuffer, packetLength), endpoint);
 

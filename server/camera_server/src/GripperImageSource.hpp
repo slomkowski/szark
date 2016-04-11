@@ -18,7 +18,7 @@ namespace camera {
 
         virtual ~GripperImageSource();
 
-        virtual cv::Mat getImage(bool drawHud);
+        virtual cv::Mat getImage(std::string &videoInput, bool drawHud);
 
     private:
         log4cpp::Category &logger;

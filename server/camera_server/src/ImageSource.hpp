@@ -20,6 +20,6 @@ namespace camera {
     public:
         virtual ~IImageSource() = default;
 
-        virtual cv::Mat getImage(bool drawHud) = 0;
+        virtual cv::Mat getImage(std::string &videoInput, bool drawHud) = 0;
     };
 }

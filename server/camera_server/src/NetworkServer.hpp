@@ -27,7 +27,9 @@ namespace camera {
         virtual ~INetworkServer() = default;
     };
 
-    constexpr int SEND_BUFFER_SIZE = 0x40000;
+    constexpr unsigned long UDP_MAX_PAYLOAD_SIZE = 65506;
+
+    constexpr unsigned int SEND_BUFFER_SIZE = 0x20000;
 
     class NetworkServer : public wallaroo::Part, public INetworkServer {
     public:
