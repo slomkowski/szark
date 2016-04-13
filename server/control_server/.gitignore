@@ -32,3 +32,5 @@ libszark_server_lib.a
 callgrind.out.*
 
 *.log
+
+config.ini
