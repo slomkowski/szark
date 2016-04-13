@@ -100,7 +100,7 @@ void camera::NetworkServer::doReceive() {
                 long serial = 0;
                 bool drawHud = false;
                 int quality = camera::DEFAULT_JPEG_QUALITY;
-                string videoInput;
+                string videoInput = "default";
                 string receivedTimestamp = common::utils::getTimestamp();
                 string sendTimestamp = common::utils::getTimestamp();
 
@@ -121,7 +121,7 @@ void camera::NetworkServer::doReceive() {
                     logger.info("Received request from %s: serial %d, input: %s, %s HUD, quality: %d.",
                                 endpoint.address().to_string().c_str(),
                                 serial,
-                                videoInput,
+                                videoInput.c_str(),
                                 (drawHud ? "with" : "without"),
                                 quality);
 
@@ -148,7 +148,7 @@ void camera::NetworkServer::doReceive() {
                     sendBuffer[header.size()] = 0;
                     std::memcpy(sendBuffer + header.size() + 1, sendImgBuffer, encodedLength);
 
-                    auto packetLength = encodedLength + header.size() + 1;
+                    unsigned int packetLength = encodedLength + header.size() + 1;
 
                     if (packetLength > UDP_MAX_PAYLOAD_SIZE) {
                         logger.warn("Payload size %d B, limiting to %d B.", packetLength, UDP_MAX_PAYLOAD_SIZE);

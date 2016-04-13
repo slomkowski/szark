@@ -27,7 +27,7 @@ namespace camera {
         virtual ~INetworkServer() = default;
     };
 
-    constexpr unsigned long UDP_MAX_PAYLOAD_SIZE = 65506;
+    constexpr unsigned int UDP_MAX_PAYLOAD_SIZE = 65506;
 
     constexpr unsigned int SEND_BUFFER_SIZE = 0x20000;
 
