@@ -2,7 +2,6 @@
 
 #include <boost/test/unit_test.hpp>
 #include <wallaroo/catalog.h>
-#include <json/value.h>
 #include <minijson_writer.hpp>
 
 #include <thread>
@@ -13,13 +12,16 @@ using namespace std::chrono;
 
 static void execTest(const shared_ptr<bridge::BridgeProcessor> &proc) {
     this_thread::sleep_for(milliseconds(500));
-    Json::Value req;
+
+    processing::Request req;
+    req.ipAddress = boost::asio::ip::address();
+
     std::stringstream respStream;
     minijson::object_writer resp(respStream);
-    proc->process(req, boost::asio::ip::address(), resp);
+    proc->process(req, resp);
     BOOST_TEST_MESSAGE(respStream.str());
     for (int i = 0; i < 30; i++) {
-        proc->process(req, boost::asio::ip::address(), resp);
+        proc->process(req, resp);
         this_thread::sleep_for(milliseconds(40));
     }
     BOOST_CHECK_EQUAL(1, 1);

@@ -10,12 +10,11 @@
 
 class RequestProcessorMock : public processing::IRequestProcessor, public wallaroo::Part {
 public:
-    virtual void process(Json::Value &request, boost::asio::ip::address address,
-                         minijson::object_writer &response) override;
+
+    virtual void process(processing::Request &req, minijson::object_writer &response) override;
 };
 
-void RequestProcessorMock::process(Json::Value &request, boost::asio::ip::address address,
-                                   minijson::object_writer &response) {
+void RequestProcessorMock::process(processing::Request &req, minijson::object_writer &response) {
 
     auto lights = response.nested_object("lights");
     lights.write("led", false);
@@ -147,11 +146,4 @@ BOOST_AUTO_TEST_CASE(RequestQueuerTest_addRequest) {
 BOOST_AUTO_TEST_CASE(RequestQueuerTest_requestProcessor) {
     wallaroo::Catalog catalog;
     auto rq = prepareBindings(catalog);
-
-    Json::Value req;
-    Json::Value resp;
-
-    req["serial"] = 123;
-
-    BOOST_CHECK_EQUAL(req["serial"].asInt(), resp["serial"].asInt());
 }
