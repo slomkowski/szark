@@ -3,23 +3,23 @@ package eu.slomkowski.szark.client.status;
 import com.google.gson.annotations.SerializedName;
 
 public enum Direction {
-	@SerializedName("backward")
-	BACKWARD("backward"),
+    @SerializedName("backward")
+    BACKWARD("backward"),
 
-	@SerializedName("forward")
-	FORWARD("forward"),
+    @SerializedName("forward")
+    FORWARD("forward"),
 
-	@SerializedName("stop")
-	STOP("stop");
+    @SerializedName("stop")
+    STOP("stop");
 
-	private String name;
+    private String name;
 
-	Direction(String name) {
-		this.name = name;
-	}
+    Direction(String name) {
+        this.name = name;
+    }
 
-	@Override
-	public String toString() {
-		return name;
-	}
+    @Override
+    public String toString() {
+        return name;
+    }
 }

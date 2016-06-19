@@ -2,10 +2,11 @@ package eu.slomkowski.szark.client.camera;
 
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
+import lombok.Data;
 
 import java.time.LocalTime;
 
-
+@Data
 class CameraParams {
     @Expose
     private int serial = 0;
@@ -15,6 +16,10 @@ class CameraParams {
 
     @Expose
     private int quality;
+
+    @SerializedName("input")
+    @Expose(serialize = true, deserialize = false)
+    private CameraType type;
 
     @Expose(serialize = true, deserialize = false)
     @SerializedName("tss")
@@ -28,51 +33,4 @@ class CameraParams {
     @SerializedName("tssr")
     private LocalTime sendResponseTimestamp = LocalTime.now();
 
-    public int getSerial() {
-        return serial;
-    }
-
-    public void setSerial(int serial) {
-        this.serial = serial;
-    }
-
-    public boolean isDrawHud() {
-        return drawHud;
-    }
-
-    public void setDrawHud(boolean drawHud) {
-        this.drawHud = drawHud;
-    }
-
-    public int getQuality() {
-        return quality;
-    }
-
-    public void setQuality(int quality) {
-        this.quality = quality;
-    }
-
-    public LocalTime getSendTimestamp() {
-        return sendTimestamp;
-    }
-
-    public void setSendTimestamp(LocalTime sendTimestamp) {
-        this.sendTimestamp = sendTimestamp;
-    }
-
-    public LocalTime getReceiveTimestamp() {
-        return receiveTimestamp;
-    }
-
-    public void setReceiveTimestamp(LocalTime receiveTimestamp) {
-        this.receiveTimestamp = receiveTimestamp;
-    }
-
-    public LocalTime getSendResponseTimestamp() {
-        return sendResponseTimestamp;
-    }
-
-    public void setSendResponseTimestamp(LocalTime sendResponseTimestamp) {
-        this.sendResponseTimestamp = sendResponseTimestamp;
-    }
 }

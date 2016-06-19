@@ -40,8 +40,8 @@ public class JointSet extends AbstractMotor {
         if (obj instanceof JointSet) {
             final JointSet o = (JointSet) obj;
             if (gripper.equals(o.gripper)
-                    && shoulder.equals(o.shoulder)
-                    && elbow.equals(o.elbow)) {
+                        && shoulder.equals(o.shoulder)
+                        && elbow.equals(o.elbow)) {
                 return true;
             }
         }
@@ -123,7 +123,7 @@ public class JointSet extends AbstractMotor {
                 final Joint o = (Joint) other;
 
                 return (this.getDirection() == o.getDirection()) && (this.getSpeed() == o.getSpeed())
-                        && (this.getPosition() == o.getPosition());
+                               && (this.getPosition() == o.getPosition());
             } else {
                 return false;
             }

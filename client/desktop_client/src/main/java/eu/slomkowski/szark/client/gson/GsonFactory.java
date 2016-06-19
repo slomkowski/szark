@@ -11,9 +11,9 @@ public class GsonFactory {
     public static Gson getGson() {
         if (gson == null) {
             gson = new GsonBuilder()
-                    .excludeFieldsWithoutExposeAnnotation()
-                    .registerTypeAdapter(LocalTime.class, new LocalTimeTypeAdapter())
-                    .create();
+                           .excludeFieldsWithoutExposeAnnotation()
+                           .registerTypeAdapter(LocalTime.class, new LocalTimeTypeAdapter())
+                           .create();
         }
         return gson;
     }

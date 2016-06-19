@@ -63,7 +63,7 @@ public class MainWindowLogic extends MainWindowView {
     }
 
     public void performCameraServerConnection(InetAddress address) {
-        cameraSelectHead.setSelected(true);
+        cameraSelectGripper.setSelected(true);
         cameraDisplayHud.setSelected(true);
         setCameraControlsEnabled(true);
 
@@ -292,10 +292,10 @@ public class MainWindowLogic extends MainWindowView {
                 mConWin.setVisible(true);
                 mWinMoveCtrl.setText("Hide move control window");
             }
-        } else if (obj == cameraSelectHead) {
-            cameraScreen.setChosenCameraType(CameraType.HEAD);
         } else if (obj == cameraSelectGripper) {
             cameraScreen.setChosenCameraType(CameraType.GRIPPER);
+        } else if (obj == cameraSelectBack) {
+            cameraScreen.setChosenCameraType(CameraType.BACK);
         } else if (obj == cameraDisplayHud) {
             if (cameraDisplayHud.isSelected()) {
                 cameraScreen.setCameraMode(CameraMode.HUD);

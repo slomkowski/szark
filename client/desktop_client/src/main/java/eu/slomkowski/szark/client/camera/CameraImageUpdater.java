@@ -3,8 +3,7 @@ package eu.slomkowski.szark.client.camera;
 import com.google.gson.Gson;
 import eu.slomkowski.szark.client.HardcodedConfiguration;
 import eu.slomkowski.szark.client.gson.GsonFactory;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
@@ -18,15 +17,14 @@ import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+@Slf4j
 public class CameraImageUpdater extends JLabel {
 
     private static final int JPEG_QUALITY = 45;
 
-    private Logger logger = LoggerFactory.getLogger(CameraImageUpdater.class);
-
     private final Gson gson = GsonFactory.getGson();
     private UpdateTask updateTask = null;
-    private CameraType chosenCameraType = CameraType.HEAD;
+    private CameraType chosenCameraType = CameraType.GRIPPER;
     private InetSocketAddress address;
     private DatagramSocket socket;
     private boolean enabled = false;
@@ -54,12 +52,7 @@ public class CameraImageUpdater extends JLabel {
         try {
             socket = new DatagramSocket();
             socket.setSoTimeout(HardcodedConfiguration.CAMERA_TIMEOUT);
-
-            int port = chosenCameraType == CameraType.GRIPPER
-                    ? HardcodedConfiguration.CAMERA_PORT_GRIPPER
-                    : HardcodedConfiguration.CAMERA_PORT_HEAD;
-
-            this.address = new InetSocketAddress(host, port);
+            this.address = new InetSocketAddress(host, chosenCameraType.getPort());
         } catch (final IOException e) {
             e.printStackTrace();
             System.exit(1);
@@ -110,6 +103,7 @@ public class CameraImageUpdater extends JLabel {
                     cameraParams.setDrawHud(cameraMode == CameraMode.HUD);
                     cameraParams.setSerial(serial);
                     cameraParams.setSendTimestamp(LocalTime.now());
+                    cameraParams.setType(chosenCameraType);
 
                     String sendPacketPayload = gson.toJson(cameraParams);
                     DatagramPacket sendPacket = new DatagramPacket(sendPacketPayload.getBytes(), sendPacketPayload.length(), address);
@@ -121,7 +115,7 @@ public class CameraImageUpdater extends JLabel {
                     try {
                         socket.receive(receivedPacket);
                     } catch (final SocketTimeoutException e) {
-                        logger.warn("Camera receive timeout.");
+                        log.warn("Camera receive timeout.");
                         continue;
                     }
 
@@ -146,7 +140,7 @@ public class CameraImageUpdater extends JLabel {
                         long from = ChronoUnit.MILLIS.between(status.getSendResponseTimestamp(), LocalTime.now());
                         long processingTime = ChronoUnit.MILLIS.between(status.getReceiveTimestamp(), status.getSendResponseTimestamp());
 
-                        logger.info("Trip: to {} ms, from {} ms, process: {} ms.", to, from, processingTime);
+                        log.info("Trip: to {} ms, from {} ms, process: {} ms.", to, from, processingTime);
                     }
 
                     ByteArrayInputStream stream = new ByteArrayInputStream(inputBuffer, headerEnd + 1, receivedPacket.getLength() - headerEnd - 1);
@@ -167,7 +161,7 @@ public class CameraImageUpdater extends JLabel {
                     SwingUtilities.invokeLater(() -> {
                         disableCameraView();
 
-                        logger.error("Camera communication error:", e.getMessage(), e);
+                        log.error("Camera communication error:", e.getMessage(), e);
 
                         JOptionPane.showMessageDialog(CameraImageUpdater.this,
                                 String.format("Camera communication error: %s. Disabling camera.",
@@ -184,15 +178,6 @@ public class CameraImageUpdater extends JLabel {
         }
 
         @Override
-        protected void done() {
-            try {
-                socket.close();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-
-        @Override
         protected void process(List<BufferedImage> chunks) {
             image = chunks.get(chunks.size() - 1);
             CameraImageUpdater.this.setSize(image.getWidth(), image.getHeight());
@@ -204,6 +189,7 @@ public class CameraImageUpdater extends JLabel {
 
             try {
                 this.get();
+                socket.close();
             } catch (Exception e) {
                 e.printStackTrace();
             }

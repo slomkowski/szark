@@ -89,7 +89,7 @@ public class ControlUpdater extends SwingWorker<Void, Status> {
         status.incrementSerial();
 
         if (!status.isKillSwitchEnable() &&
-                receivedStatus.getReceivedKillSwitchStatus() != KillSwitchStatus.INACTIVE) {
+                    receivedStatus.getReceivedKillSwitchStatus() != KillSwitchStatus.INACTIVE) {
 
             if (receivedStatus.getReceivedKillSwitchStatus() == KillSwitchStatus.ACTIVE_HARDWARE) {
                 throw new HardwareStoppedException("Kill switch has been pressed!");

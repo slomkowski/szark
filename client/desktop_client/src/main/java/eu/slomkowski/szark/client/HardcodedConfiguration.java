@@ -13,8 +13,6 @@ public interface HardcodedConfiguration {
     };
 
     int CAMERA_TIMEOUT = 500; // in milliseconds
-    int CAMERA_PORT_GRIPPER = 10192;
-    int CAMERA_PORT_HEAD = 10192;
 
     int CONTROL_SERVER_PORT = 10191;
     int CONTROL_SERVER_REFRESH_INTERVAL = 30; // in milliseconds

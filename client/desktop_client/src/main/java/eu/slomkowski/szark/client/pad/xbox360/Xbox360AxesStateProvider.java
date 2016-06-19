@@ -54,11 +54,11 @@ public class Xbox360AxesStateProvider implements AxesStateProvider {
         controller.poll();
 
         AxesState axesState = new AxesState(
-                getCaterpillarAxisState(leftCaterpillarAccelerator, leftCaterpillarBackwardButton),
-                getCaterpillarAxisState(rightCaterpillarAccelerator, rightCaterpillarBackwardButton),
-                getJointAxisState(shoulderJointAccelerator),
-                getJointAxisState(elbowJointAccelerator),
-                getJointAxisState(gripperJointAccelerator));
+                                                   getCaterpillarAxisState(leftCaterpillarAccelerator, leftCaterpillarBackwardButton),
+                                                   getCaterpillarAxisState(rightCaterpillarAccelerator, rightCaterpillarBackwardButton),
+                                                   getJointAxisState(shoulderJointAccelerator),
+                                                   getJointAxisState(elbowJointAccelerator),
+                                                   getJointAxisState(gripperJointAccelerator));
 
         logger.debug("Axes state: {}.", axesState.toString());
 
@@ -90,7 +90,7 @@ public class Xbox360AxesStateProvider implements AxesStateProvider {
 
         List<Controller> controllers = Arrays.stream(ce.getControllers()).filter(
                 e -> (e.getType() == Controller.Type.GAMEPAD) || (e.getType() == Controller.Type.STICK))
-                .collect(Collectors.toList());
+                                               .collect(Collectors.toList());
 
         controllers.forEach(c -> logger.info("Found game controller: '{}'.", c.getName()));
 
