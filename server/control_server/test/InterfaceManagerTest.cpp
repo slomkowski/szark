@@ -11,6 +11,7 @@
 #include <algorithm>
 #include <sstream>
 #include <memory>
+#include <numeric>
 
 BOOST_AUTO_TEST_CASE(InterfaceManager_Operation) {
     using std::chrono::duration_cast;

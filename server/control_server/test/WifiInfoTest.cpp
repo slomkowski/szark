@@ -1,6 +1,7 @@
 #include "WifiInfo.hpp"
 
 #include <boost/test/unit_test.hpp>
+#include <boost/asio/ip/address.hpp>
 
 #include <chrono>
 #include <thread>
@@ -15,10 +16,10 @@ BOOST_AUTO_TEST_CASE(WifiInfoTest_Run) {
     for (int i = 0; i < 10; i++) {
         std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
-        BOOST_CHECK_THROW(wifi.getWifiLinkParams(boost::asio::ip::address_v4::from_string("1.1.1.1")),
+        BOOST_CHECK_THROW(wifi.getWifiLinkParams(boost::asio::ip::make_address("1.1.1.1")),
                           os::WifiException);
 
-        auto linkParams = wifi.getWifiLinkParams(boost::asio::ip::address_v4::from_string("192.168.0.1"));
+        auto linkParams = wifi.getWifiLinkParams(boost::asio::ip::make_address("192.168.0.1"));
 
         BOOST_CHECK_EQUAL(INTERFACE_NAME, linkParams.getInterfaceName());
 

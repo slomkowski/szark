@@ -29,7 +29,7 @@ processing::NetServer::NetServer(unsigned int port)
 
 void processing::NetServer::Init() {
     buff.reset(new char[MAX_PACKET_SIZE]);
-    udpSocket.reset(new ip::udp::socket(ioServiceProvider->getIoService()));
+    udpSocket.reset(new ip::udp::socket(ioServiceProvider->getIoContext()));
 
     if (udpPort == 0) {
         udpPort = config->getInt("NetServer.port");
@@ -130,7 +130,8 @@ void processing::NetServer::sendResponse(long id, std::string response, bool tra
 }
 
 void processing::NetServer::removeFromRequestMap(long id) {
-    ioServiceProvider->getIoService().post([id, this]() {
+    post(ioServiceProvider->getIoContext(),
+        [id, this]() {
         logger.debug("Removing key %ld from senders map.", id);
         sendersMap.erase(id);
         logger.debug("Senders map contains now %d keys.", sendersMap.size());

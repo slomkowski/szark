@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8.4)
+cmake_minimum_required(VERSION 3.10)
 project(SZARK_common_lib)
 
 set(MAIN_LIB szark_common)

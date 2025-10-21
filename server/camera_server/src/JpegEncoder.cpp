@@ -23,7 +23,7 @@ public:
         std::vector<unsigned char> buffer(30000);
 
         std::vector<int> jpegEncoderParameters;
-        jpegEncoderParameters.push_back(CV_IMWRITE_JPEG_QUALITY);
+        jpegEncoderParameters.push_back(cv::IMWRITE_JPEG_QUALITY);
         jpegEncoderParameters.push_back(quality);
 
         int us = common::utils::measureTime<std::chrono::microseconds>([&]() {

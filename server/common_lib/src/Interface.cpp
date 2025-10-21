@@ -7,6 +7,7 @@
 #include <boost/algorithm/string.hpp>
 
 #include <numeric>
+#include <cmath>
 
 using namespace std;
 using namespace boost;

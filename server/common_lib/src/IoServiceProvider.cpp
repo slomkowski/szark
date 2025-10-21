@@ -6,20 +6,20 @@ namespace common {
     WALLAROO_REGISTER(IoServiceProvider)
 
     IoServiceProvider::IoServiceProvider()
-            : signals(ioService, SIGINT, SIGTERM) {
+            : signals(ioContext, SIGINT, SIGTERM) {
         signals.async_wait(std::bind(&IoServiceProvider::signalHandler, this));
     }
 
-    boost::asio::io_service &common::IoServiceProvider::getIoService() {
-        return ioService;
+    boost::asio::io_context &IoServiceProvider::getIoContext() {
+        return ioContext;
     }
 
     void IoServiceProvider::run() {
-        ioService.run();
+        ioContext.run();
     }
 
     void IoServiceProvider::signalHandler() {
         std::cerr << "Ctrl+C pressed, stopping.\n";
-        ioService.stop();
+        ioContext.stop();
     }
 }

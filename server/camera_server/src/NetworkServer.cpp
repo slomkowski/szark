@@ -38,7 +38,7 @@ camera::NetworkServer::NetworkServer(int port)
 
 void NetworkServer::Init() {
     using boost::asio::ip::udp;
-    udpSocket.reset(new udp::socket(ioServiceProvider->getIoService()));
+    udpSocket.reset(new udp::socket(ioServiceProvider->getIoContext()));
 
     if (port == 0) {
         port = config->getInt("NetworkServer.port");

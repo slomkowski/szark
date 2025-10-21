@@ -81,10 +81,10 @@ namespace camera {
 
             if (invert) {
                 Point filledAreaOffset(size.x * (1.0 - progress), 0);
-                rectangle(img, topLeft + filledAreaOffset, topLeft + size, color, CV_FILLED);
+                rectangle(img, topLeft + filledAreaOffset, topLeft + size, color, FILLED);
             } else {
                 Point filledAreaSize(size.x * progress, size.y);
-                rectangle(img, topLeft, topLeft + filledAreaSize, color, CV_FILLED);
+                rectangle(img, topLeft, topLeft + filledAreaSize, color, FILLED);
             }
         }
     };

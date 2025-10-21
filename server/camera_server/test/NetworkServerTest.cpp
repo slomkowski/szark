@@ -13,7 +13,7 @@ class DummyImageSource : public camera::IImageSource, public wallaroo::Part {
 public:
     cv::Mat getImage(bool drawHud) {
         this_thread::sleep_for(chrono::milliseconds(100));
-        return cv::imread("test.jpg", CV_LOAD_IMAGE_COLOR);
+        return cv::imread("test.jpg", cv::IMREAD_COLOR);
     }
 };
 

@@ -66,7 +66,7 @@ BOOST_AUTO_TEST_CASE(NetServerTest_Run) {
 
     auto ioServiceProvider = std::shared_ptr<common::IoServiceProvider>(catalog["ioServiceProvider"]);
 
-    ioServiceProvider->getIoService().run();
+    ioServiceProvider->getIoContext().run();
 
     this_thread::sleep_for(chrono::milliseconds(500));
 
