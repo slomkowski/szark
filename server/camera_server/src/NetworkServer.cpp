@@ -15,7 +15,7 @@ using namespace boost;
 using namespace camera;
 
 namespace camera {
-    const int RECEIVED_DATA_MAX_LENGTH = 256;
+    constexpr int RECEIVED_DATA_MAX_LENGTH = 256;
 }
 
 WALLAROO_REGISTER(NetworkServer);

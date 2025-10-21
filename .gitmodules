@@ -6,10 +6,13 @@
 	url = https://github.com/abcminiuser/lufa.git
 [submodule "external-libs/minijson_writer"]
 	path = external-libs/minijson_writer
-	url = https://github.com/giacomodrago/minijson_writer.git
+	url = https://github.com/linbc/minijson_writer.git
 [submodule "external-libs/minijson_reader"]
 	path = external-libs/minijson_reader
-	url = https://github.com/giacomodrago/minijson_reader.git
+	url = https://github.com/kaidokert/minijson_reader.git
 [submodule "external-libs/backward-cpp"]
 	path = external-libs/backward-cpp
 	url = https://github.com/bombela/backward-cpp.git
+[submodule "firmware/bridge-pio/lib/lufa"]
+	path = firmware/bridge-pio/lib/lufa
+	url = https://github.com/maxgerhardt/lufa.git

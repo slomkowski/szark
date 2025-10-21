@@ -11,7 +11,7 @@ using namespace camera;
 
 class DummyImageSource : public camera::IImageSource, public wallaroo::Part {
 public:
-    cv::Mat getImage(bool drawHud) {
+    cv::Mat getImage(std::string &videoInput, bool drawHud) override {
         this_thread::sleep_for(chrono::milliseconds(100));
         return cv::imread("test.jpg", cv::IMREAD_COLOR);
     }
