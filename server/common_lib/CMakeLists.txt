@@ -1,14 +1,18 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.25)
 project(SZARK_common_lib)
 
 set(MAIN_LIB szark_common)
 set(TEST_EXECUTABLE szark_common_test)
 
+if (POLICY CMP0167)
+    cmake_policy(SET CMP0167 NEW)
+endif ()
+
 INCLUDE("../common.cmake")
 
 INCLUDE(FindPkgConfig)
 
-find_package(Boost COMPONENTS system unit_test_framework program_options filesystem REQUIRED)
+find_package(Boost REQUIRED COMPONENTS unit_test_framework program_options filesystem)
 find_package(PkgConfig REQUIRED)
 find_package(Threads REQUIRED)
 
@@ -30,27 +34,34 @@ set(src
         src/initialization.cpp include/initialization.hpp
         src/logging.cpp include/logging.hpp
         src/utils.cpp include/utils.hpp
-        )
+)
 
 add_library(${MAIN_LIB} STATIC ${src})
 
-target_link_libraries(${MAIN_LIB} ${LOG4CPP_LIBRARIES})
-target_link_libraries(${MAIN_LIB} ${Boost_LIBRARIES})
-target_link_libraries(${MAIN_LIB} ${CMAKE_THREAD_LIBS_INIT})
-target_link_libraries(${MAIN_LIB} rt)
+target_link_libraries(${MAIN_LIB}
+        ${LOG4CPP_LIBRARIES}
+        Boost::program_options
+        Boost::filesystem
+        Threads::Threads
+        rt
+)
 
 enable_testing()
 
 set(test_src
         test/ConfigurationTest.cpp
         test/SharedInterfaceProviderTest.cpp
-        )
+)
 
 add_executable(${TEST_EXECUTABLE} ${src} ${test_src} test/main.cpp)
 
-target_link_libraries(${TEST_EXECUTABLE} ${LOG4CPP_LIBRARIES})
-target_link_libraries(${TEST_EXECUTABLE} ${Boost_LIBRARIES})
-target_link_libraries(${TEST_EXECUTABLE} ${CMAKE_THREAD_LIBS_INIT})
-target_link_libraries(${TEST_EXECUTABLE} rt)
+target_link_libraries(${TEST_EXECUTABLE}
+        ${LOG4CPP_LIBRARIES}
+        Boost::unit_test_framework
+        Boost::program_options
+        Boost::filesystem
+        Threads::Threads
+        rt
+)
 
 add_test(SZARKCommonLibTest ${TEST_EXECUTABLE})

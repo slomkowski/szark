@@ -4,12 +4,16 @@
 # License: GPL v3
 #
 
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.25)
 project(SZARK_camera_server)
+
+if (POLICY CMP0167)
+    cmake_policy(SET CMP0167 NEW)
+endif ()
 
 INCLUDE("../common.cmake")
 
-find_package(Boost COMPONENTS system unit_test_framework program_options filesystem REQUIRED)
+find_package(Boost REQUIRED COMPONENTS unit_test_framework program_options filesystem)
 find_package(OpenCV REQUIRED)
 find_package(PkgConfig REQUIRED)
 find_package(Threads REQUIRED)
